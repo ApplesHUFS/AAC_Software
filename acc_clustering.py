@@ -36,7 +36,10 @@ class AACCLIPEncoder:
         self.processor = AutoProcessor.from_pretrained(model_name)
 
     def encode_single(self, image_path, text):
-        image = Image.open(image_path).convert("RGB")
+        image = Image.open(image_path)
+        if image.mode == 'P' and 'transparency' in image.info:
+            image = image.convert('RGBA')
+        image = image.convert("RGB")
 
         inputs = self.processor(
             text=[text],
@@ -51,7 +54,7 @@ class AACCLIPEncoder:
             image_embedding = outputs.image_embeds / outputs.image_embeds.norm(dim=-1, keepdim=True)
             text_embedding = outputs.text_embeds / outputs.text_embeds.norm(dim=-1, keepdim=True)
 
-            return image_embedding.cpu().numpy().flatten(), text_embedding.cpu().numpy().flatten()
+            return image_embedding.float().cpu().numpy().flatten(), text_embedding.float().cpu().numpy().flatten()
     
     def encode_folder(self, folder_path):
         filenames = []
