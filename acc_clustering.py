@@ -5,14 +5,12 @@ import os
 import tqdm
 import json
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
 import numpy as np
 from pathlib import Path
 from dotenv import load_dotenv
 import huggingface_hub
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
-import seaborn as sns
 
 load_dotenv()
 
@@ -121,32 +119,8 @@ class AACClusterer:
         with open(embeddings_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
-    def find_optimal_clusters(self, embeddings, max_clusters=300):
-        silhouette_scores = []
-        k_range = range(2, min(max_clusters + 1, len(embeddings)), 5)
-
-        for k in tqdm.tqdm(k_range, desc="클러스터 수 결정"):
-            kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
-            cluster_labels = kmeans.fit_predict(embeddings)
-            score = silhouette_score(embeddings, cluster_labels)
-            silhouette_scores.append(score)
-
-        return list(k_range), silhouette_scores
-    
-    def detect_elbow_point(self, k_range, scores):
-        if len(scores) < 3:
-            return min(3, max(k_range))
-        
-        best_idx = np.argmax(scores)
-        return k_range[best_idx]
-        
-    def perform_clustering(self, n_clusters=None):
+    def perform_clustering(self, n_clusters):
         embeddings = (self.image_embeddings + self.text_embeddings) / 2
-    
-        if n_clusters is None:
-            k_range, scores = self.find_optimal_clusters(embeddings)
-            n_clusters = self.detect_elbow_point(k_range, scores)
-            print(f"자동 선택한 클러스터 수: {n_clusters} (실루엣 점수: {max(scores):.3f})")
 
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
         cluster_labels = kmeans.fit_predict(embeddings)
@@ -252,8 +226,8 @@ class AACClusterer:
 
 def run_aac_clustering_pipeline(
     aac_folder_path, 
+    n_clusters,
     output_folder='./aac_embeddings',
-    n_clusters=None,
     visualize=True
 ):
     print("\nCLIP 인코딩 중...")
@@ -294,8 +268,8 @@ if __name__ == "__main__":
     
     results = run_aac_clustering_pipeline(
         aac_folder_path=aac_cards_path,
+        n_clusters=96,
         output_folder="./aac_embeddings",
-        n_clusters=None,
         visualize=True
     )
     
