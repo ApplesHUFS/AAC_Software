@@ -61,6 +61,7 @@ class AACCLIPEncoder:
         filenames = []
         image_embeddings = []
         text_embeddings = []
+        seen_texts = set()
 
         for filename in tqdm.tqdm(os.listdir(folder_path), desc="폴더 내 파일 처리"):
             file_path = os.path.join(folder_path, filename)
@@ -75,9 +76,13 @@ class AACCLIPEncoder:
                 if len(text) == 1 and text.isalpha() and text.isascii():
                     continue
 
+                if text in seen_texts:
+                    continue
+                
                 img_emb, txt_emb = self.encode_single(file_path, text)
                 
                 if img_emb is not None and txt_emb is not None:
+                    seen_texts.add(text)
                     filenames.append(filename)
                     image_embeddings.append(img_emb)
                     text_embeddings.append(txt_emb)
@@ -116,9 +121,9 @@ class AACClusterer:
         with open(embeddings_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
-    def find_optimal_clusters(self, embeddings, max_clusters=200):
+    def find_optimal_clusters(self, embeddings, max_clusters=300):
         silhouette_scores = []
-        k_range = range(10, min(max_clusters + 1, len(embeddings)), 10)
+        k_range = range(2, min(max_clusters + 1, len(embeddings)), 5)
 
         for k in tqdm.tqdm(k_range, desc="클러스터 수 결정"):
             kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
