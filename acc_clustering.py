@@ -164,6 +164,24 @@ class AACClusterer:
 
         return results
 
+    def save_clustering_results(self, results, output_folder):
+        Path(output_folder).mkdir(parents=True, exist_ok=True)
+        
+        clustered_files_str_keys = {str(k): v for k, v in results['clustered_files'].items()}
+        
+        cluster_data = {
+            'cluster_labels': results['cluster_labels'].tolist(),
+            'clustered_files': clustered_files_str_keys,
+            'n_clusters': results['n_clusters'],
+            'filenames': self.filenames
+        }
+        
+        json_path = os.path.join(output_folder, 'clustering_results.json')
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(cluster_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"클러스터링 결과 저장: {json_path}")
+
     def print_cluster_results(self, results):
         print(f"\n=== AAC 카드 클러스터링 결과 ===")
         print(f"총 파일 수: {len(self.filenames)}")
@@ -267,6 +285,9 @@ def run_aac_clustering_pipeline(
     
     clusterer = AACClusterer(embedding_data=embedding_data)
     results = clusterer.perform_clustering(n_clusters=n_clusters)
+    
+    print("\n클러스터링 결과 저장 중...")
+    clusterer.save_clustering_results(results, output_folder)
     
     clusterer.print_cluster_results(results)
     
