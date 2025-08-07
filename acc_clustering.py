@@ -66,7 +66,10 @@ class AACCLIPEncoder:
             file_ext = Path(filename).suffix.lower()
 
             if file_ext == '.png' and os.path.isfile(file_path):
-                text = Path(filename).stem.split('_', 1)[-1] if '_' in Path(filename).stem else Path(filename).stem
+                if '_' not in Path(filename).stem:
+                    continue
+                    
+                text = Path(filename).stem.split('_', 1)[-1]
 
                 img_emb, txt_emb = self.encode_single(file_path, text)
                 
@@ -109,7 +112,7 @@ class AACClusterer:
         with open(embeddings_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
-    def find_optimal_clusters(self, embeddings, max_clusters=70):
+    def find_optimal_clusters(self, embeddings, max_clusters=100):
         inertias = []
         k_range = range(1, min(max_clusters + 1, len(embeddings)))
 
@@ -199,7 +202,7 @@ class AACClusterer:
         pca = PCA(n_components=2, random_state=42)
         embeddings_2d = pca.fit_transform(embeddings)
         
-        plt.figure(figsize=(12, 8))
+        plt.figure(figsize=(15, 8))
         colors = plt.cm.tab10(np.linspace(0, 1, results['n_clusters']))
         
         for i in range(results['n_clusters']):
@@ -252,19 +255,6 @@ def run_aac_clustering_pipeline(
     n_clusters=None,
     visualize=True
 ):
-    """
-    AAC 카드 클러스터링 전체 파이프라인 실행
-    
-    Args:
-        aac_folder_path: AAC 카드 이미지들이 있는 폴더 경로
-        output_folder: 임베딩 결과를 저장할 폴더
-        n_clusters: 클러스터 수 (None이면 자동 결정)
-        visualize: 시각화 수행 여부
-    
-    Returns:
-        클러스터링 결과 딕셔너리
-    """
-        
     print("\nCLIP 인코딩 중...")
     encoder = AACCLIPEncoder()
     filenames, image_embeddings, text_embeddings = encoder.encode_folder(aac_folder_path)
