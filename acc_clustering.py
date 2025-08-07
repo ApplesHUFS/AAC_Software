@@ -7,9 +7,23 @@ import json
 from sklearn.cluster import KMeans
 import numpy as np
 from pathlib import Path
+from dotenv import load_dotenv
+import huggingface_hub
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+import seaborn as sns
+
+load_dotenv()
 
 class AACCLIPEncoder:
     def __init__(self, model_name="openai/clip-vit-base-patch32"):
+        hf_token = os.getenv("HUGGINGFACE_TOKEN")
+        if hf_token:
+            huggingface_hub.login(token=hf_token)
+            print("HuggingFace에 로그인했습니다.")
+        else:
+            print("Warning: HUGGINGFACE_TOKEN이 .env 파일에 없습니다.")
+
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"device: {self.device}")
 
@@ -44,7 +58,7 @@ class AACCLIPEncoder:
         image_embeddings = []
         text_embeddings = []
 
-        for filename in tqdm(os.listdir(folder_path), desc="폴더 내 파일 처리"):
+        for filename in tqdm.tqdm(os.listdir(folder_path), desc="폴더 내 파일 처리"):
             file_path = os.path.join(folder_path, filename)
             file_ext = Path(filename).suffix.lower()
 
@@ -96,7 +110,7 @@ class AACClusterer:
         inertias = []
         k_range = range(1, min(max_clusters + 1, len(embeddings)))
 
-        for k in tqdm(k_range, desc="클러스터 수 결정"):
+        for k in tqdm.tqdm(k_range, desc="클러스터 수 결정"):
             kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
             kmeans.fit(embeddings)
             inertias.append(kmeans.inertia_)
@@ -141,14 +155,14 @@ class AACClusterer:
             'cluster_labels': cluster_labels,
             'clustered_files': clustered_files,
             'n_clusters': n_clusters,
-            'kmeans_model': kmeans
+            'kmeans_model': kmeans,
+            'embeddings': embeddings
         }
 
         return results
 
     def print_cluster_results(self, results):
         print(f"\n=== AAC 카드 클러스터링 결과 ===")
-        print(f"임베딩 타입: {results['embedding_type']}")
         print(f"총 파일 수: {len(self.filenames)}")
         print(f"클러스터 수: {results['n_clusters']}")
         
@@ -156,12 +170,66 @@ class AACClusterer:
             print(f"\n클러스터 {cluster_id} ({len(files)}개 파일):")
             for filename in files:
                 print(f"  - {filename}")
+        
+    def visualize_clusters(self, results, output_folder='./aac_embeddings'):
+        embeddings = results['embeddings']
+        cluster_labels = results['cluster_labels']
+        
+        pca = PCA(n_components=2, random_state=42)
+        embeddings_2d = pca.fit_transform(embeddings)
+        
+        plt.figure(figsize=(12, 8))
+        colors = plt.cm.tab10(np.linspace(0, 1, results['n_clusters']))
+        
+        for i in range(results['n_clusters']):
+            cluster_mask = cluster_labels == i
+            plt.scatter(embeddings_2d[cluster_mask, 0], 
+                       embeddings_2d[cluster_mask, 1], 
+                       c=[colors[i]], 
+                       label=f'클러스터 {i} ({np.sum(cluster_mask)}개)',
+                       alpha=0.7,
+                       s=50)
+        
+        plt.title('AAC 카드 클러스터링 결과 (PCA 2D 시각화)', fontsize=14, fontweight='bold')
+        plt.xlabel(f'PCA 1차원 (분산 설명률: {pca.explained_variance_ratio_[0]:.2%})')
+        plt.ylabel(f'PCA 2차원 (분산 설명률: {pca.explained_variance_ratio_[1]:.2%})')
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        viz_path = os.path.join(output_folder, 'cluster_visualization.png')
+        plt.savefig(viz_path, dpi=300, bbox_inches='tight')
+        plt.show()
+        print(f"클러스터 시각화가 저장되었습니다: {viz_path}")
+        
+        plt.figure(figsize=(10, 6))
+        cluster_counts = [len(results['clustered_files'][i]) for i in range(results['n_clusters'])]
+        bars = plt.bar(range(results['n_clusters']), cluster_counts, color=colors)
+        
+        for i, bar in enumerate(bars):
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                    f'{int(height)}',
+                    ha='center', va='bottom')
+        
+        plt.title('클러스터별 파일 수', fontsize=14, fontweight='bold')
+        plt.xlabel('클러스터 번호')
+        plt.ylabel('파일 수')
+        plt.xticks(range(results['n_clusters']))
+        plt.grid(True, alpha=0.3, axis='y')
+        plt.tight_layout()
+        
+        bar_path = os.path.join(output_folder, 'cluster_counts.png')
+        plt.savefig(bar_path, dpi=300, bbox_inches='tight')
+        plt.show()
+        print(f"클러스터 개수 그래프가 저장되었습니다: {bar_path}")
 
 
 def run_aac_clustering_pipeline(
     aac_folder_path, 
     output_folder='./aac_embeddings',
-    n_clusters=None
+    n_clusters=None,
+    visualize=True
 ):
     """
     AAC 카드 클러스터링 전체 파이프라인 실행
@@ -170,7 +238,7 @@ def run_aac_clustering_pipeline(
         aac_folder_path: AAC 카드 이미지들이 있는 폴더 경로
         output_folder: 임베딩 결과를 저장할 폴더
         n_clusters: 클러스터 수 (None이면 자동 결정)
-        embedding_type: 사용할 임베딩 타입 ('image', 'text', 'combined')
+        visualize: 시각화 수행 여부
     
     Returns:
         클러스터링 결과 딕셔너리
@@ -199,6 +267,10 @@ def run_aac_clustering_pipeline(
     
     clusterer.print_cluster_results(results)
     
+    if visualize:
+        print("\n클러스터링 결과 시각화 중...")
+        clusterer.visualize_clusters(results, output_folder)
+    
     print("\n=== 클러스터링 완료 ===")
     return results
 
@@ -208,9 +280,10 @@ if __name__ == "__main__":
     results = run_aac_clustering_pipeline(
         aac_folder_path=aac_cards_path,
         output_folder="./aac_embeddings",
-        n_clusters=None
+        n_clusters=None,
+        visualize=True
     )
     
     # 저장된 임베딩으로 나중에 다시 클러스터링하고 싶다면:
     # clusterer = AACClusterer(embeddings_path='./aac_embeddings/aac_embeddings.json')
-    # new_results = clusterer.perform_clustering('text', n_clusters=3)
+    # new_results = clusterer.perform_clustering(n_clusters=3)
