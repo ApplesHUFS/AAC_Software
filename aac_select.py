@@ -30,11 +30,7 @@ class ClusterSampler:
         
         return sampled_files
 
-def sample_clusters(clustering_results_path, samples_per_cluster=3, specific_clusters=None, output_path="sampled_results.json"):
-    sampler = ClusterSampler(clustering_results_path)
-    sampled = sampler.sample_from_clusters(samples_per_cluster, specific_clusters)
-    return sampled
-
 if __name__ == "__main__":
-    print(sample_clusters("./aac_embeddings/clustering_results.json", samples_per_cluster=5, specific_clusters=[0, 2, 5]))
-    # sample_clusters("./aac_embeddings/clustering_results.json", samples_per_cluster=5, specific_clusters=[0, 2, 5])
+    sampler = ClusterSampler(clustering_results_path="./aac_embeddings/clustering_results.json")
+    sampled = sampler.sample_from_clusters(samples_per_cluster=5, specific_clusters=[0, 2, 5])
+    print(sampled)
