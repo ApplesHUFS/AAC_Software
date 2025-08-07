@@ -29,25 +29,12 @@ class ClusterSampler:
                 print(f"  - {file}")
         
         return sampled_files
-    
-    def save_sampled_results(self, sampled_files, output_path):
-        sampled_data = {
-            'sampled_files': {str(k): v for k, v in sampled_files.items()},         # items[0: [...], 2: [...], 5: [...]]
-            'total_sampled': sum(len(files) for files in sampled_files.values())
-        }
-        
-        with open(output_path, 'w', encoding='utf-8') as f:
-            json.dump(sampled_data, f, ensure_ascii=False, indent=2)
-        
-        print(f"\n샘플링 결과 저장: {output_path}")
 
 def sample_clusters(clustering_results_path, samples_per_cluster=3, specific_clusters=None, output_path="sampled_results.json"):
     sampler = ClusterSampler(clustering_results_path)
-    sampled = sampler.sample_from_clusters(samples_per_cluster, specific_clusters) #  {0: [...], 2: [...], 5: [...]}
-    sampler.save_sampled_results(sampled, output_path)
+    sampled = sampler.sample_from_clusters(samples_per_cluster, specific_clusters)
     return sampled
 
 if __name__ == "__main__":
-    sample_clusters("./aac_embeddings/clustering_results.json", samples_per_cluster=5, specific_clusters=[0, 2, 5])
-    
+    print(sample_clusters("./aac_embeddings/clustering_results.json", samples_per_cluster=5, specific_clusters=[0, 2, 5]))
     # sample_clusters("./aac_embeddings/clustering_results.json", samples_per_cluster=5, specific_clusters=[0, 2, 5])
