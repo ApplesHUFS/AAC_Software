@@ -189,13 +189,13 @@ class AACClusterer:
             plt.scatter(embeddings_2d[cluster_mask, 0], 
                        embeddings_2d[cluster_mask, 1], 
                        c=[colors[i]], 
-                       label=f'클러스터 {i} ({np.sum(cluster_mask)}개)',
+                       label=f'Cluster {i} ({np.sum(cluster_mask)} files)',
                        alpha=0.7,
                        s=50)
         
-        plt.title('AAC 카드 클러스터링 결과 (PCA 2D 시각화)', fontsize=14, fontweight='bold')
-        plt.xlabel(f'PCA 1차원 (분산 설명률: {pca.explained_variance_ratio_[0]:.2%})')
-        plt.ylabel(f'PCA 2차원 (분산 설명률: {pca.explained_variance_ratio_[1]:.2%})')
+        plt.title('AAC Card Clustering Results (PCA 2D Visualization)', fontsize=14, fontweight='bold')
+        plt.xlabel(f'PCA Component 1 (Explained Variance: {pca.explained_variance_ratio_[0]:.2%})')
+        plt.ylabel(f'PCA Component 2 (Explained Variance: {pca.explained_variance_ratio_[1]:.2%})')
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
@@ -203,7 +203,7 @@ class AACClusterer:
         viz_path = os.path.join(output_folder, 'cluster_visualization.png')
         plt.savefig(viz_path, dpi=300, bbox_inches='tight')
         plt.show()
-        print(f"클러스터 시각화가 저장되었습니다: {viz_path}")
+        print(f"Cluster visualization saved: {viz_path}")
         
         plt.figure(figsize=(10, 6))
         cluster_counts = [len(results['clustered_files'][i]) for i in range(results['n_clusters'])]
@@ -215,9 +215,9 @@ class AACClusterer:
                     f'{int(height)}',
                     ha='center', va='bottom')
         
-        plt.title('클러스터별 파일 수', fontsize=14, fontweight='bold')
-        plt.xlabel('클러스터 번호')
-        plt.ylabel('파일 수')
+        plt.title('Number of Files per Cluster', fontsize=14, fontweight='bold')
+        plt.xlabel('Cluster ID')
+        plt.ylabel('Number of Files')
         plt.xticks(range(results['n_clusters']))
         plt.grid(True, alpha=0.3, axis='y')
         plt.tight_layout()
@@ -225,7 +225,7 @@ class AACClusterer:
         bar_path = os.path.join(output_folder, 'cluster_counts.png')
         plt.savefig(bar_path, dpi=300, bbox_inches='tight')
         plt.show()
-        print(f"클러스터 개수 그래프가 저장되었습니다: {bar_path}")
+        print(f"Cluster count graph saved: {bar_path}")
 
 
 def run_aac_clustering_pipeline(
