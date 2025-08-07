@@ -5,6 +5,7 @@ import os
 import tqdm
 import json
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 import numpy as np
 from pathlib import Path
 from dotenv import load_dotenv
@@ -70,6 +71,9 @@ class AACCLIPEncoder:
                     continue
                     
                 text = Path(filename).stem.split('_', 1)[-1]
+                
+                if len(text) == 1 and text.isalpha() and text.isascii():
+                    continue
 
                 img_emb, txt_emb = self.encode_single(file_path, text)
                 
@@ -83,7 +87,7 @@ class AACCLIPEncoder:
 
         print(f"총 {len(filenames)}개의 파일 인코딩 완료")
         return filenames, image_embeddings, text_embeddings
-    
+
     def save_embeddings(self, filenames, image_embeddings, text_embeddings, output_folder):
         Path(output_folder).mkdir(parents=True, exist_ok=True)
 
@@ -112,40 +116,32 @@ class AACClusterer:
         with open(embeddings_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
-    def find_optimal_clusters(self, embeddings, max_clusters=100):
-        inertias = []
-        k_range = range(1, min(max_clusters + 1, len(embeddings)))
+    def find_optimal_clusters(self, embeddings, max_clusters=200):
+        silhouette_scores = []
+        k_range = range(10, min(max_clusters + 1, len(embeddings)), 10)
 
         for k in tqdm.tqdm(k_range, desc="클러스터 수 결정"):
             kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
-            kmeans.fit(embeddings)
-            inertias.append(kmeans.inertia_)
+            cluster_labels = kmeans.fit_predict(embeddings)
+            score = silhouette_score(embeddings, cluster_labels)
+            silhouette_scores.append(score)
 
-        return list(k_range), inertias
+        return list(k_range), silhouette_scores
     
-    def detect_elbow_point(self, k_range, inertias):
-        if len(inertias) < 3:
+    def detect_elbow_point(self, k_range, scores):
+        if len(scores) < 3:
             return min(3, max(k_range))
         
-        k_norm = np.array(k_range) / max(k_range)
-        inertia_norm = np.array(inertias) / max(inertias)
-
-        difference = []
-        for i, (k, inertia) in enumerate(zip(k_norm, inertia_norm)):
-            line_y = 1 - k
-            diff = abs(inertia - line_y)
-            difference.append(diff)
-        
-        elbow_idx = np.argmax(difference)
-        return k_range[elbow_idx]
+        best_idx = np.argmax(scores)
+        return k_range[best_idx]
         
     def perform_clustering(self, n_clusters=None):
         embeddings = (self.image_embeddings + self.text_embeddings) / 2
     
         if n_clusters is None:
-            k_range, inertias = self.find_optimal_clusters(embeddings)
-            n_clusters = self.detect_elbow_point(k_range, inertias)
-            print(f"자동 선택한 클러스터 수: {n_clusters}")
+            k_range, scores = self.find_optimal_clusters(embeddings)
+            n_clusters = self.detect_elbow_point(k_range, scores)
+            print(f"자동 선택한 클러스터 수: {n_clusters} (실루엣 점수: {max(scores):.3f})")
 
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
         cluster_labels = kmeans.fit_predict(embeddings)
