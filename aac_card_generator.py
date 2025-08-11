@@ -36,11 +36,9 @@ class AACCardCombinationGenerator:
         self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
         self.n_clusters = cluster_data['n_clusters']
         
-        # 파일명 to 인덱스 매핑
         self.filename_to_idx = {fn: i for i, fn in enumerate(self.filenames)}
         
     def calculate_centroids(self):
-        """각 클러스터의 centroid 계산"""
         self.centroids = np.zeros((self.n_clusters, self.embeddings.shape[1]))
         
         for cluster_id in range(self.n_clusters):
@@ -51,33 +49,25 @@ class AACCardCombinationGenerator:
                 self.centroids[cluster_id] = np.mean(cluster_embeddings, axis=0)
                 
     def precompute_similarities(self):
-        """모든 카드 간 유사도 사전 계산"""
         print("유사도 매트릭스 계산 중...")
         self.similarity_matrix = cosine_similarity(self.embeddings)
         
     def select_initial_card(self) -> Tuple[str, int]:
-        # 사용 횟수가 적은 클러스터 우선 선택
         cluster_weights = []
         for i in range(self.n_clusters):
-            # 사용 횟수가 많을수록 가중치 감소
             weight = 1.0 / (1.0 + self.cluster_usage_count[i])
             cluster_weights.append(weight)
         
-        # 정규화
         cluster_weights = np.array(cluster_weights)
         cluster_weights = cluster_weights / cluster_weights.sum()
         
-        # 가중치 기반 클러스터 선택
         cluster_id = np.random.choice(self.n_clusters, p=cluster_weights)
         
-        # 해당 클러스터의 카드들
         cluster_mask = self.cluster_labels == cluster_id
         cluster_indices = np.where(cluster_mask)[0]
                 
-        # 클러스터 내에서 사용 횟수가 적은 카드 선택
         idx = self._select_least_used_card(cluster_indices)
         
-        # 사용 횟수 업데이트
         self.card_usage_count[self.filenames[idx]] += 1
         self.cluster_usage_count[cluster_id] += 1
         
@@ -87,26 +77,22 @@ class AACCardCombinationGenerator:
         if isinstance(candidate_indices, np.ndarray):
             candidate_indices = candidate_indices.tolist()
         
-        # 각 후보의 사용 횟수
         usage_counts = [self.card_usage_count[self.filenames[idx]] 
                        for idx in candidate_indices]
         
-        # 사용 횟수가 적을수록 높은 확률
         min_usage = min(usage_counts)
         weights = []
         for count in usage_counts:
             if count == min_usage:
-                weights.append(10.0)  # 최소 사용 카드에 10배 가중치
+                weights.append(10.0)
             elif count == min_usage + 1:
-                weights.append(5.0)  # 그 다음 적게 사용된 카드에 5배
+                weights.append(5.0)
             else:
                 weights.append(1.0 / (1.0 + (count - min_usage)))
         
-        # 정규화
         weights = np.array(weights)
         weights = weights / weights.sum()
         
-        # 가중치 기반 선택
         selected_idx = np.random.choice(len(candidate_indices), p=weights)
         return candidate_indices[selected_idx]
     
@@ -116,28 +102,21 @@ class AACCardCombinationGenerator:
         if similarity_range is None:
             similarity_range = self.similarity_range
             
-        # 마지막 선택된 카드의 인덱스
         last_idx = selected_indices[-1]
         
-        # 모든 카드와의 유사도
         similarities = self.similarity_matrix[last_idx]
         
-        # 유사도 범위 내의 카드 찾기
         min_sim, max_sim = similarity_range
         candidates = []
         
         for i, sim in enumerate(similarities):
-            # 이미 선택된 카드 제외
             if i in selected_indices:
                 continue
                 
-            # 유사도 범위 체크
             if min_sim <= sim <= max_sim:
                 candidates.append(i)
         
-        # 후보가 없으면 범위 확장
         if not candidates:
-            # 범위를 점진적으로 확장
             expanded_min = max(0, min_sim - 0.05)
             expanded_max = min(1, max_sim + 0.05)
             
@@ -147,10 +126,8 @@ class AACCardCombinationGenerator:
                 if expanded_min <= sim <= expanded_max:
                     candidates.append(i)
                 
-        # 사용 빈도를 고려한 선택
         selected_idx = self._select_least_used_card(candidates)
         
-        # 사용 횟수 업데이트
         self.card_usage_count[self.filenames[selected_idx]] += 1
         cluster_id = self.cluster_labels[selected_idx]
         self.cluster_usage_count[cluster_id] += 1
@@ -158,18 +135,14 @@ class AACCardCombinationGenerator:
         return self.filenames[selected_idx], selected_idx
     
     def generate_single_combination(self, n_cards: int) -> List[str]:
-        """단일 카드 조합 생성"""
         selected_cards = []
         selected_indices = []
         
-        # 첫 번째 카드 선택
         card, idx = self.select_initial_card()
         selected_cards.append(card)
         selected_indices.append(idx)
         
-        # 나머지 카드 선택
         for _ in range(n_cards - 1):
-            # 다양성을 위해 유사도 범위를 약간씩 조정
             range_variation = random.uniform(-0.1, 0.1)
             adjusted_range = (
                 max(0, self.similarity_range[0] + range_variation),
@@ -187,16 +160,13 @@ class AACCardCombinationGenerator:
         return selected_cards
     
     def generate_card_combinations(self, n_samples: int = 200, reset_usage: bool = True) -> List[List[str]]:
-        """여러 카드 조합 생성"""
         if reset_usage:
-            # 사용 횟수 초기화
             self.card_usage_count = {fn: 0 for fn in self.filenames}
             self.cluster_usage_count = {i: 0 for i in range(self.n_clusters)}
         
         combinations = []
         
-        # 카드 수 분포 (1-4개)
-        card_count_distribution = [0.2, 0.4, 0.3, 0.1]  # 1, 2, 3, 4개 확률
+        card_count_distribution = [0.2, 0.4, 0.3, 0.1]
         
         for _ in tqdm(range(n_samples), desc="카드 조합 생성"):
             n_cards = np.random.choice([1, 2, 3, 4], p=card_count_distribution)
@@ -205,13 +175,11 @@ class AACCardCombinationGenerator:
             if combination:
                 combinations.append(combination)
         
-        # 사용 통계 출력
         self._print_usage_statistics()
         
         return combinations
     
     def _print_usage_statistics(self):
-        """카드 사용 통계 출력"""
         usage_values = list(self.card_usage_count.values())
         if usage_values:
             print(f"\n카드 사용 분포:")
@@ -220,12 +188,10 @@ class AACCardCombinationGenerator:
             print(f"  최소: {min(usage_values)}회")
             print(f"  최대: {max(usage_values)}회")
             
-            # 사용되지 않은 카드 수
             unused = sum(1 for v in usage_values if v == 0)
             print(f"  미사용 카드: {unused}개 ({unused/len(usage_values)*100:.1f}%)")
     
     def update_dataset(self, output_path: str = None):
-        """데이터셋에 카드 조합 추가"""
         if output_path is None:
             output_path = self.dataset_path
             
@@ -234,27 +200,22 @@ class AACCardCombinationGenerator:
             
         print(f"데이터셋 업데이트 시작: {len(dataset)}개 샘플")
         
-        # 사용 횟수 초기화
         self.card_usage_count = {fn: 0 for fn in self.filenames}
         self.cluster_usage_count = {i: 0 for i in range(self.n_clusters)}
         
-        # 모든 샘플에 대해 카드 조합 생성 (reset_usage=False로 전체 통계 유지)
         combinations = self.generate_card_combinations(len(dataset), reset_usage=False)
         
         for item, combination in zip(dataset, combinations):
             item['input']['AAC_card_combination'] = combination
         
-        # 저장
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(dataset, f, ensure_ascii=False, indent=2)
             
         print(f"데이터셋 업데이트 완료: {output_path}")
         
-        # 통계 출력
         self.print_statistics(dataset)
     
     def print_statistics(self, dataset: List[Dict]):
-        """생성된 데이터셋 통계 출력"""
         card_counts = {}
         combination_lengths = []
         similarity_scores = []
@@ -263,7 +224,6 @@ class AACCardCombinationGenerator:
             cards = item['input']['AAC_card_combination']
             combination_lengths.append(len(cards))
             
-            # 카드 간 유사도 계산
             if len(cards) > 1:
                 indices = [self.filename_to_idx[card] for card in cards]
                 for i in range(len(indices) - 1):
@@ -287,7 +247,6 @@ class AACCardCombinationGenerator:
             print(f"  최소: {np.min(similarity_scores):.3f}")
             print(f"  최대: {np.max(similarity_scores):.3f}")
         
-        # 사용 빈도 균등성 분석
         usage_values = list(card_counts.values())
         print(f"\n카드 사용 균등성:")
         print(f"  평균 사용: {np.mean(usage_values):.1f}회")
@@ -312,7 +271,6 @@ class AACCardCombinationGenerator:
         print("\n=== 조합 다양성 분석 ===")
         combinations = self.generate_card_combinations(n_samples, reset_usage=True)
         
-        # 클러스터 다양성 분석
         cluster_diversities = []
         
         for combination in tqdm(combinations, desc="다양성 분석"):
@@ -328,20 +286,16 @@ class AACCardCombinationGenerator:
             print(f"  (1.0 = 모든 카드가 다른 클러스터)")
 
 
-# 사용 예시
 if __name__ == "__main__":
-    # 생성기 초기화
     generator = AACCardCombinationGenerator(
         embeddings_path="./aac_embeddings/aac_embeddings.json",
         clustering_results_path="./aac_embeddings/clustering_results.json",
         dataset_path="data/aac_dataset.json",
-        similarity_range=(0.15, 0.85)  # 유사도 범위 조정 (기본: 0.3-0.7)
+        similarity_range=(0.15, 0.85)
     )
     
-    # 다양성 분석 (선택사항)
     print("조합 다양성 테스트...")
     generator.analyze_combination_diversity(n_samples=100)
     
-    # 데이터셋 업데이트
     print("\n데이터셋 업데이트 시작...")
     generator.update_dataset(output_path="data/aac_dataset_with_cards.json")
