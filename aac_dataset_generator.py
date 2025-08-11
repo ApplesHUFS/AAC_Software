@@ -89,8 +89,8 @@ class AACDatasetGenerator:
 위 이미지들을 보고 다음 형식의 JSON으로 context를 생성해주세요:
 {
     "time": "오전/오후 X시 형식 또는 아침/점심/저녁 등",
-    "place": "구체적인 장소 (예: 학교 교실, 집 거실, 치료실 등)",
-    "interaction_partner": "대화 상대 (예: 엄마, 선생님, 친구, 치료사 등)",
+    "place": "구체적인 장소",
+    "interaction_partner": "대화 상대",
     "current_activity": "현재 하고 있는 활동이나 상황"
 }
 

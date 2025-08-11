@@ -166,7 +166,7 @@ class AACCardCombinationGenerator:
         
         combinations = []
         
-        card_count_distribution = [0.2, 0.4, 0.3, 0.1]
+        card_count_distribution = [0.35, 0.35, 0.2, 0.1]
         
         for _ in tqdm(range(n_samples), desc="카드 조합 생성"):
             n_cards = np.random.choice([1, 2, 3, 4], p=card_count_distribution)
