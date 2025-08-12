@@ -122,52 +122,12 @@ class DataPreparationPipeline:
             save_interval=save_interval
         )
     
-    def run_full_pipeline(self, confirm_filter: bool = True, visualize: bool = True,
-                         openai_start_idx: int = 0, openai_end_idx: int = None):
-        try:
-            print("Starting AAC Dataset Preparation Pipeline")
-            print(f"Configuration: {self.config}")
-            
-            # Step 1: Filter images
-            filtered_count = self.step1_filter_images(confirm=confirm_filter)
-            print(f"Step 1 completed: {filtered_count} images filtered")
-            
-            # Step 2: Generate embeddings
-            filenames, img_emb, txt_emb = self.step2_generate_embeddings()
-            print(f"Step 2 completed: {len(filenames)} images encoded")
-            
-            # Step 3: Perform clustering
-            cluster_results = self.step3_perform_clustering(visualize=visualize)
-            print(f"Step 3 completed: {cluster_results['n_clusters']} clusters created")
-            
-            # Step 4: Generate dataset schema
-            total_samples = self.step4_generate_dataset_schema()
-            print(f"Step 4 completed: {total_samples} samples created")
-            
-            # Step 5: Generate card combinations
-            self.step5_generate_card_combinations()
-            print("Step 5 completed: Card combinations generated")
-            
-            # Step 6: Generate final dataset with OpenAI
-            if self.config.get('skip_openai', False):
-                print("Step 6 skipped: OpenAI processing disabled")
-            else:
-                self.step6_generate_final_dataset(
-                    start_idx=openai_start_idx,
-                    end_idx=openai_end_idx
-                )
-                print("Step 6 completed: Final dataset generated")
-            
-            print("\n" + "="*50)
-            print("PIPELINE COMPLETED SUCCESSFULLY")
-            print("="*50)
-            print(f"Final outputs saved to: {self.output_folder}")
-            
-        except Exception as e:
-            print(f"\nPipeline failed at step: {e}")
-            raise
-    
-    def run_partial_pipeline(self, steps: list, **kwargs):
+    def run_pipeline(self, steps: list = None, confirm_filter: bool = True, 
+                    visualize: bool = True, openai_start_idx: int = 0, 
+                    openai_end_idx: int = None):
+        if steps is None:
+            steps = [1, 2, 3, 4, 5, 6]
+        
         step_methods = {
             1: self.step1_filter_images,
             2: self.step2_generate_embeddings, 
@@ -177,32 +137,82 @@ class DataPreparationPipeline:
             6: self.step6_generate_final_dataset
         }
         
-        for step in steps:
-            if step in step_methods:
+        try:
+            print("Starting AAC Dataset Preparation Pipeline")
+            print(f"Configuration: {self.config}")
+            print(f"Running steps: {steps}")
+            
+            for step in steps:
+                if step not in step_methods:
+                    print(f"Invalid step: {step}")
+                    continue
+                
                 print(f"\nRunning step {step}...")
+                
                 if step == 1:
-                    step_methods[step](confirm=kwargs.get('confirm_filter', True))
+                    result = step_methods[step](confirm=confirm_filter)
+                    print(f"Step 1 completed: {result} images filtered")
+                elif step == 2:
+                    filenames, img_emb, txt_emb = step_methods[step]()
+                    print(f"Step 2 completed: {len(filenames)} images encoded")
                 elif step == 3:
-                    step_methods[step](visualize=kwargs.get('visualize', True))
+                    cluster_results = step_methods[step](visualize=visualize)
+                    print(f"Step 3 completed: {cluster_results['n_clusters']} clusters created")
+                elif step == 4:
+                    total_samples = step_methods[step]()
+                    print(f"Step 4 completed: {total_samples} samples created")
+                elif step == 5:
+                    step_methods[step]()
+                    print("Step 5 completed: Card combinations generated")
                 elif step == 6:
                     step_methods[step](
-                        start_idx=kwargs.get('openai_start_idx', 0),
-                        end_idx=kwargs.get('openai_end_idx', None)
+                        start_idx=openai_start_idx,
+                        end_idx=openai_end_idx
                     )
-                else:
-                    step_methods[step]()
-            else:
-                print(f"Invalid step: {step}")
+                    print("Step 6 completed: Final dataset generated")
+            
+            print("\n" + "="*50)
+            print("PIPELINE COMPLETED SUCCESSFULLY")
+            print("="*50)
+            print(f"Final outputs saved to: {self.output_folder}")
+            
+        except Exception as e:
+            print(f"\nPipeline failed at step: {e}")
+            raise
 
 
 def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='AAC 데이터셋 준비 파이프라인')
+    parser.add_argument('--steps', nargs='+', type=int, default=[1, 2, 3, 4, 5, 6],
+                       help='실행할 단계 (1-6) 예: --steps 1 2 3')
+    parser.add_argument('--no-confirm', action='store_true',
+                       help='확인 과정 건너뛰기')
+    parser.add_argument('--no-visualize', action='store_true',
+                       help='시각화 건너뛰기')
+    parser.add_argument('--openai-start', type=int, default=0,
+                       help='OpenAI 처리 시작 인덱스')
+    parser.add_argument('--openai-end', type=int, default=None,
+                       help='OpenAI 처리 종료 인덱스')
+    
+    args = parser.parse_args()
+    
+    if 6 in args.steps and DATASET_CONFIG.get('skip_openai', False):
+        print("Warning: Step 6 requested but skip_openai is True in config")
+        response = input("Continue with OpenAI processing? (y/N): ").strip().lower()
+        if response not in ['y', 'yes']:
+            print("Removing step 6 from execution")
+            args.steps = [s for s in args.steps if s != 6]
+    
     pipeline = DataPreparationPipeline(DATASET_CONFIG)
     
-    pipeline.run_full_pipeline(
-        confirm_filter=True,
-        visualize=True,
-        openai_start_idx=0,
-        openai_end_idx=None
+    pipeline.run_pipeline(
+        steps=args.steps,
+        confirm_filter=not args.no_confirm,
+        visualize=not args.no_visualize,
+        openai_start_idx=args.openai_start,
+        openai_end_idx=args.openai_end
     )
 
 

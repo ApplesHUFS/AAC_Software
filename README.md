@@ -19,15 +19,42 @@ OPENAI_API_KEY=your_openai_key_here
 ```
 data/
 ├── images/              # AAC 카드 이미지 (PNG 형식)
-├── persona.json        # 페르소나 정의 (수동 준비)
+├── persona.json        # 페르소나 정의
 └── processed/          # 출력 디렉토리 (자동 생성)
 ```
 
 ## 사용법
 
-### 데이터셋 준비 실행
+### 전체 파이프라인 실행
 ```bash
 python data_prepare.py
+```
+
+### 특정 단계만 실행
+```bash
+# 1-3단계만 실행 (이미지 처리 + 임베딩 + 클러스터링)
+python data_prepare.py --steps 1 2 3
+
+# 4-5단계만 실행 (스키마 생성 + 카드 조합)
+python data_prepare.py --steps 4 5
+
+# 6단계만 실행 (OpenAI 처리, 처음 10개 샘플만)
+python data_prepare.py --steps 6 --openai-start 0 --openai-end 10
+```
+
+### 추가 옵션
+```bash
+# 도움말 보기
+python data_prepare.py --help
+
+# 확인 과정 건너뛰기
+python data_prepare.py --no-confirm
+
+# 시각화 건너뛰기
+python data_prepare.py --no-visualize
+
+# OpenAI 처리 범위 지정
+python data_prepare.py --steps 6 --openai-start 100 --openai-end 200
 ```
 
 ### 설정 변경
@@ -41,16 +68,20 @@ DATASET_CONFIG = {
 }
 ```
 
-### 특정 단계만 실행
-`data_prepare.py`의 `main()` 함수 수정:
-```python
-# 1-3단계만 실행 (AI 처리 제외)
-pipeline.run_partial_pipeline(
-    steps=[1, 2, 3],
-    confirm_filter=True,
-    visualize=True
-)
-```
+## 처리 과정
+
+1. **이미지 필터링** (`--steps 1`): 부적절한 이미지 제거
+2. **CLIP 인코딩** (`--steps 2`): 이미지-텍스트 임베딩 생성
+3. **클러스터링** (`--steps 3`): 유사한 카드 그룹화
+4. **스키마 생성** (`--steps 4`): 데이터셋 구조 생성
+5. **카드 조합** (`--steps 5`): 의미있는 카드 시퀀스 생성
+6. **AI 완성** (`--steps 6`): OpenAI로 상황과 해석 생성
+
+## 이미지 요구사항
+
+이미지 파일명 형식: `{번호}_{키워드}.png`
+- 예시: `001_사과.png`, `002_행복.png`
+- 키워드는 텍스트 임베딩 생성에 사용됩니다
 
 ## 출력 파일
 
@@ -69,7 +100,7 @@ pipeline.run_partial_pipeline(
 ```
 project/
 ├── config/               # 설정 파일
-├── data_src/            # 데이터 모듈
+├── data_src/            # 핵심 모듈
 ├── data_prepare.py      # 데이터 준비 파이프라인
 └── README.md
 ```
