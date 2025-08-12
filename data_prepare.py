@@ -87,7 +87,9 @@ class DataPreparationPipeline:
         generator = CardCombinationGenerator(
             embeddings_path=str(self.embeddings_path),
             clustering_results_path=str(self.clustering_path),
-            similarity_range=tuple(self.config['similarity_range'])
+            similarity_range=tuple(self.config['similarity_range']),
+            similarity_threshold=self.config.get('similarity_threshold', 0.5),
+            card_min_similarity=self.config.get('card_min_similarity', 0.3)
         )
         
         generator.update_dataset(
