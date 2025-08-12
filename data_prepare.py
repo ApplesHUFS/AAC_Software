@@ -2,16 +2,14 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent / "data_src"))
+from config.dataset_config import DATASET_CONFIG
 
-from config import DATASET_CONFIG
-
-from image_filter import ImageFilter
-from embeddings import CLIPEncoder
-from clustering import Clusterer
-from schema import DatasetSchema
-from card_generator import CardCombinationGenerator
-from dataset_generator import DatasetGenerator
+from data.image_filter import ImageFilter
+from data.embeddings import CLIPEncoder
+from data.clustering import Clusterer
+from data.schema import DatasetSchema
+from data.card_generator import CardCombinationGenerator
+from data.dataset_generator import DatasetGenerator
 
 
 class DataPreparationPipeline:

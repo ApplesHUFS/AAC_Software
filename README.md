@@ -6,7 +6,7 @@ AAC(보완대체의사소통) 카드를 이용한 AI 해석 시스템입니다. 
 
 1. 패키지 설치:
 ```bash
-pip install torch transformers sklearn matplotlib tqdm openai python-dotenv pillow huggingface-hub
+pip install -r requirements.txt
 ```
 
 2. `.env` 파일 생성:
