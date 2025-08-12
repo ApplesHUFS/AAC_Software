@@ -1,31 +1,51 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 from collections import defaultdict
+from itertools import combinations
 
 
 class ImageFilter:
-    def __init__(self, images_folder: str):
+    def __init__(self, images_folder: str, similarity_threshold: float = 0.7):
         self.images_folder = Path(images_folder)
         self.filtered_folder = self.images_folder.parent / "filtered_images"
+        self.similarity_threshold = similarity_threshold
         
         self.inappropriate_keywords = {
             '강간', '성매매', '구강 성교', '사정', '발기', '자위', '성관계', 
-            '성폭행', '나체', '살인', '학대', '자살', '납치되다', 
-            '금품을 갈취하다', '총을 쏘다', '여자 생식기', '남자 생식기',
+            '성폭행', '나체', '살인', '학대', '자살', '납치되다', '여자 생식기', '남자 생식기',
             '남자 성기', '생식기를 만지다', '클리토리스', '낙태', '자해',
-            '목졸리다', '목을 조르다', '목 조르다', '마약', '범죄', 
-            '범죄 현장', '도둑', '훔치다', '공격', '공격하다', '쏘다',
+            '목을 조르다', '목 조르다', '마약', '공격하다', '쏘다'
+        }
+
+        self.medical_technical_keywords = {
             '포롭터', '이경검사', '요추 천자', '기관절개술', '동정맥루', '뇌전도검사',
             '폐활량 측정', '산소포화도 측정', '유발 전위', '파노라마 방사선 촬영',
+            '대퇴사두근', '비복근', '소둔근', '승모근', '비골', '정강이뼈', 
+            '지골', '위팔뼈', '자뼈', '대퇴골', '묘성증후군', '자폐스펙트럼장애', 
+            '지체장애', '뇌전증', '난독증', '글루텐 불내증', '요로감염증',
+            '압력 관리 기계', '작업 치료사', '언어치료사', '수치료', '시험관 시술',
+            '피임약', '난관결찰', '정관수술'
+        }
+
+        self.academic_scientific_keywords = {
             '엽록소', '구석기시대', '신석기시대', '대수층', '수권', '암석권',
-            '지협', '대기현상', '응결', '증발', '대퇴사두근', '비복근',
-            '소둔근', '승모근', '비골', '정강이뼈', '지골', '위팔뼈',
-            '자뼈', '대퇴골', '묘성증후군', '자폐스펙트럼장애', '지체장애',
-            '뇌전증', '난독증', '글루텐 불내증', '요로감염증', '아이 트래킹',
-            '헤드 포인터', '헤드마우스', '트랙볼', '환자 리프트', '경추보호대',
-            '계단 리프트', '기립훈련기'
+            '지협', '대기현상', '응결', '증발'
+        }
+        
+
+        self.cultural_specific_keywords = {
+            'ñ', '알타미라', '세르반테스', '둘네시아', '프란시스코 고야', '산초 판사',
+            '마고스토', '파네예스트', '까가네', '티오 데 나달', '트론카 데 나달', 
+            '성 조지', '사순절의 거인', '살바도르 달리', '헤미사이클', '카르멘 문', 
+            '탐 톰브', '사그라다 파밀리아 성당', '아토미움', '까혼 드럼', '클라베스', 
+            '이맘', '란셋', '아우구스투스', '스페인어', '스페인의'
+        }
+
+        self.administrative_legal_keywords = {
+            '출생증명서', '공민권', '가족관계증명서', '영수증', '이행', 
+            '노사협의회', '인구조사', '신청서', '명예위원회', '조약'
         }
         
         self.location_keywords = {
@@ -39,14 +59,13 @@ class ImageFilter:
             '레이다', '타라고나', '칸타브리아', '세우타', '멜리야', '라 리오하',
             '마드리드', '무르시아', '나바라', '엘이에로', '라 고메라', '라 팔마',
             '란사로테', '포르멘테라', '테네리페', '이비자', '마요르카', '미노르카',
-            '서울', '부산', '대구', '인천', '광주', '대전', '울산', '제주',
-            '경기도', '강원도', '충청도', '전라도', '경상도', '평양', '개성',
-            '도쿄', '오사카', '요코하마', '나고야', '베이징', '상하이', '홍콩',
-            '런던', '파리', '베를린', '로마', '뉴욕', '로스앤젤레스', '시카고',
-            '모스크바', '상트페테르부르크', '시드니', '멜버른', '토론토', '밴쿠버',
-            'spain', 'korea', 'japan', 'china', 'america', 'france', 'germany',
-            'italy', 'russia', 'australia', 'canada', 'london', 'paris',
-            'berlin', 'rome', 'tokyo', 'seoul', 'busan', 'moscow', 'sydney'
+            '헝가리', '노르웨이', '불가리아', '쿠바', '파나마', '푸에르토리코', 
+            '네덜란드', '에콰도르', '호주', '오스트리아', '보스니아 헤르체코비나', '체코',
+            '사이프러스', '코스타리카', '크로아티아', '덴마크', '에스토니아', '스코틀랜드',
+            '슬로바키아', '핀란드', '과테말라', '아일랜드', '아이슬란드', '리투아니아', 
+            '룩셈부르크', '북마케도니아', '몰타', '니카라과', '남아프리카', '스위스', '터키',
+            '그린 카나리아', '푸에르테벤투라', '아프가니스탄', '사우디아라비아'
+
         }
     
     def _extract_keyword(self, filename: str) -> str:
@@ -54,6 +73,42 @@ class ImageFilter:
         if '_' not in stem:
             return ""
         return stem.split('_', 1)[1].strip()
+    
+    def _get_ngrams(self, text: str, n: int = 2) -> Set[str]:
+        if len(text) < n:
+            return {text}
+        return {text[i:i+n] for i in range(len(text) - n + 1)}
+    
+    def _calculate_ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
+        if not text1 or not text2:
+            return 0.0
+        
+        ngrams1 = self._get_ngrams(text1.lower(), n)
+        ngrams2 = self._get_ngrams(text2.lower(), n)
+        
+        if not ngrams1 or not ngrams2:
+            return 0.0
+        
+        intersection = len(ngrams1.intersection(ngrams2))
+        union = len(ngrams1.union(ngrams2))
+        
+        return intersection / union if union > 0 else 0.0
+    
+    def _find_similar_keywords(self, keyword_to_files: Dict[str, List[str]]) -> List[Tuple[str, str, float]]:
+        similar_pairs = []
+        keywords = list(keyword_to_files.keys())
+        
+        for i, j in combinations(range(len(keywords)), 2):
+            keyword1, keyword2 = keywords[i], keywords[j]
+            
+            similarity_2gram = self._calculate_ngram_similarity(keyword1, keyword2, 2)
+            similarity_3gram = self._calculate_ngram_similarity(keyword1, keyword2, 3)
+            avg_similarity = (similarity_2gram + similarity_3gram) / 2
+            
+            if avg_similarity >= self.similarity_threshold:
+                similar_pairs.append((keyword1, keyword2, avg_similarity))
+        
+        return similar_pairs
     
     def _should_filter(self, keyword: str) -> str:
         keyword_lower = keyword.lower()
@@ -66,6 +121,18 @@ class ImageFilter:
         
         if any(inappropriate in keyword_lower for inappropriate in self.inappropriate_keywords):
             return "inappropriate"
+        
+        if any(word in keyword_lower for word in self.medical_technical_keywords):
+            return "medical_technical"
+        
+        if any(word in keyword_lower for word in self.academic_scientific_keywords):
+            return "academic_scientific"
+        
+        if any(word in keyword_lower for word in self.cultural_specific_keywords):
+            return "cultural_specific"
+        
+        if any(word in keyword_lower for word in self.administrative_legal_keywords):
+            return "administrative_legal"
         
         if any(location in keyword_lower for location in self.location_keywords):
             return "locations"
@@ -92,7 +159,26 @@ class ImageFilter:
         
         for keyword, files in keyword_to_files.items():
             if len(files) > 1:
-                filtered_files["duplicates"].extend(files[1:])
+                filtered_files["exact_duplicates"].extend(files[1:])
+        
+        similar_pairs = self._find_similar_keywords(keyword_to_files)
+        similar_files_info = []
+        
+        for keyword1, keyword2, similarity in similar_pairs:
+            files1 = keyword_to_files[keyword1]
+            files2 = keyword_to_files[keyword2]
+            
+            if len(files1) <= len(files2):
+                filtered_files["similar_keywords"].extend(files1)
+                similar_files_info.append(f"'{keyword1}' (유사도: {similarity:.3f}) -> '{keyword2}'와 유사")
+            else:
+                filtered_files["similar_keywords"].extend(files2)
+                similar_files_info.append(f"'{keyword2}' (유사도: {similarity:.3f}) -> '{keyword1}'와 유사")
+        
+        if similar_files_info:
+            print("발견된 유사 키워드들:")
+            for info in similar_files_info:
+                print(f"  {info}")
         
         return dict(filtered_files)
     

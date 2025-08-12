@@ -178,12 +178,11 @@ class CardCombinationGenerator:
         used_files = set()
         combination = []
         
-        # 베이스 클러스터에서 1-3장 또는 요청된 개수만큼 선택
         base_count = min(n_cards, max(1, min(3, n_cards)))
         if n_cards == 1:
             base_count = 1
         elif n_cards == 4:
-            base_count = random.randint(1, 2)  # 4장 요청시 베이스에서 1-2장만
+            base_count = random.randint(1, 2)
         else:
             base_count = random.randint(1, min(3, n_cards))
         
@@ -203,7 +202,6 @@ class CardCombinationGenerator:
         
         similar_clusters, dissimilar_clusters = self._find_similar_and_dissimilar_clusters(base_cluster)
         
-        # 유사 클러스터에서 추가 선택
         if similar_clusters and random.random() < 0.7 and len(combination) < n_cards:
             similar_cluster, _ = random.choice(similar_clusters)
             remaining_slots = n_cards - len(combination)
@@ -219,7 +217,6 @@ class CardCombinationGenerator:
                 combination.extend(similar_cards)
                 used_files.update(similar_cards)
         
-        # 비유사 클러스터에서 추가 선택
         if dissimilar_clusters and random.random() < 0.5 and len(combination) < n_cards:
             dissimilar_cluster, _ = random.choice(dissimilar_clusters)
             remaining_slots = n_cards - len(combination)
@@ -235,7 +232,6 @@ class CardCombinationGenerator:
                 combination.extend(dissimilar_cards)
                 used_files.update(dissimilar_cards)
         
-        # 목표 개수에 못 미치면 다른 클러스터에서 추가 선택
         available_clusters = [cid for cid in self.clustered_files.keys() 
                             if cid != base_cluster and 
                             cid not in [c for c, _ in similar_clusters[:1]] and
@@ -262,7 +258,7 @@ class CardCombinationGenerator:
             self._initialize_tracking()
         
         combinations = []
-        card_count_distribution = [0.35, 0.35, 0.2, 0.1]
+        card_count_distribution = [0.35, 0.4, 0.2, 0.05]
         
         for _ in tqdm(range(n_samples), desc="Generating card combinations"):
             n_cards = np.random.choice([1, 2, 3, 4], p=card_count_distribution)
