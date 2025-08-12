@@ -4,7 +4,6 @@ DATASET_CONFIG = {
     'output_folder': 'dataset/processed',
     'samples_per_persona': 200,
     'n_clusters': 96,
-    'similarity_range': [0.15, 0.85],
     'similarity_threshold': 0.5,
     'card_min_similarity': 0.3,
     'analyze_diversity': True,

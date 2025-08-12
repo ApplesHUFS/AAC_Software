@@ -20,7 +20,7 @@ class DataPreparationPipeline:
     def _validate_config(self):
         required_keys = [
             'images_folder', 'persona_json_path', 'output_folder',
-            'samples_per_persona', 'n_clusters', 'similarity_range'
+            'samples_per_persona', 'n_clusters'
         ]
         for key in required_keys:
             if key not in self.config:
@@ -87,7 +87,6 @@ class DataPreparationPipeline:
         generator = CardCombinationGenerator(
             embeddings_path=str(self.embeddings_path),
             clustering_results_path=str(self.clustering_path),
-            similarity_range=tuple(self.config['similarity_range']),
             similarity_threshold=self.config.get('similarity_threshold', 0.5),
             card_min_similarity=self.config.get('card_min_similarity', 0.3)
         )

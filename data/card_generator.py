@@ -1,8 +1,7 @@
 import json
 import numpy as np
 import random
-from typing import List, Dict, Tuple, Optional, Set, Any
-from sklearn.metrics.pairwise import cosine_similarity
+from typing import List, Dict, Tuple, Optional, Set
 from tqdm import tqdm
 from collections import defaultdict
 
@@ -11,10 +10,8 @@ class CardCombinationGenerator:
     def __init__(self, 
                  embeddings_path: str,
                  clustering_results_path: str,
-                 similarity_range: Tuple[float, float] = (0.15, 0.85),
                  similarity_threshold: float = 0.5,
                  card_min_similarity: float = 0.3):
-        self.similarity_range = similarity_range
         self.similarity_threshold = similarity_threshold
         self.card_min_similarity = card_min_similarity
         self._load_data(embeddings_path, clustering_results_path)
@@ -40,8 +37,6 @@ class CardCombinationGenerator:
         self.n_clusters = cluster_data['n_clusters']
         
         self.filename_to_idx = {fn: i for i, fn in enumerate(self.filenames)}
-        self.similarity_matrix = cosine_similarity(self.embeddings)
-        
         self.centroids = self._compute_centroids()
         
     def _compute_centroids(self) -> Dict[int, np.ndarray]:
@@ -115,9 +110,16 @@ class CardCombinationGenerator:
             available_indices = [self.filename_to_idx[f] for f in available_files if f in self.filename_to_idx]
             if not available_indices:
                 return []
-            actual_count = min(count, len(available_indices))
-            selected_idx = self._select_weighted_card(available_indices[:actual_count] if actual_count < len(available_indices) else available_indices)
-            return [self.filenames[selected_idx]]
+            
+            results = []
+            remaining_indices = available_indices.copy()
+            for _ in range(min(count, len(remaining_indices))):
+                if not remaining_indices:
+                    break
+                selected_idx = self._select_weighted_card(remaining_indices)
+                results.append(self.filenames[selected_idx])
+                remaining_indices.remove(selected_idx)
+            return results
         
         card_similarities = []
         for candidate in available_files:
@@ -149,63 +151,63 @@ class CardCombinationGenerator:
         if actual_count == 0:
             return []
         
-        candidate_indices = [self.filename_to_idx[card] for card in candidates[:actual_count] if card in self.filename_to_idx]
+        candidate_indices = [self.filename_to_idx[card] for card in candidates if card in self.filename_to_idx]
         if not candidate_indices:
             return []
             
         results = []
-        for _ in range(min(actual_count, len(candidate_indices))):
-            if not candidate_indices:
+        remaining_indices = candidate_indices.copy()
+        for _ in range(min(actual_count, len(remaining_indices))):
+            if not remaining_indices:
                 break
-            selected_idx = self._select_weighted_card(candidate_indices)
-            selected_card = self.filenames[selected_idx]
-            results.append(selected_card)
-            candidate_indices = [idx for idx in candidate_indices if idx != selected_idx]
+            selected_idx = self._select_weighted_card(remaining_indices)
+            results.append(self.filenames[selected_idx])
+            remaining_indices.remove(selected_idx)
             
         return results
     
-    def _select_initial_cards(self, n_cards: int) -> Tuple[List[str], Set[str]]:
+    def generate_single_combination(self, n_cards: int) -> List[str]:
+        if n_cards < 1:
+            return []
+        
         cluster_weights = np.array([1.0 / (1.0 + self.cluster_usage_count[i]) 
                                    for i in range(self.n_clusters)])
         cluster_weights /= cluster_weights.sum()
         
         base_cluster = np.random.choice(self.n_clusters, p=cluster_weights)
-        base_count = min(n_cards, random.randint(1, 3))
+        used_files = set()
+        combination = []
+        
+        # 베이스 클러스터에서 1-3장 또는 요청된 개수만큼 선택
+        base_count = min(n_cards, max(1, min(3, n_cards)))
+        if n_cards == 1:
+            base_count = 1
+        elif n_cards == 4:
+            base_count = random.randint(1, 2)  # 4장 요청시 베이스에서 1-2장만
+        else:
+            base_count = random.randint(1, min(3, n_cards))
         
         base_cards = self._sample_cards_with_similarity(
-            base_cluster, [], base_count, set(), prefer_similar=False
+            base_cluster, [], base_count, used_files, prefer_similar=False
         )
         
-        used_files = set(base_cards)
         for card in base_cards:
             self.card_usage_count[card] += 1
             self.cluster_usage_count[base_cluster] += 1
         
-        return base_cards, used_files
-    
-    def generate_single_combination(self, n_cards: int) -> List[str]:
-        if n_cards < 1:
-            return []
-            
-        combination, used_files = self._select_initial_cards(n_cards)
+        combination.extend(base_cards)
+        used_files.update(base_cards)
+        
         if len(combination) >= n_cards:
             return combination[:n_cards]
         
-        base_cluster = None
-        for cluster_id, files in self.clustered_files.items():
-            if any(card in files for card in combination):
-                base_cluster = cluster_id
-                break
-        
-        if base_cluster is None:
-            return combination
-        
         similar_clusters, dissimilar_clusters = self._find_similar_and_dissimilar_clusters(base_cluster)
         
+        # 유사 클러스터에서 추가 선택
         if similar_clusters and random.random() < 0.7 and len(combination) < n_cards:
             similar_cluster, _ = random.choice(similar_clusters)
             remaining_slots = n_cards - len(combination)
-            similar_count = min(random.randint(0, 2), remaining_slots)
+            similar_count = min(random.randint(0, min(2, remaining_slots)), remaining_slots)
             
             if similar_count > 0:
                 similar_cards = self._sample_cards_with_similarity(
@@ -217,6 +219,7 @@ class CardCombinationGenerator:
                 combination.extend(similar_cards)
                 used_files.update(similar_cards)
         
+        # 비유사 클러스터에서 추가 선택
         if dissimilar_clusters and random.random() < 0.5 and len(combination) < n_cards:
             dissimilar_cluster, _ = random.choice(dissimilar_clusters)
             remaining_slots = n_cards - len(combination)
@@ -231,6 +234,26 @@ class CardCombinationGenerator:
                     self.cluster_usage_count[dissimilar_cluster] += 1
                 combination.extend(dissimilar_cards)
                 used_files.update(dissimilar_cards)
+        
+        # 목표 개수에 못 미치면 다른 클러스터에서 추가 선택
+        available_clusters = [cid for cid in self.clustered_files.keys() 
+                            if cid != base_cluster and 
+                            cid not in [c for c, _ in similar_clusters[:1]] and
+                            cid not in [c for c, _ in dissimilar_clusters[:1]]]
+        
+        while len(combination) < n_cards and available_clusters:
+            cluster = random.choice(available_clusters)
+            available_clusters.remove(cluster)
+            remaining_slots = n_cards - len(combination)
+            
+            extra_cards = self._sample_cards_with_similarity(
+                cluster, combination, min(1, remaining_slots), used_files, prefer_similar=False
+            )
+            for card in extra_cards:
+                self.card_usage_count[card] += 1
+                self.cluster_usage_count[cluster] += 1
+            combination.extend(extra_cards)
+            used_files.update(extra_cards)
         
         return combination[:n_cards]
     
@@ -295,7 +318,7 @@ class CardCombinationGenerator:
             if len(cards) > 1:
                 indices = [self.filename_to_idx[card] for card in cards if card in self.filename_to_idx]
                 for i in range(len(indices) - 1):
-                    sim = self.similarity_matrix[indices[i], indices[i+1]]
+                    sim = float(np.dot(self.embeddings[indices[i]], self.embeddings[indices[i+1]]))
                     similarity_scores.append(sim)
         
         print(f"\nDataset statistics:")
