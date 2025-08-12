@@ -1,16 +1,14 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 from collections import defaultdict
-from itertools import combinations
 
 
 class ImageFilter:
-    def __init__(self, images_folder: str, similarity_threshold: float = 0.7):
+    def __init__(self, images_folder: str):
         self.images_folder = Path(images_folder)
         self.filtered_folder = self.images_folder.parent / "filtered_images"
-        self.similarity_threshold = similarity_threshold
         
         self.inappropriate_keywords = {
             '강간', '성매매', '구강 성교', '사정', '발기', '자위', '성관계', 
@@ -26,7 +24,7 @@ class ImageFilter:
             '지골', '위팔뼈', '자뼈', '대퇴골', '묘성증후군', '자폐스펙트럼장애', 
             '지체장애', '뇌전증', '난독증', '글루텐 불내증', '요로감염증',
             '압력 관리 기계', '작업 치료사', '언어치료사', '수치료', '시험관 시술',
-            '피임약', '난관결찰', '정관수술'
+            '피임약', '난관결찰', '정관수술', '외이도', '이소골'
         }
 
         self.academic_scientific_keywords = {
@@ -40,7 +38,7 @@ class ImageFilter:
             '마고스토', '파네예스트', '까가네', '티오 데 나달', '트론카 데 나달', 
             '성 조지', '사순절의 거인', '살바도르 달리', '헤미사이클', '카르멘 문', 
             '탐 톰브', '사그라다 파밀리아 성당', '아토미움', '까혼 드럼', '클라베스', 
-            '이맘', '란셋', '아우구스투스', '스페인어', '스페인의'
+            '이맘', '란셋', '아우구스투스', '스페인어', '스페인의', '크레마', '파예'
         }
 
         self.administrative_legal_keywords = {
@@ -64,8 +62,8 @@ class ImageFilter:
             '사이프러스', '코스타리카', '크로아티아', '덴마크', '에스토니아', '스코틀랜드',
             '슬로바키아', '핀란드', '과테말라', '아일랜드', '아이슬란드', '리투아니아', 
             '룩셈부르크', '북마케도니아', '몰타', '니카라과', '남아프리카', '스위스', '터키',
-            '그린 카나리아', '푸에르테벤투라', '아프가니스탄', '사우디아라비아'
-
+            '그린 카나리아', '푸에르테벤투라', '아프가니스탄', '사우디아라비아', '북한', '대한민국',
+            '인도', '이라크', '이란'
         }
     
     def _extract_keyword(self, filename: str) -> str:
@@ -73,42 +71,6 @@ class ImageFilter:
         if '_' not in stem:
             return ""
         return stem.split('_', 1)[1].strip()
-    
-    def _get_ngrams(self, text: str, n: int = 2) -> Set[str]:
-        if len(text) < n:
-            return {text}
-        return {text[i:i+n] for i in range(len(text) - n + 1)}
-    
-    def _calculate_ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
-        if not text1 or not text2:
-            return 0.0
-        
-        ngrams1 = self._get_ngrams(text1.lower(), n)
-        ngrams2 = self._get_ngrams(text2.lower(), n)
-        
-        if not ngrams1 or not ngrams2:
-            return 0.0
-        
-        intersection = len(ngrams1.intersection(ngrams2))
-        union = len(ngrams1.union(ngrams2))
-        
-        return intersection / union if union > 0 else 0.0
-    
-    def _find_similar_keywords(self, keyword_to_files: Dict[str, List[str]]) -> List[Tuple[str, str, float]]:
-        similar_pairs = []
-        keywords = list(keyword_to_files.keys())
-        
-        for i, j in combinations(range(len(keywords)), 2):
-            keyword1, keyword2 = keywords[i], keywords[j]
-            
-            similarity_2gram = self._calculate_ngram_similarity(keyword1, keyword2, 2)
-            similarity_3gram = self._calculate_ngram_similarity(keyword1, keyword2, 3)
-            avg_similarity = (similarity_2gram + similarity_3gram) / 2
-            
-            if avg_similarity >= self.similarity_threshold:
-                similar_pairs.append((keyword1, keyword2, avg_similarity))
-        
-        return similar_pairs
     
     def _should_filter(self, keyword: str) -> str:
         keyword_lower = keyword.lower()
@@ -159,26 +121,7 @@ class ImageFilter:
         
         for keyword, files in keyword_to_files.items():
             if len(files) > 1:
-                filtered_files["exact_duplicates"].extend(files[1:])
-        
-        similar_pairs = self._find_similar_keywords(keyword_to_files)
-        similar_files_info = []
-        
-        for keyword1, keyword2, similarity in similar_pairs:
-            files1 = keyword_to_files[keyword1]
-            files2 = keyword_to_files[keyword2]
-            
-            if len(files1) <= len(files2):
-                filtered_files["similar_keywords"].extend(files1)
-                similar_files_info.append(f"'{keyword1}' (유사도: {similarity:.3f}) -> '{keyword2}'와 유사")
-            else:
-                filtered_files["similar_keywords"].extend(files2)
-                similar_files_info.append(f"'{keyword2}' (유사도: {similarity:.3f}) -> '{keyword1}'와 유사")
-        
-        if similar_files_info:
-            print("발견된 유사 키워드들:")
-            for info in similar_files_info:
-                print(f"  {info}")
+                filtered_files["duplicates"].extend(files[1:])
         
         return dict(filtered_files)
     
