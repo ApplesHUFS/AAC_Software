@@ -1,79 +1,50 @@
-# AAC Card Interpretation System
+# AAC 카드 해석 시스템
 
-An end-to-end system for AAC (Augmentative and Alternative Communication) card interpretation using AI. This project includes dataset preparation, model training, and real-time card interpretation capabilities.
+AAC(보완대체의사소통) 카드를 이용한 AI 해석 시스템입니다. 현재는 데이터셋 준비 단계를 구현했습니다.
 
-## Project Overview
+## 설치
 
-This system provides:
-- **Dataset Preparation**: Automated pipeline for creating AAC datasets with CLIP embeddings and AI-generated interpretations
-- **Model Training**: (Coming Soon) Training pipelines for AAC interpretation models  
-- **Inference System**: (Coming Soon) Real-time AAC card sequence interpretation
-
-## Current Status: Dataset Preparation Phase
-
-Currently implementing the dataset preparation pipeline that processes AAC card images and generates training data.
-
-## Project Structure
-
-```
-project/
-├── config/                # Configuration files
-│   ├── __init__.py
-│   └── dataset_config.py  # Dataset preparation settings
-├── data_src/              # Core modules
-│   ├── image_filter.py    # Image filtering and cleanup
-│   ├── embeddings.py      # CLIP encoding
-│   ├── clustering.py      # K-means clustering
-│   ├── schema.py          # Dataset schema generation
-│   ├── card_generator.py  # Card combination generation
-│   └── dataset_generator.py # AI-powered dataset completion
-├── data_prepare.py        # Dataset preparation pipeline
-└── README.md
-```
-
-## Setup
-
-1. Install dependencies:
+1. 패키지 설치:
 ```bash
 pip install torch transformers sklearn matplotlib tqdm openai python-dotenv pillow huggingface-hub
 ```
 
-2. Create `.env` file:
+2. `.env` 파일 생성:
 ```
 HUGGINGFACE_TOKEN=your_token_here
 OPENAI_API_KEY=your_openai_key_here
 ```
 
-3. Prepare data structure:
+3. 데이터 구조 준비:
 ```
 data/
-├── images/               # AAC card images (PNG format)
-├── persona.json         # Persona definitions
-└── processed/           # Output directory (auto-created)
+├── images/              # AAC 카드 이미지 (PNG 형식)
+├── persona.json        # 페르소나 정의 (수동 준비)
+└── processed/          # 출력 디렉토리 (자동 생성)
 ```
 
-## Usage
+## 사용법
 
-### Dataset Preparation
+### 데이터셋 준비 실행
 ```bash
 python data_prepare.py
 ```
 
-### Custom Configuration
-Edit `config/dataset_config.py` to adjust settings:
+### 설정 변경
+`config/dataset_config.py`에서 설정 수정:
 ```python
 DATASET_CONFIG = {
     'images_folder': 'data/images',
-    'samples_per_persona': 200,
-    'n_clusters': 96,
-    'skip_openai': False  # Set True for testing without AI
+    'samples_per_persona': 200,    # 페르소나당 샘플 수
+    'n_clusters': 96,              # 클러스터 수
+    'skip_openai': False           # True로 설정하면 AI 처리 건너뛰기
 }
 ```
 
-### Advanced Usage
-Modify `data_prepare.py` to run specific pipeline steps:
+### 특정 단계만 실행
+`data_prepare.py`의 `main()` 함수 수정:
 ```python
-# Run only steps 1-3 (skip AI processing)
+# 1-3단계만 실행 (AI 처리 제외)
 pipeline.run_partial_pipeline(
     steps=[1, 2, 3],
     confirm_filter=True,
@@ -81,68 +52,39 @@ pipeline.run_partial_pipeline(
 )
 ```
 
-## Dataset Pipeline Steps
+## 처리 과정
 
-1. **Image Filtering**: Remove inappropriate content, duplicates, and invalid files
-2. **CLIP Encoding**: Generate image and text embeddings using CLIP
-3. **Clustering**: Group similar cards using K-means clustering
-4. **Schema Generation**: Create dataset structure with personas
-5. **Card Combinations**: Generate meaningful card sequences
-6. **AI Completion**: Use OpenAI to generate contexts and interpretations
+1. **이미지 필터링**: 부적절한 이미지 제거
+2. **CLIP 인코딩**: 이미지-텍스트 임베딩 생성
+3. **클러스터링**: 유사한 카드 그룹화
+4. **스키마 생성**: 데이터셋 구조 생성
+5. **카드 조합**: 의미있는 카드 시퀀스 생성
+6. **AI 완성**: OpenAI로 상황과 해석 생성
 
-## Image Requirements
+## 이미지 요구사항
 
-Images should be named as: `{id}_{keyword}.png`
-- Example: `001_apple.png`, `002_happy.png`
-- Keywords will be used for text embedding generation
-- Invalid formats will be filtered out automatically
+이미지 파일명 형식: `{번호}_{키워드}.png`
+- 예시: `001_사과.png`, `002_행복.png`
+- 키워드는 텍스트 임베딩 생성에 사용됩니다
 
-## Roadmap
+## 출력 파일
 
-### Phase 1: Dataset Preparation ✅ (Current)
-- [x] Image filtering and preprocessing
-- [x] CLIP-based embedding generation
-- [x] Intelligent card combination generation
-- [x] AI-powered context and interpretation generation
+- `embeddings.json`: CLIP 임베딩 데이터
+- `clustering_results.json`: 클러스터링 결과
+- `dataset_completed.json`: 최종 완성된 데이터셋
+- `cluster_visualization.png`: 클러스터 시각화
 
-### Phase 2: Model Training (Coming Soon)
-- [ ] Training pipeline for sequence interpretation models
-- [ ] Model evaluation and validation
-- [ ] Hyperparameter optimization
-- [ ] Model export and optimization
+## 향후 계획
 
-### Phase 3: Inference System (Coming Soon)
-- [ ] Real-time card sequence interpretation
-- [ ] Web API for integration
-- [ ] Mobile app interface
-- [ ] Performance monitoring
+- **Phase 2**: 모델 훈련 파이프라인
+- **Phase 3**: 실시간 카드 해석 시스템
 
-## Contributing
+## 프로젝트 구조
 
-This is an early-stage project. The codebase will expand significantly as we add training and inference capabilities. 
-
-Current focus areas:
-- Dataset quality improvement
-- Pipeline optimization
-- Configuration management
-
-## Output Files
-
-The dataset preparation generates:
-- `embeddings.json`: CLIP embeddings for all images
-- `clustering_results.json`: Cluster assignments and metadata
-- `dataset.json`: Basic dataset structure
-- `dataset_with_cards.json`: Dataset with card combinations
-- `dataset_completed.json`: Final dataset with AI-generated content
-- `cluster_visualization.png`: Cluster visualization plots
-
-## Performance Notes
-
-- CLIP encoding: ~1-2 seconds per image on GPU
-- Clustering: Fast after embeddings are generated
-- OpenAI processing: ~3-5 seconds per sample (rate limited)
-- Memory usage scales with number of images
-
-## License
-
-[To be determined]
+```
+project/
+├── config/               # 설정 파일
+├── data_src/            # 핵심 모듈
+├── data_prepare.py      # 데이터 준비 파이프라인
+└── README.md
+```
