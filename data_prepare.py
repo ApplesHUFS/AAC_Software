@@ -11,7 +11,6 @@ from data.schema import DatasetSchema
 from data.card_generator import CardCombinationGenerator
 from data.dataset_generator import DatasetGenerator
 
-
 class DataPreparationPipeline:
     def __init__(self, config: dict):
         self.config = config
