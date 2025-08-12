@@ -69,7 +69,7 @@ pipeline.run_partial_pipeline(
 ```
 project/
 ├── config/               # 설정 파일
-├── data_src/            # 핵심 모듈
+├── data_src/            # 데이터 모듈
 ├── data_prepare.py      # 데이터 준비 파이프라인
 └── README.md
 ```
