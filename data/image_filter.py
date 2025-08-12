@@ -1,16 +1,14 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 from collections import defaultdict
-from itertools import combinations
 
 
 class ImageFilter:
-    def __init__(self, images_folder: str, similarity_threshold: float = 0.7):
+    def __init__(self, images_folder: str):
         self.images_folder = Path(images_folder)
         self.filtered_folder = self.images_folder.parent / "filtered_images"
-        self.similarity_threshold = similarity_threshold
         
         self.inappropriate_keywords = {
             '강간', '성매매', '구강 성교', '사정', '발기', '자위', '성관계', 
@@ -93,42 +91,6 @@ class ImageFilter:
             return ""
         return stem.split('_', 1)[1].strip()
     
-    def _get_ngrams(self, text: str, n: int = 2) -> Set[str]:
-        if len(text) < n:
-            return {text}
-        return {text[i:i+n] for i in range(len(text) - n + 1)}
-    
-    def _calculate_ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
-        if not text1 or not text2:
-            return 0.0
-        
-        ngrams1 = self._get_ngrams(text1.lower(), n)
-        ngrams2 = self._get_ngrams(text2.lower(), n)
-        
-        if not ngrams1 or not ngrams2:
-            return 0.0
-        
-        intersection = len(ngrams1.intersection(ngrams2))
-        union = len(ngrams1.union(ngrams2))
-        
-        return intersection / union if union > 0 else 0.0
-    
-    def _find_similar_keywords(self, keyword_to_files: Dict[str, List[str]]) -> List[Tuple[str, str, float]]:
-        similar_pairs = []
-        keywords = list(keyword_to_files.keys())
-        
-        for i, j in combinations(range(len(keywords)), 2):
-            keyword1, keyword2 = keywords[i], keywords[j]
-            
-            similarity_2gram = self._calculate_ngram_similarity(keyword1, keyword2, 2)
-            similarity_3gram = self._calculate_ngram_similarity(keyword1, keyword2, 3)
-            avg_similarity = (similarity_2gram + similarity_3gram) / 2
-            
-            if avg_similarity >= self.similarity_threshold:
-                similar_pairs.append((keyword1, keyword2, avg_similarity))
-        
-        return similar_pairs
-    
     def _should_filter(self, keyword: str) -> str:
         keyword_lower = keyword.lower()
         
@@ -152,9 +114,6 @@ class ImageFilter:
         
         if any(word in keyword_lower for word in self.administrative_legal_keywords):
             return "administrative_legal"
-        
-        if any(word in keyword_lower for word in self.miscellaneous_keywords):
-            return "miscellaneous"
         
         if any(location in keyword_lower for location in self.location_keywords):
             return "locations"
@@ -181,26 +140,7 @@ class ImageFilter:
         
         for keyword, files in keyword_to_files.items():
             if len(files) > 1:
-                filtered_files["exact_duplicates"].extend(files[1:])
-        
-        similar_pairs = self._find_similar_keywords(keyword_to_files)
-        similar_files_info = []
-        
-        for keyword1, keyword2, similarity in similar_pairs:
-            files1 = keyword_to_files[keyword1]
-            files2 = keyword_to_files[keyword2]
-            
-            if len(files1) <= len(files2):
-                filtered_files["similar_keywords"].extend(files1)
-                similar_files_info.append(f"'{keyword1}' (유사도: {similarity:.3f}) -> '{keyword2}'와 유사")
-            else:
-                filtered_files["similar_keywords"].extend(files2)
-                similar_files_info.append(f"'{keyword2}' (유사도: {similarity:.3f}) -> '{keyword1}'와 유사")
-        
-        if similar_files_info:
-            print("발견된 유사 키워드들:")
-            for info in similar_files_info:
-                print(f"  {info}")
+                filtered_files["duplicates"].extend(files[1:])
         
         return dict(filtered_files)
     
