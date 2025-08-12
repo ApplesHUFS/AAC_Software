@@ -1,20 +1,22 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 from collections import defaultdict
+from itertools import combinations
 
 
 class ImageFilter:
-    def __init__(self, images_folder: str):
+    def __init__(self, images_folder: str, similarity_threshold: float = 0.7):
         self.images_folder = Path(images_folder)
         self.filtered_folder = self.images_folder.parent / "filtered_images"
+        self.similarity_threshold = similarity_threshold
         
         self.inappropriate_keywords = {
             '강간', '성매매', '구강 성교', '사정', '발기', '자위', '성관계', 
             '성폭행', '나체', '살인', '학대', '자살', '납치되다', '여자 생식기', '남자 생식기',
             '남자 성기', '생식기를 만지다', '클리토리스', '낙태', '자해',
-            '목을 조르다', '목 조르다', '마약', '공격하다', '쏘다'
+            '목을 조르다', '목 조르다', '마약', '공격하다', '쏘다', '불구'
         }
 
         self.medical_technical_keywords = {
@@ -24,12 +26,14 @@ class ImageFilter:
             '지골', '위팔뼈', '자뼈', '대퇴골', '묘성증후군', '자폐스펙트럼장애', 
             '지체장애', '뇌전증', '난독증', '글루텐 불내증', '요로감염증',
             '압력 관리 기계', '작업 치료사', '언어치료사', '수치료', '시험관 시술',
-            '피임약', '난관결찰', '정관수술', '외이도', '이소골'
+            '피임약', '난관결찰', '정관수술', '외이도', '이소골', '소파수술', '하복부 방사선 보호 차폐',
+            '양수 진단', '대장내시경', '요로결석', '위내시경', '심전도계', '좌약을 넣다', '관장튜브',
+            '좌약', '관장', '뉴런', '버튼형 위조루', '다운증후군', '췌장', '당뇨'
         }
 
         self.academic_scientific_keywords = {
             '엽록소', '구석기시대', '신석기시대', '대수층', '수권', '암석권',
-            '지협', '대기현상', '응결', '증발'
+            '지협', '대기현상', '응결', '증발', '난생의', '단백질', 'DNA'
         }
         
 
@@ -43,7 +47,8 @@ class ImageFilter:
 
         self.administrative_legal_keywords = {
             '출생증명서', '공민권', '가족관계증명서', '영수증', '이행', 
-            '노사협의회', '인구조사', '신청서', '명예위원회', '조약'
+            '노사협의회', '인구조사', '신청서', '명예위원회', '조약', '보조금',
+            '수술동의서', '동의서', '평생교육', '정당', '야당'
         }
         
         self.location_keywords = {
@@ -63,7 +68,23 @@ class ImageFilter:
             '슬로바키아', '핀란드', '과테말라', '아일랜드', '아이슬란드', '리투아니아', 
             '룩셈부르크', '북마케도니아', '몰타', '니카라과', '남아프리카', '스위스', '터키',
             '그린 카나리아', '푸에르테벤투라', '아프가니스탄', '사우디아라비아', '북한', '대한민국',
-            '인도', '이라크', '이란'
+            '인도', '이라크', '이란', '이스라엘', '뉴질랜드', '파키스탄', '태국',
+            '러시아', '영국', '그리스', '벨기에', '이탈리아', '독일', '포르투갈', '스페인',
+            '베트남', '시리아', '싱가포르', '카타르', '오만', '네팔', '카자흐스탄', '인도네시아',
+            '필리핀', '캄보디아', '나토', '가나', '에티오피아', '콩고민주공화국', '앙골라', '알제리',
+            '아르메니아', '아제르바이잔', '바하마 제도', '바베이도스', '벨로루시', '보츠와나', '부르키나파소',
+            '부룬디', '카보베르데'
+        }
+
+        self.miscellaneous_keywords = {
+            '페탕크', '콘크리트 칼블럭', '배수관 세정제', '연습문제', 
+            '동등한 기회', '접근하기 쉬운', 'ESPLAI', '기술 교사', 
+            'IOS', 'OTS', '문화', '존엄성', '스폰서', '홍보하다', 
+            '의무를 지우다', '도시 중심지', '정화 시설', '의사소통책을 사용하다',
+            '계속하다', '시간을 가지다', '자수틀', '결항되다', '술탄', 
+            '전동캔따개', '죽마로 걷다', '배터리함', '돼지껍데기 과자',
+            '라벨을 붙이다', '용수로', '가족 모임 장소', '무덤을 파다', '자세', '개인의',
+            '문장'
         }
     
     def _extract_keyword(self, filename: str) -> str:
@@ -71,6 +92,42 @@ class ImageFilter:
         if '_' not in stem:
             return ""
         return stem.split('_', 1)[1].strip()
+    
+    def _get_ngrams(self, text: str, n: int = 2) -> Set[str]:
+        if len(text) < n:
+            return {text}
+        return {text[i:i+n] for i in range(len(text) - n + 1)}
+    
+    def _calculate_ngram_similarity(self, text1: str, text2: str, n: int = 2) -> float:
+        if not text1 or not text2:
+            return 0.0
+        
+        ngrams1 = self._get_ngrams(text1.lower(), n)
+        ngrams2 = self._get_ngrams(text2.lower(), n)
+        
+        if not ngrams1 or not ngrams2:
+            return 0.0
+        
+        intersection = len(ngrams1.intersection(ngrams2))
+        union = len(ngrams1.union(ngrams2))
+        
+        return intersection / union if union > 0 else 0.0
+    
+    def _find_similar_keywords(self, keyword_to_files: Dict[str, List[str]]) -> List[Tuple[str, str, float]]:
+        similar_pairs = []
+        keywords = list(keyword_to_files.keys())
+        
+        for i, j in combinations(range(len(keywords)), 2):
+            keyword1, keyword2 = keywords[i], keywords[j]
+            
+            similarity_2gram = self._calculate_ngram_similarity(keyword1, keyword2, 2)
+            similarity_3gram = self._calculate_ngram_similarity(keyword1, keyword2, 3)
+            avg_similarity = (similarity_2gram + similarity_3gram) / 2
+            
+            if avg_similarity >= self.similarity_threshold:
+                similar_pairs.append((keyword1, keyword2, avg_similarity))
+        
+        return similar_pairs
     
     def _should_filter(self, keyword: str) -> str:
         keyword_lower = keyword.lower()
@@ -95,6 +152,9 @@ class ImageFilter:
         
         if any(word in keyword_lower for word in self.administrative_legal_keywords):
             return "administrative_legal"
+        
+        if any(word in keyword_lower for word in self.miscellaneous_keywords):
+            return "miscellaneous"
         
         if any(location in keyword_lower for location in self.location_keywords):
             return "locations"
@@ -121,7 +181,26 @@ class ImageFilter:
         
         for keyword, files in keyword_to_files.items():
             if len(files) > 1:
-                filtered_files["duplicates"].extend(files[1:])
+                filtered_files["exact_duplicates"].extend(files[1:])
+        
+        similar_pairs = self._find_similar_keywords(keyword_to_files)
+        similar_files_info = []
+        
+        for keyword1, keyword2, similarity in similar_pairs:
+            files1 = keyword_to_files[keyword1]
+            files2 = keyword_to_files[keyword2]
+            
+            if len(files1) <= len(files2):
+                filtered_files["similar_keywords"].extend(files1)
+                similar_files_info.append(f"'{keyword1}' (유사도: {similarity:.3f}) -> '{keyword2}'와 유사")
+            else:
+                filtered_files["similar_keywords"].extend(files2)
+                similar_files_info.append(f"'{keyword2}' (유사도: {similarity:.3f}) -> '{keyword1}'와 유사")
+        
+        if similar_files_info:
+            print("발견된 유사 키워드들:")
+            for info in similar_files_info:
+                print(f"  {info}")
         
         return dict(filtered_files)
     

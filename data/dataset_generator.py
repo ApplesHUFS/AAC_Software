@@ -2,6 +2,7 @@ import json
 import os
 import base64
 import time
+import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
@@ -29,10 +30,7 @@ class DatasetGenerator:
             return base64.b64encode(image_file.read()).decode('utf-8')
     
     def _prepare_image_content(self, card_combinations: List[str]) -> List[Dict]:
-        content = [{
-            "type": "text",
-            "text": "다음 AAC 카드들을 순서대로 보고 해석해주세요:"
-        }]
+        content = []
         
         for i, card_filename in enumerate(card_combinations, 1):
             image_path = self.images_folder / card_filename
@@ -51,12 +49,32 @@ class DatasetGenerator:
                     "type": "image_url",
                     "image_url": {
                         "url": f"data:image/png;base64,{base64_image}",
-                        "detail": "low"
+                        "detail": "high"
                     }
                 }
             ])
         
         return content
+    
+    def _clean_interpretations(self, interpretations: List[str]) -> List[str]:
+        cleaned = []
+        patterns = [
+            r'^첫\s*번째\s*해석:\s*',
+            r'^두\s*번째\s*해석:\s*', 
+            r'^세\s*번째\s*해석:\s*',
+            r'^\d+\.\s*',
+            r'^-\s*'
+        ]
+        
+        for interpretation in interpretations:
+            cleaned_text = interpretation.strip()
+            for pattern in patterns:
+                cleaned_text = re.sub(pattern, '', cleaned_text, flags=re.IGNORECASE)
+            cleaned_text = cleaned_text.strip()
+            if cleaned_text:
+                cleaned.append(cleaned_text)
+        
+        return cleaned
     
     def _generate_context(self, persona: Dict, card_combination: List[str]) -> Optional[Dict]:
         system_prompt = """당신은 AAC(보완대체의사소통) 전문가입니다. 
@@ -82,24 +100,49 @@ class DatasetGenerator:
             "type": "text",
             "text": """
 위 이미지들을 보고 다음 형식의 JSON으로 context를 생성해주세요:
-{
-    "time": "오전/오후 X시 형식 또는 아침/점심/저녁 등",
-    "place": "구체적인 장소",
-    "interaction_partner": "대화 상대",
-    "current_activity": "현재 하고 있는 활동이나 상황"
-}
 
 실제 일어날 법한 자연스러운 상황으로 만들어주세요."""
         })
         
+        context_schema = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "context_generation",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "time": {
+                            "type": "string",
+                            "description": "오전/오후 X시 형식 또는 아침/점심/저녁 등"
+                        },
+                        "place": {
+                            "type": "string",
+                            "description": "구체적인 장소"
+                        },
+                        "interaction_partner": {
+                            "type": "string",
+                            "description": "대화 상대"
+                        },
+                        "current_activity": {
+                            "type": "string",
+                            "description": "현재 하고 있는 활동이나 상황"
+                        }
+                    },
+                    "required": ["time", "place", "interaction_partner", "current_activity"],
+                    "additionalProperties": False
+                }
+            }
+        }
+        
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o-2024-08-06",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content}
                 ],
-                response_format={"type": "json_object"},
+                response_format=context_schema,
                 temperature=0.8,
                 max_tokens=300
             )
@@ -121,7 +164,8 @@ class DatasetGenerator:
 3. 세 번째 해석: 창의적이면서도 맥락상 가능한 해석
 
 각 해석은 자연스러운 한국어 문장으로 작성하되, 사용자의 의도를 명확히 전달해야 합니다.
-이미지의 시각적 요소와 순서를 중요하게 고려하세요."""
+이미지의 시각적 요소와 순서를 중요하게 고려하세요.
+해석 앞에 '첫 번째 해석:', '두 번째 해석:' 등의 접두사는 붙이지 마세요."""
         
         image_content = self._prepare_image_content(card_combination)
         
@@ -148,31 +192,50 @@ class DatasetGenerator:
             "text": """
 위 이미지들을 보고 이 사람이 전달하고자 하는 메시지를 3가지로 해석해주세요.
 이미지의 시각적 내용과 순서를 반드시 고려하세요.
-
-JSON 형식으로 응답해주세요:
-{
-    "interpretations": [
-        "첫 번째 해석 (가장 가능성 높음)",
-        "두 번째 해석 (다른 관점)",
-        "세 번째 해석 (창의적)"
-    ]
-}"""
+각 해석은 접두사 없이 바로 내용으로 시작하세요."""
         })
+        
+        interpretations_schema = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "interpretations_generation",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "interpretations": {
+                            "type": "array",
+                            "description": "3가지 해석 후보",
+                            "items": {
+                                "type": "string",
+                                "description": "개별 해석"
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                        }
+                    },
+                    "required": ["interpretations"],
+                    "additionalProperties": False
+                }
+            }
+        }
         
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o-2024-08-06",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content}
                 ],
-                response_format={"type": "json_object"},
+                response_format=interpretations_schema,
                 temperature=0.9,
                 max_tokens=400
             )
             
             result = json.loads(response.choices[0].message.content)
-            return result.get("interpretations", [])
+            raw_interpretations = result.get("interpretations", [])
+            
+            return self._clean_interpretations(raw_interpretations)
             
         except Exception as e:
             print(f"Error generating interpretations: {e}")
@@ -197,7 +260,10 @@ JSON 형식으로 응답해주세요:
         for idx in tqdm(range(start_idx, end_idx), desc="Processing dataset"):
             item = self.dataset[idx]
             
-            if item['input']['context'].get('time') and item.get('output'):
+            if (item['input']['context'].get('time') and 
+                item['input']['context']['time'] not in [None, "", "오류"] and 
+                item.get('output') and 
+                item['output'] not in ["", ["Processing error"]]):
                 continue
             
             try:
@@ -210,9 +276,10 @@ JSON 형식으로 응답해주세요:
                 if context:
                     item['input']['context'] = context
                 
-                interpretations = self._generate_interpretations(persona, context, card_combination)
-                if interpretations:
-                    item['output'] = interpretations
+                if context:
+                    interpretations = self._generate_interpretations(persona, context, card_combination)
+                    if interpretations:
+                        item['output'] = interpretations
                 
                 processed_count += 1
                 
