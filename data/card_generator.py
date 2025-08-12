@@ -11,13 +11,15 @@ class CardCombinationGenerator:
                  embeddings_path: str,
                  clustering_results_path: str,
                  similarity_threshold: float = 0.5,
-                 card_min_similarity: float = 0.3):
+                 card_min_similarity: float = 0.3,
+                 config: Optional[Dict] = None):
         self.similarity_threshold = similarity_threshold
         self.card_min_similarity = card_min_similarity
+        self.config = config or {}
         self._load_data(embeddings_path, clustering_results_path)
         self._initialize_tracking()
 
-    def _load_data(self, embeddings_path: str, clustering_results_path: str):
+    def _load_data(self, embeddings_path: str, clustering_results_path: str) -> None:
         with open(embeddings_path, 'r', encoding='utf-8') as f:
             embedding_data = json.load(f)
 
@@ -48,14 +50,9 @@ class CardCombinationGenerator:
                 centroids[cluster_id] = centroid / (np.linalg.norm(centroid) + 1e-12)
         return centroids
 
-    def _initialize_tracking(self):
+    def _initialize_tracking(self) -> None:
         self.card_usage_count = {fn: 0 for fn in self.filenames}
         self.cluster_usage_count = {i: 0 for i in range(self.n_clusters)}
-
-    def _calculate_cluster_similarity(self, cluster1: int, cluster2: int) -> float:
-        if cluster1 not in self.centroids or cluster2 not in self.centroids:
-            return 0.0
-        return float(np.dot(self.centroids[cluster1], self.centroids[cluster2]))
 
     def _find_similar_and_dissimilar_clusters(self, base_cluster_id: int) -> Tuple[List[Tuple[int, float]], List[Tuple[int, float]]]:
         if base_cluster_id not in self.centroids:
@@ -92,8 +89,8 @@ class CardCombinationGenerator:
             else:
                 weights.append(1.0 / (1.0 + (count - min_usage)))
 
-        weights = np.array(weights) / np.sum(weights)
-        selected_idx = np.random.choice(len(candidate_indices), p=weights)
+        weights_array = np.array(weights) / np.sum(weights)
+        selected_idx = np.random.choice(len(candidate_indices), p=weights_array)
         return candidate_indices[selected_idx]
 
     def _sample_cards_with_similarity(self, cluster_id: int, selected_cards: List[str],
@@ -140,12 +137,12 @@ class CardCombinationGenerator:
         if prefer_similar:
             card_similarities.sort(key=lambda x: x[1], reverse=True)
             top_k = min(len(card_similarities), max(3, len(card_similarities) // 2))
-            candidates = [card for card, sim in card_similarities[:top_k]]
+            candidates = [card for card, _ in card_similarities[:top_k]]
         else:
             filtered = [(card, sim) for card, sim in card_similarities if sim >= self.card_min_similarity]
             if not filtered:
                 filtered = card_similarities
-            candidates = [card for card, sim in filtered]
+            candidates = [card for card, _ in filtered]
 
         actual_count = min(count, len(candidates))
         if actual_count == 0:
@@ -175,7 +172,7 @@ class CardCombinationGenerator:
         cluster_weights /= cluster_weights.sum()
 
         base_cluster = np.random.choice(self.n_clusters, p=cluster_weights)
-        used_files = set()
+        used_files: Set[str] = set()
         combination = []
 
         base_count = min(n_cards, max(1, min(3, n_cards)))
@@ -258,7 +255,7 @@ class CardCombinationGenerator:
             self._initialize_tracking()
 
         combinations = []
-        card_count_distribution = [0.35, 0.4, 0.2, 0.05]
+        card_count_distribution = self.config.get('card_count_distribution', [0.35, 0.4, 0.2, 0.05])
 
         for _ in tqdm(range(n_samples), desc="Generating card combinations"):
             n_cards = np.random.choice([1, 2, 3, 4], p=card_count_distribution)
@@ -269,7 +266,7 @@ class CardCombinationGenerator:
         self._print_usage_stats()
         return combinations
 
-    def _print_usage_stats(self):
+    def _print_usage_stats(self) -> None:
         usage_values = list(self.card_usage_count.values())
         if not usage_values:
             return
@@ -283,11 +280,12 @@ class CardCombinationGenerator:
         unused = sum(1 for v in usage_values if v == 0)
         print(f"  Unused cards: {unused} ({unused/len(usage_values)*100:.1f}%)")
 
-    def update_dataset(self, dataset_path: str, output_path: str):
+    def update_dataset(self, dataset_path: str, output_path: str) -> None:
         with open(dataset_path, 'r', encoding='utf-8') as f:
             dataset = json.load(f)
 
         print(f"Updating dataset: {len(dataset)} samples")
+        reset_usage = self.config.get('reset_card_usage', True)
         self._initialize_tracking()
 
         combinations = self.generate_combinations(len(dataset), reset_usage=False)
@@ -302,7 +300,7 @@ class CardCombinationGenerator:
         self.print_dataset_stats(dataset)
         self._analyze_diversity_from_combinations(combinations)
 
-    def print_dataset_stats(self, dataset: List[Dict]):
+    def print_dataset_stats(self, dataset: List[Dict]) -> None:
         combination_lengths = [len(item['input']['AAC_card_combination']) for item in dataset]
         card_counts = defaultdict(int)
         similarity_scores = []
@@ -336,7 +334,7 @@ class CardCombinationGenerator:
             print(f"  Average usage: {np.mean(usage_values):.1f} times")
             print(f"  Coefficient of variation: {np.std(usage_values)/np.mean(usage_values):.2f}")
 
-    def _analyze_diversity_from_combinations(self, combinations: List[List[str]]):
+    def _analyze_diversity_from_combinations(self, combinations: List[List[str]]) -> None:
         print("\nAnalyzing combination diversity...")
 
         cluster_diversities = []
@@ -352,7 +350,7 @@ class CardCombinationGenerator:
             print(f"Average cluster diversity: {np.mean(cluster_diversities):.3f}")
             print("  (1.0 = all cards from different clusters)")
 
-    def analyze_diversity(self, n_samples: int = 100):
+    def analyze_diversity(self, n_samples: int = 100) -> None:
         print("\nAnalyzing combination diversity...")
         combinations = self.generate_combinations(n_samples, reset_usage=True)
         self._analyze_diversity_from_combinations(combinations)

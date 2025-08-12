@@ -4,7 +4,7 @@ import json
 import numpy as np
 from PIL import Image
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from transformers import AutoProcessor, AutoModel
 from tqdm import tqdm
 from dotenv import load_dotenv
@@ -12,14 +12,21 @@ import huggingface_hub
 
 
 class CLIPEncoder:
-    def __init__(self, model_name: str = "openai/clip-vit-base-patch32"):
+    def __init__(self, model_name: str = "openai/clip-vit-base-patch32", config: Optional[dict] = None):
         load_dotenv()
+
+        self.config = config or {}
 
         hf_token = os.getenv("HUGGINGFACE_TOKEN")
         if hf_token:
             huggingface_hub.login(token=hf_token)
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        device_setting = self.config.get('device', 'auto')
+        if device_setting == 'auto':
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self.device = device_setting
+
         print(f"Using device: {self.device}")
 
         self.model = AutoModel.from_pretrained(
@@ -87,14 +94,14 @@ class CLIPEncoder:
                 print(f"Error processing {filename}: {e}")
                 continue
 
-        image_embeddings = np.array(image_embeddings)
-        text_embeddings = np.array(text_embeddings)
+        image_embeddings_array = np.array(image_embeddings)
+        text_embeddings_array = np.array(text_embeddings)
 
         print(f"Encoded {len(filenames)} files")
-        return filenames, image_embeddings, text_embeddings
+        return filenames, image_embeddings_array, text_embeddings_array
 
     def save_embeddings(self, filenames: List[str], image_embeddings: np.ndarray,
-                       text_embeddings: np.ndarray, output_path: str):
+                       text_embeddings: np.ndarray, output_path: str) -> None:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
         embedding_data = {

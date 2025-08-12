@@ -1,7 +1,7 @@
 import shutil
 import re
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set
 from collections import defaultdict
 
 
@@ -16,7 +16,8 @@ class ImageFilter:
             '남자 성기', '생식기를 만지다', '클리토리스', '낙태', '자해',
             '목을 조르다', '목 조르다', '마약', '공격하다', '쏘다', '불구',
             '소변줄', '탐폰을 끼우다', '사지', '탐폰을 빼다', '속옷을벗다', '팬티를 입다', '팬티를 벗다',
-            '범죄학자', '범죄 현장', '유언장', '무덤을 파다', '범죄', '공동 묘지'}
+            '범죄학자', '범죄 현장', '유언장', '무덤을 파다', '범죄', '공동 묘지'
+        }
 
         self.medical_technical_keywords = {
             '포롭터', '이경검사', '요추 천자', '기관절개술', '동정맥루', '뇌전도검사',
@@ -47,7 +48,6 @@ class ImageFilter:
             '공룡 다리', '티라노사우루스 렉스 두개골', '트리케라톱스 두개골', '공룡 척추 화석', '공룡 척추',
             '공룡 꼬리', '공룡 이빨', '공룡 목', '공룡 발톱', '공룡 골판', '공룡 팔'
         }
-
 
         self.cultural_specific_keywords = {
             'ñ', '알타미라', '세르반테스', '둘네시아', '프란시스코 고야', '산초 판사',
@@ -80,7 +80,6 @@ class ImageFilter:
             '공증인', '법률', '인가하다', '사생활 침해', '특별 고용 센터', '전화번호', '우편번호',
             '조기교실 센터', '교육부', '홍보 담당 부서', '지역', '신규 이민자 프로그램',
             '등록', '통역 센터', '경찰서', '접수처'
-
         }
 
         self.location_keywords = {
@@ -119,8 +118,8 @@ class ImageFilter:
             '경추보호대', '투관침', '전극' '핫팩', '공기탱크', '압력계', '스쿠버다이빙 장비',
             '아이 트래킹', '헤드마우스', '헤드 포인터', '참빛', '유해폐기물', '감각 물병', '도자기 가마',
             '계단 리프트', '스티커', '막사'
-
         }
+
         self.concepts_keywords = {
             '동등한 기회', '접근하기 쉬운', '문화', '존엄성', '의무를 지우다',
             '계속하다', '시간을 가지다', '중요하다', '참여', '의심', '할 수 있다',
@@ -128,14 +127,14 @@ class ImageFilter:
             '범주', '감각', '공간 개념', '개인의', '활동과 행사', '목격', '독립하다', '무게',
             '동사', '방학'
         }
+
         self.miscellaneous_keywords = {
             '역 슬래시', '역 느낌표', '역 물음표', '하이픈', '세미콜론',
             '심사의원', ' 삼촌', '숙모', '조카', '사촌', '주유소 직원',
             '교장', '상담사', '교장 선생님'
-
         }
 
-    def _contains_word(self, text: str, keywords: set) -> bool:
+    def _contains_word(self, text: str, keywords: Set[str]) -> bool:
         for keyword in keywords:
             if re.search(r'\b' + re.escape(keyword) + r'\b', text, re.IGNORECASE):
                 return True
@@ -179,8 +178,8 @@ class ImageFilter:
             raise FileNotFoundError(f"Images folder not found: {self.images_folder}")
 
         png_files = [f.name for f in self.images_folder.glob("*.png")]
-        filtered_files = defaultdict(list)
-        keyword_to_files = defaultdict(list)
+        filtered_files: Dict[str, List[str]] = defaultdict(list)
+        keyword_to_files: Dict[str, List[str]] = defaultdict(list)
 
         for filename in png_files:
             keyword = self._extract_keyword(filename)

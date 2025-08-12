@@ -2,13 +2,13 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Any
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 
 
 class Clusterer:
-    def __init__(self, embeddings_path: Optional[str] = None, embedding_data: Optional[Dict] = None):
+    def __init__(self, embeddings_path: Optional[str] = None, embedding_data: Optional[Dict] = None, config: Optional[Dict] = None):
         if embedding_data is not None:
             self.data = embedding_data
         elif embeddings_path:
@@ -16,20 +16,24 @@ class Clusterer:
         else:
             raise ValueError("Either embeddings_path or embedding_data must be provided")
 
+        self.config = config or {}
         self.filenames = self.data['filenames']
         self.image_embeddings = np.array(self.data['image_embeddings'])
         self.text_embeddings = np.array(self.data['text_embeddings'])
         self.embeddings = (self.image_embeddings + self.text_embeddings) / 2
 
-    def _load_embeddings(self, embeddings_path: str) -> Dict:
+    def _load_embeddings(self, embeddings_path: str) -> Dict[str, Any]:
         with open(embeddings_path, 'r', encoding='utf-8') as f:
             return json.load(f)
 
-    def perform_clustering(self, n_clusters: int) -> Dict:
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    def perform_clustering(self, n_clusters: int) -> Dict[str, Any]:
+        random_state = self.config.get('clustering_random_state', 42)
+        n_init = self.config.get('clustering_n_init', 10)
+
+        kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
         cluster_labels = kmeans.fit_predict(self.embeddings)
 
-        clustered_files = {}
+        clustered_files: Dict[int, List[str]] = {}
         for i, filename in enumerate(self.filenames):
             cluster_id = int(cluster_labels[i])
             if cluster_id not in clustered_files:
@@ -44,7 +48,7 @@ class Clusterer:
             'embeddings': self.embeddings
         }
 
-    def save_clustering_results(self, results: Dict, output_path: str):
+    def save_clustering_results(self, results: Dict[str, Any], output_path: str) -> None:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
         cluster_data = {
@@ -59,7 +63,7 @@ class Clusterer:
 
         print(f"Clustering results saved to {output_path}")
 
-    def print_cluster_summary(self, results: Dict):
+    def print_cluster_summary(self, results: Dict[str, Any]) -> None:
         print(f"\nClustering Results:")
         print(f"Total files: {len(self.filenames)}")
         print(f"Number of clusters: {results['n_clusters']}")
@@ -67,7 +71,7 @@ class Clusterer:
         for cluster_id, files in results['clustered_files'].items():
             print(f"Cluster {cluster_id}: {len(files)} files")
 
-    def visualize_clusters(self, results: Dict, output_folder: str):
+    def visualize_clusters(self, results: Dict[str, Any], output_folder: str) -> None:
         output_folder = Path(output_folder)
         output_folder.mkdir(parents=True, exist_ok=True)
 
@@ -81,7 +85,7 @@ class Clusterer:
         self._plot_cluster_counts(results, output_folder)
 
     def _plot_scatter(self, embeddings_2d: np.ndarray, cluster_labels: np.ndarray,
-                     n_clusters: int, pca: PCA, output_folder: Path):
+                     n_clusters: int, pca: PCA, output_folder: Path) -> None:
         plt.figure(figsize=(15, 8))
         colors = plt.cm.tab10(np.linspace(0, 1, n_clusters))
 
@@ -105,7 +109,7 @@ class Clusterer:
         plt.close()
         print(f"Cluster visualization saved: {viz_path}")
 
-    def _plot_cluster_counts(self, results: Dict, output_folder: Path):
+    def _plot_cluster_counts(self, results: Dict[str, Any], output_folder: Path) -> None:
         plt.figure(figsize=(10, 6))
         n_clusters = results['n_clusters']
         cluster_counts = [len(results['clustered_files'][i]) for i in range(n_clusters)]
@@ -130,7 +134,7 @@ class Clusterer:
         plt.close()
         print(f"Cluster count graph saved: {bar_path}")
 
-    def cluster_and_save(self, n_clusters: int, output_folder: str, visualize: bool = True) -> Dict:
+    def cluster_and_save(self, n_clusters: int, output_folder: str, visualize: bool = True) -> Dict[str, Any]:
         results = self.perform_clustering(n_clusters)
 
         output_folder = Path(output_folder)

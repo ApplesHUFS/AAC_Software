@@ -25,9 +25,9 @@ class DatasetSchema:
     @staticmethod
     def generate_dataset(persona_json_path: str, output_path: str, samples_per_persona: int = 200) -> int:
         with open(persona_json_path, 'r', encoding='utf-8') as f:
-            personas = json.load(f)
+            personas: List[Dict[str, Any]] = json.load(f)
 
-        dataset = []
+        dataset: List[Dict[str, Any]] = []
         data_id = 1
 
         for persona in personas:
