@@ -1,7 +1,7 @@
-import os
 import shutil
+import re
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List
 from collections import defaultdict
 
 
@@ -28,7 +28,7 @@ class ImageFilter:
             '피임약', '난관결찰', '정관수술', '외이도', '이소골', '소파수술', '하복부 방사선 보호 차폐',
             '양수 진단', '대장내시경', '요로결석', '위내시경', '심전도계', '좌약을 넣다', '관장튜브',
             '좌약', '관장', '뉴런', '버튼형 위조루', '다운증후군', '췌장', '당뇨', '정맥', '동맥',
-            "항암화학요법"
+            "항암화학요법", '수중 분만'
         }
 
         self.academic_scientific_keywords = {
@@ -90,6 +90,12 @@ class ImageFilter:
             '문장', '글루텐', '고용, 평등, 협력과 의사소'
         }
     
+    def _contains_word(self, text: str, keywords: set) -> bool:
+        for keyword in keywords:
+            if re.search(r'\b' + re.escape(keyword) + r'\b', text, re.IGNORECASE):
+                return True
+        return False
+    
     def _extract_keyword(self, filename: str) -> str:
         stem = Path(filename).stem
         if '_' not in stem:
@@ -105,23 +111,19 @@ class ImageFilter:
         if len(keyword.strip()) == 1 and keyword.isalpha() and keyword.isascii():
             return "single_english_letter"
         
-        if any(inappropriate in keyword_lower for inappropriate in self.inappropriate_keywords):
-            return "inappropriate"
+        categories = [
+            ("inappropriate", self.inappropriate_keywords),
+            ("medical_technical", self.medical_technical_keywords),
+            ("academic_scientific", self.academic_scientific_keywords),
+            ("cultural_specific", self.cultural_specific_keywords),
+            ("administrative_legal", self.administrative_legal_keywords),
+            ("locations", self.location_keywords),
+            ("miscellaneous", self.miscellaneous_keywords)
+        ]
         
-        if any(word in keyword_lower for word in self.medical_technical_keywords):
-            return "medical_technical"
-        
-        if any(word in keyword_lower for word in self.academic_scientific_keywords):
-            return "academic_scientific"
-        
-        if any(word in keyword_lower for word in self.cultural_specific_keywords):
-            return "cultural_specific"
-        
-        if any(word in keyword_lower for word in self.administrative_legal_keywords):
-            return "administrative_legal"
-        
-        if any(location in keyword_lower for location in self.location_keywords):
-            return "locations"
+        for category_name, keywords in categories:
+            if self._contains_word(keyword_lower, keywords):
+                return category_name
         
         return ""
     
