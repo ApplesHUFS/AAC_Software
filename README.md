@@ -104,3 +104,8 @@ project/
 ├── data_prepare.py      # 데이터 준비 파이프라인
 └── README.md
 ```
+
+# 커밋 전에
+```
+pre-commit run --all-files
+```
