@@ -28,8 +28,14 @@ class DatasetGenerator:
 
         self.client = OpenAI()
 
-        with open(dataset_path, 'r', encoding='utf-8') as f:
-            self.dataset = json.load(f)
+        if Path(self.output_path).exists() and not self.overwrite_mode:
+            print(f"Loading existing dataset from: {self.output_path}")
+            with open(self.output_path, 'r', encoding='utf-8') as f:
+                self.dataset = json.load(f)
+        else:
+            print(f"Loading source dataset from: {dataset_path}")
+            with open(dataset_path, 'r', encoding='utf-8') as f:
+                self.dataset = json.load(f)
 
         print(f"Dataset loaded: {len(self.dataset)} samples")
 
