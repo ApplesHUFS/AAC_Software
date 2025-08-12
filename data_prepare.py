@@ -95,9 +95,6 @@ class DataPreparationPipeline:
             dataset_path=str(self.dataset_path),
             output_path=str(self.dataset_with_cards_path)
         )
-        
-        if self.config.get('analyze_diversity', True):
-            generator.analyze_diversity(n_samples=100)
     
     def step6_generate_final_dataset(self, start_idx: int = 0, end_idx: int = None, 
                                    save_interval: int = 10):

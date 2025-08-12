@@ -6,7 +6,6 @@ DATASET_CONFIG = {
     'n_clusters': 96,
     'similarity_threshold': 0.5,
     'card_min_similarity': 0.3,
-    'analyze_diversity': True,
     'show_sample': True,
     'skip_openai': False
 }

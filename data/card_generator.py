@@ -304,6 +304,7 @@ class CardCombinationGenerator:
             
         print(f"Dataset updated and saved to {output_path}")
         self.print_dataset_stats(dataset)
+        self._analyze_diversity_from_combinations(combinations)
     
     def print_dataset_stats(self, dataset: List[Dict]):
         combination_lengths = [len(item['input']['AAC_card_combination']) for item in dataset]
@@ -339,9 +340,8 @@ class CardCombinationGenerator:
             print(f"  Average usage: {np.mean(usage_values):.1f} times")
             print(f"  Coefficient of variation: {np.std(usage_values)/np.mean(usage_values):.2f}")
     
-    def analyze_diversity(self, n_samples: int = 100):
+    def _analyze_diversity_from_combinations(self, combinations: List[List[str]]):
         print("\nAnalyzing combination diversity...")
-        combinations = self.generate_combinations(n_samples, reset_usage=True)
         
         cluster_diversities = []
         for combination in combinations:
@@ -355,3 +355,8 @@ class CardCombinationGenerator:
         if cluster_diversities:
             print(f"Average cluster diversity: {np.mean(cluster_diversities):.3f}")
             print("  (1.0 = all cards from different clusters)")
+    
+    def analyze_diversity(self, n_samples: int = 100):
+        print("\nAnalyzing combination diversity...")
+        combinations = self.generate_combinations(n_samples, reset_usage=True)
+        self._analyze_diversity_from_combinations(combinations)
