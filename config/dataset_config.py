@@ -11,7 +11,7 @@ DATASET_CONFIG = {
     # 페르소나 기반 카드 선택
     'persona_preference_ratio': 0.9,
     'persona_topic_ratio': 0.7,
-    'topic_similarity_threshold': 0.6,
+    'topic_similarity_threshold': 0.75,
     'similarity_threshold': 0.5,
     'card_min_similarity': 0.3,
 
@@ -45,5 +45,5 @@ DATASET_CONFIG = {
     'clustering_n_init': 10,
 
     # 텍스트 유사도 모델
-    'similarity_model': 'jhgan/ko-sroberta-multitask',  # 한국어 sentence transformer
+    'similarity_model': 'Snowflake/snowflake-arctic-embed-l',  # 고성능 임베딩 모델
 }

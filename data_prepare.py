@@ -110,7 +110,7 @@ class DataPreparationPipeline:
 
         return cluster_tags
 
-    def step6_assign_persona_categories(self, cluster_tags: Dict[int, List[str]]) -> None:
+    def step6_assign_persona_categories(self, cluster_tags: Optional[Dict[int, List[str]]] = None) -> None:
         print("\n" + "="*50)
         print("STEP 6: Assigning persona preferred categories")
         print("="*50)
@@ -118,26 +118,45 @@ class DataPreparationPipeline:
         with open(self.config['persona_json_path'], 'r', encoding='utf-8') as f:
             personas = json.load(f)
 
-        if cluster_tags:
-            tagger = ClusterTagger(
-                embeddings_path=str(self.embeddings_path),
-                clustering_results_path=str(self.clustering_path),
-                images_folder=str(self.images_folder),
-                config=self.config
+        if not cluster_tags:
+            if not self.cluster_tags_path.exists():
+                raise FileNotFoundError(
+                    f"Cluster tags file not found: {self.cluster_tags_path}\n"
+                    f"Please run step 5 first to generate cluster tags."
+                )
+
+            print(f"Loading cluster tags from {self.cluster_tags_path}")
+            with open(self.cluster_tags_path, 'r', encoding='utf-8') as f:
+                cluster_tags_raw = json.load(f)
+                cluster_tags = {int(k): v for k, v in cluster_tags_raw.items()}
+
+        if not cluster_tags:
+            raise ValueError(
+                "No cluster tags available. Cannot assign preferred categories.\n"
+                "Please run step 5 first to generate cluster tags."
             )
 
-            enhanced_personas = tagger.assign_preferred_categories(
-                cluster_tags,
-                personas,
-                self.config.get('topic_similarity_threshold', 0.6)
-            )
-        else:
-            enhanced_personas = personas
+        tagger = ClusterTagger(
+            embeddings_path=str(self.embeddings_path),
+            clustering_results_path=str(self.clustering_path),
+            images_folder=str(self.images_folder),
+            config=self.config
+        )
+
+        enhanced_personas = tagger.assign_preferred_categories(
+            cluster_tags,
+            personas,
+            self.config.get('topic_similarity_threshold', 0.75)
+        )
 
         with open(str(self.enhanced_persona_path), 'w', encoding='utf-8') as f:
             json.dump(enhanced_personas, f, ensure_ascii=False, indent=2)
 
         print(f"Enhanced personas saved to {self.enhanced_persona_path}")
+
+        total_categories = sum(len(p['persona']['preferred_category_types']) for p in enhanced_personas)
+        print(f"Total preferred categories assigned: {total_categories}")
+        print(f"Average per persona: {total_categories/len(enhanced_personas):.1f}")
 
     def step7_generate_persona_card_combinations(self) -> None:
         print("\n" + "="*50)
@@ -233,7 +252,7 @@ class DataPreparationPipeline:
                         cluster_tags = step_methods[step]()
                         print(f"Step 5 completed: {len(cluster_tags)} clusters tagged")
                     elif step == '6':
-                        step_methods[step](cluster_tags)
+                        step_methods[step]()
                         print("Step 6 completed: Persona categories assigned")
                     elif step == '7':
                         step_methods[step]()

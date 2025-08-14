@@ -36,7 +36,7 @@ class Clusterer:
         random_state = self.config.get('clustering_random_state', 42)
         n_init = self.config.get('clustering_n_init', 10)
 
-        kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init, n_jobs=-1)
+        kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
         cluster_labels = kmeans.fit_predict(self.embeddings)
 
         clustered_files = {}

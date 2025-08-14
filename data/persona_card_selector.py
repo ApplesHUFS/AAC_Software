@@ -321,16 +321,26 @@ class PersonaCardSelector:
                     break
 
             if persona_data:
+                item['input']['persona']['preferred_category_types'] = persona_data.get('preferred_category_types', [])
+
                 combination = self.generate_persona_combination(persona_data)
                 item['input']['AAC_card_combination'] = combination
+
+                if not combination:
+                    print(f"Warning: Empty combination for item {item.get('id', 'unknown')}")
             else:
                 print(f"Warning: No matching persona found for item {item.get('id', 'unknown')}")
+                item['input']['persona']['preferred_category_types'] = []
+                item['input']['AAC_card_combination'] = []
 
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(dataset, f, ensure_ascii=False, indent=2)
 
         print(f"Dataset updated with persona-based combinations: {output_path}")
         self._print_statistics()
+
+        updated_count = sum(1 for item in dataset if item['input']['persona']['preferred_category_types'])
+        print(f"Preferred categories updated: {updated_count}/{len(dataset)} items")
 
     def _print_statistics(self) -> None:
         usage_values = list(self.card_usage_count.values())

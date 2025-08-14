@@ -193,7 +193,7 @@ class ClusterTagger:
             embeddings2 = self.similarity_model.encode(topics2, convert_to_tensor=True)
 
             similarities = torch.mm(embeddings1, embeddings2.T)
-            similarities = (similarities + 1) / 2
+            similarities = (similarities + 1) / 2  # -1~1을 0~1로 변환
 
             return torch.clamp(similarities, 0.0, 1.0).cpu().numpy()
         except Exception as e:
@@ -202,13 +202,13 @@ class ClusterTagger:
 
     def assign_preferred_categories(self, cluster_tags: Dict[int, List[str]],
                                    personas: List[Dict],
-                                   similarity_threshold: float = 0.6) -> List[Dict]:
+                                   similarity_threshold: float = 0.75) -> List[Dict]:
 
         for persona in tqdm(personas, desc="Assigning preferred categories"):
             interesting_topics = persona['persona']['interesting_topics']
             preferred_categories = []
 
-            if not interesting_topics:
+            if not interesting_topics or not cluster_tags:
                 persona['persona']['preferred_category_types'] = preferred_categories
                 continue
 
@@ -232,10 +232,16 @@ class ClusterTagger:
                 if cluster_id not in cluster_max_similarities or max_sim > cluster_max_similarities[cluster_id]:
                     cluster_max_similarities[cluster_id] = max_sim
 
-            for cluster_id, max_similarity in cluster_max_similarities.items():
-                if max_similarity >= similarity_threshold:
-                    preferred_categories.append(cluster_id)
+            candidates = [(cluster_id, sim) for cluster_id, sim in cluster_max_similarities.items()
+                         if sim >= similarity_threshold]
+
+            candidates.sort(key=lambda x: x[1], reverse=True)
+            preferred_categories = [cluster_id for cluster_id, _ in candidates[:8]]
 
             persona['persona']['preferred_category_types'] = preferred_categories
+
+            if preferred_categories:
+                print(f"Persona {persona['persona']['age']}/{persona['persona']['gender']}: "
+                      f"{len(preferred_categories)} preferred categories (max sim: {candidates[0][1]:.3f})")
 
         return personas
