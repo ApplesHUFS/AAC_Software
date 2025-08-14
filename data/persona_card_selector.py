@@ -1,7 +1,7 @@
 import json
 import numpy as np
 import random
-from typing import List, Dict, Any, Optional, Set
+from typing import List, Dict, Any, Optional, Set, Tuple
 from pathlib import Path
 from collections import defaultdict
 
@@ -25,8 +25,27 @@ class PersonaCardSelector:
             self.cluster_tags = {int(k): v for k, v in json.load(f).items()}
 
         self.filenames = embedding_data['filenames']
+        img_embeddings = np.array(embedding_data['image_embeddings'])
+        txt_embeddings = np.array(embedding_data['text_embeddings'])
+        self.embeddings = (img_embeddings + txt_embeddings) / 2
+
+        norms = np.linalg.norm(self.embeddings, axis=1, keepdims=True) + 1e-12
+        self.embeddings = self.embeddings / norms
+
         self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
         self.filename_to_idx = {fn: i for i, fn in enumerate(self.filenames)}
+        self.cluster_labels = np.array(cluster_data['cluster_labels'])
+
+        self.centroids = self._compute_centroids()
+
+    def _compute_centroids(self) -> Dict[int, np.ndarray]:
+        centroids = {}
+        for cluster_id, files in self.clustered_files.items():
+            indices = [self.filename_to_idx[f] for f in files if f in self.filename_to_idx]
+            if indices:
+                centroid = self.embeddings[indices].mean(axis=0)
+                centroids[cluster_id] = centroid / (np.linalg.norm(centroid) + 1e-12)
+        return centroids
 
     def _initialize_tracking(self) -> None:
         self.card_usage_count = {fn: 0 for fn in self.filenames}
@@ -45,6 +64,27 @@ class PersonaCardSelector:
         if '_' not in stem:
             return ""
         return stem.split('_', 1)[1].lower()
+
+    def _find_similar_and_dissimilar_clusters(self, base_cluster_id: int) -> Tuple[List[Tuple[int, float]], List[Tuple[int, float]]]:
+        if base_cluster_id not in self.centroids:
+            return [], []
+
+        base_centroid = self.centroids[base_cluster_id]
+        similarities = []
+
+        for cluster_id, centroid in self.centroids.items():
+            if cluster_id == base_cluster_id:
+                continue
+            sim = float(np.dot(base_centroid, centroid))
+            similarities.append((cluster_id, sim))
+
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        similar_clusters = similarities[:3]
+
+        similarity_threshold = self.config.get('similarity_threshold', 0.5)
+        dissimilar_clusters = [(cid, sim) for cid, sim in similarities if sim < similarity_threshold]
+
+        return similar_clusters, dissimilar_clusters
 
     def _find_topic_related_cards(self, interesting_topics: List[str],
                                  cluster_ids: List[int]) -> List[str]:
@@ -83,25 +123,62 @@ class PersonaCardSelector:
         selected_idx = np.random.choice(len(candidates), p=weights_array)
         return candidates[selected_idx]
 
-    def _sample_from_clusters(self, cluster_ids: List[int], count: int,
-                             used_cards: Set[str],
-                             persona_topics: Optional[List[str]] = None) -> List[str]:
-        if not cluster_ids:
+    def _sample_cards_with_similarity(self, cluster_id: int, selected_cards: List[str],
+                                    count: int, used_files: Set[str],
+                                    persona_topics: Optional[List[str]] = None,
+                                    prefer_similar: bool = True) -> List[str]:
+        if cluster_id not in self.clustered_files:
             return []
 
-        available_cards = []
-        for cluster_id in cluster_ids:
-            if cluster_id in self.clustered_files:
-                cluster_cards = [card for card in self.clustered_files[cluster_id]
-                               if card not in used_cards]
-                available_cards.extend(cluster_cards)
-
-        if not available_cards:
+        available_files = [f for f in self.clustered_files[cluster_id] if f not in used_files]
+        if not available_files:
             return []
+
+        if not selected_cards:
+            available_indices = [self.filename_to_idx[f] for f in available_files if f in self.filename_to_idx]
+            if not available_indices:
+                return []
+
+            results = []
+            remaining_files = available_files.copy()
+            for _ in range(min(count, len(remaining_files))):
+                if not remaining_files:
+                    break
+                selected_card = self._select_weighted_card(remaining_files)
+                results.append(selected_card)
+                remaining_files.remove(selected_card)
+            return results
+
+        card_similarities = []
+        for candidate in available_files:
+            if candidate not in self.filename_to_idx:
+                continue
+
+            similarities = []
+            for selected in selected_cards:
+                if selected in self.filename_to_idx:
+                    idx1 = self.filename_to_idx[candidate]
+                    idx2 = self.filename_to_idx[selected]
+                    sim = float(np.dot(self.embeddings[idx1], self.embeddings[idx2]))
+                    similarities.append(sim)
+
+            avg_sim = np.mean(similarities) if similarities else 0.0
+            card_similarities.append((candidate, avg_sim))
+
+        if prefer_similar:
+            card_similarities.sort(key=lambda x: x[1], reverse=True)
+            top_k = min(len(card_similarities), max(3, len(card_similarities) // 2))
+            candidates = [card for card, _ in card_similarities[:top_k]]
+        else:
+            card_min_similarity = self.config.get('card_min_similarity', 0.3)
+            filtered = [(card, sim) for card, sim in card_similarities if sim >= card_min_similarity]
+            if not filtered:
+                filtered = card_similarities
+            candidates = [card for card, _ in filtered]
 
         if persona_topics:
-            topic_related = self._find_topic_related_cards(persona_topics, cluster_ids)
-            topic_related = [card for card in topic_related if card not in used_cards]
+            topic_related = self._find_topic_related_cards(persona_topics, [cluster_id])
+            topic_related = [card for card in topic_related if card in candidates]
 
             if topic_related:
                 topic_ratio = self.config.get('persona_topic_ratio', 0.7)
@@ -114,27 +191,32 @@ class PersonaCardSelector:
                     card = self._select_weighted_card(topic_related)
                     selected_cards.append(card)
                     topic_related.remove(card)
-                    available_cards = [c for c in available_cards if c != card]
+                    candidates = [c for c in candidates if c != card]
 
                 remaining_count = count - len(selected_cards)
                 for _ in range(remaining_count):
-                    if not available_cards:
+                    if not candidates:
                         break
-                    card = self._select_weighted_card(available_cards)
+                    card = self._select_weighted_card(candidates)
                     selected_cards.append(card)
-                    available_cards.remove(card)
+                    candidates.remove(card)
 
                 return selected_cards
 
-        selected_cards = []
-        for _ in range(min(count, len(available_cards))):
-            if not available_cards:
-                break
-            card = self._select_weighted_card(available_cards)
-            selected_cards.append(card)
-            available_cards.remove(card)
+        actual_count = min(count, len(candidates))
+        if actual_count == 0:
+            return []
 
-        return selected_cards
+        results = []
+        remaining_candidates = candidates.copy()
+        for _ in range(min(actual_count, len(remaining_candidates))):
+            if not remaining_candidates:
+                break
+            selected_card = self._select_weighted_card(remaining_candidates)
+            results.append(selected_card)
+            remaining_candidates.remove(selected_card)
+
+        return results
 
     def generate_persona_combination(self, persona: Dict[str, Any]) -> List[str]:
         complexity = persona.get('selection_complexity', 'moderate')
@@ -151,42 +233,88 @@ class PersonaCardSelector:
         use_persona_preference = random.random() < persona_preference_ratio
 
         if use_persona_preference and preferred_clusters:
-            preferred_count = min(n_cards, max(1, int(n_cards * 0.8)))
+            base_cluster = random.choice(preferred_clusters)
+        else:
+            cluster_weights = np.array([1.0 / (1.0 + self.cluster_usage_count[i])
+                                       for i in self.clustered_files.keys()])
+            cluster_weights /= cluster_weights.sum()
+            base_cluster = np.random.choice(list(self.clustered_files.keys()), p=cluster_weights)
 
-            preferred_cards = self._sample_from_clusters(
-                preferred_clusters, preferred_count, used_cards, interesting_topics
+        base_count = min(n_cards, max(1, min(3, n_cards)))
+        if n_cards == 1:
+            base_count = 1
+        elif n_cards == 4:
+            base_count = random.randint(1, 2)
+        else:
+            base_count = random.randint(1, min(3, n_cards))
+
+        base_cards = self._sample_cards_with_similarity(
+            base_cluster, [], base_count, used_cards, interesting_topics, prefer_similar=False
+        )
+
+        for card in base_cards:
+            self.card_usage_count[card] += 1
+            self.cluster_usage_count[base_cluster] += 1
+
+        combination.extend(base_cards)
+        used_cards.update(base_cards)
+
+        if len(combination) >= n_cards:
+            return combination[:n_cards]
+
+        similar_clusters, dissimilar_clusters = self._find_similar_and_dissimilar_clusters(base_cluster)
+
+        # 유사한 클러스터에서 추가 카드 선택 (70% 확률)
+        if similar_clusters and random.random() < 0.7 and len(combination) < n_cards:
+            similar_cluster, _ = random.choice(similar_clusters)
+            remaining_slots = n_cards - len(combination)
+            similar_count = min(random.randint(0, min(2, remaining_slots)), remaining_slots)
+
+            if similar_count > 0:
+                similar_cards = self._sample_cards_with_similarity(
+                    similar_cluster, combination, similar_count, used_cards, interesting_topics, prefer_similar=True
+                )
+                for card in similar_cards:
+                    self.card_usage_count[card] += 1
+                    self.cluster_usage_count[similar_cluster] += 1
+                combination.extend(similar_cards)
+                used_cards.update(similar_cards)
+
+        # 비유사한 클러스터에서 추가 카드 선택 (50% 확률)
+        if dissimilar_clusters and random.random() < 0.5 and len(combination) < n_cards:
+            dissimilar_cluster, _ = random.choice(dissimilar_clusters)
+            remaining_slots = n_cards - len(combination)
+            dissimilar_count = min(1, remaining_slots)
+
+            if dissimilar_count > 0:
+                dissimilar_cards = self._sample_cards_with_similarity(
+                    dissimilar_cluster, combination, dissimilar_count, used_cards, interesting_topics, prefer_similar=False
+                )
+                for card in dissimilar_cards:
+                    self.card_usage_count[card] += 1
+                    self.cluster_usage_count[dissimilar_cluster] += 1
+                combination.extend(dissimilar_cards)
+                used_cards.update(dissimilar_cards)
+
+        # 나머지 클러스터에서 추가 카드 선택
+        available_clusters = [cid for cid in self.clustered_files.keys()
+                            if cid != base_cluster and
+                            cid not in [c for c, _ in similar_clusters[:1]] and
+                            cid not in [c for c, _ in dissimilar_clusters[:1]]]
+
+        while len(combination) < n_cards and available_clusters:
+            cluster = random.choice(available_clusters)
+            available_clusters.remove(cluster)
+            remaining_slots = n_cards - len(combination)
+
+            extra_cards = self._sample_cards_with_similarity(
+                cluster, combination, min(1, remaining_slots), used_cards, interesting_topics, prefer_similar=False
             )
-
-            for card in preferred_cards:
+            for card in extra_cards:
                 self.card_usage_count[card] += 1
-                for cluster_id, files in self.clustered_files.items():
-                    if card in files:
-                        self.cluster_usage_count[cluster_id] += 1
-                        break
-
-            combination.extend(preferred_cards)
-            used_cards.update(preferred_cards)
-
-        remaining_count = n_cards - len(combination)
-        if remaining_count > 0:
-            all_clusters = list(self.clustered_files.keys())
-            available_clusters = [cid for cid in all_clusters if cid not in preferred_clusters]
-
-            if not available_clusters:
-                available_clusters = all_clusters
-
-            other_cards = self._sample_from_clusters(
-                available_clusters, remaining_count, used_cards
-            )
-
-            for card in other_cards:
-                self.card_usage_count[card] += 1
-                for cluster_id, files in self.clustered_files.items():
-                    if card in files:
-                        self.cluster_usage_count[cluster_id] += 1
-                        break
-
-            combination.extend(other_cards)
+                self.cluster_usage_count[cluster] += 1
+            combination.extend(extra_cards)
+            used_cards.update(extra_cards)
 
         return combination[:n_cards]
 
@@ -212,18 +340,16 @@ class PersonaCardSelector:
         with open(personas_path, 'r', encoding='utf-8') as f:
             personas = json.load(f)
 
-        persona_dict = {p['id']: p['persona'] for p in personas}
-
         print(f"Generating persona-based card combinations for {len(dataset)} samples...")
 
         for item in dataset:
-            persona_id = item['input']['persona']['age']  # This needs proper persona matching
+            item_persona = item['input']['persona']
             persona_data = None
 
             for p in personas:
-                if (p['persona']['age'] == item['input']['persona']['age'] and
-                    p['persona']['gender'] == item['input']['persona']['gender'] and
-                    p['persona']['disability_type'] == item['input']['persona']['disability_type']):
+                if (p['persona']['age'] == item_persona['age'] and
+                    p['persona']['gender'] == item_persona['gender'] and
+                    p['persona']['disability_type'] == item_persona['disability_type']):
                     persona_data = p['persona']
                     break
 

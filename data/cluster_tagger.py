@@ -6,7 +6,7 @@ from typing import Dict, List, Any, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
 from sklearn.metrics import pairwise_distances
-
+from tqdm import tqdm
 
 class ClusterTagger:
     def __init__(self, embeddings_path: str, clustering_results_path: str,
@@ -216,7 +216,7 @@ class ClusterTagger:
                                    personas: List[Dict],
                                    similarity_threshold: float = 0.6) -> List[Dict]:
 
-        for persona in personas:
+        for persona in tqdm(personas, desc="Assigning preferred categories"):
             interesting_topics = persona['persona']['interesting_topics']
             preferred_categories = []
 
