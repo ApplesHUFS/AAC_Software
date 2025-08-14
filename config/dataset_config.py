@@ -6,7 +6,7 @@ DATASET_CONFIG = {
 
     # 데이터셋 생성 설정
     'samples_per_persona': 200,                             # 페르소나당 생성할 샘플 수
-    'n_clusters': 96,                                       # K-means 클러스터 개수
+    'n_clusters': 120,                                       # K-means 클러스터 개수
 
     # 카드 조합 생성 설정
     'similarity_threshold': 0.5,                            # 클러스터 간 유사도 임계값
