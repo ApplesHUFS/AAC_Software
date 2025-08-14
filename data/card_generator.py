@@ -10,7 +10,11 @@ class CardCombinationGenerator:
     def __init__(self,
                  embeddings_path: str,
                  clustering_results_path: str,
+                 similarity_threshold: float = 0.5,
+                 card_min_similarity: float = 0.3,
                  config: Optional[Dict] = None):
+        self.similarity_threshold = similarity_threshold
+        self.card_min_similarity = card_min_similarity
         self.config = config or {}
         self._load_data(embeddings_path, clustering_results_path)
         self._initialize_tracking()
@@ -32,79 +36,66 @@ class CardCombinationGenerator:
 
         self.cluster_labels = np.array(cluster_data['cluster_labels'])
         self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
-        self.cluster_semantics = {int(k): v for k, v in cluster_data['cluster_semantics'].items()}
         self.n_clusters = cluster_data['n_clusters']
 
         self.filename_to_idx = {fn: i for i, fn in enumerate(self.filenames)}
+        self.centroids = self._compute_centroids()
+
+    def _compute_centroids(self) -> Dict[int, np.ndarray]:
+        centroids = {}
+        for cluster_id, files in self.clustered_files.items():
+            indices = [self.filename_to_idx[f] for f in files if f in self.filename_to_idx]
+            if indices:
+                centroid = self.embeddings[indices].mean(axis=0)
+                centroids[cluster_id] = centroid / (np.linalg.norm(centroid) + 1e-12)
+        return centroids
 
     def _initialize_tracking(self) -> None:
         self.card_usage_count = {fn: 0 for fn in self.filenames}
         self.cluster_usage_count = {i: 0 for i in range(self.n_clusters)}
 
-    def _get_complexity_card_count(self, complexity: str) -> int:
-        complexity_mapping = {
-            "simple": random.choice([1, 2]),
-            "moderate": random.choice([2, 3]),
-            "complex": random.choice([3, 4])
-        }
-        return complexity_mapping.get(complexity, 2)
+    def _find_similar_and_dissimilar_clusters(self, base_cluster_id: int) -> Tuple[List[Tuple[int, float]], List[Tuple[int, float]]]:
+        if base_cluster_id not in self.centroids:
+            return [], []
 
-    def _calculate_cluster_preference_scores(self, persona: Dict) -> Dict[int, float]:
-        scores = {}
+        base_centroid = self.centroids[base_cluster_id]
+        similarities = []
 
-        for cluster_id, semantics in self.cluster_semantics.items():
-            score = 0.0
+        for cluster_id, centroid in self.centroids.items():
+            if cluster_id == base_cluster_id:
+                continue
+            sim = float(np.dot(base_centroid, centroid))
+            similarities.append((cluster_id, sim))
 
-            # preferred_category_type 매칭
-            semantic_category = semantics['semantic_category'].lower()
-            for preferred in persona['communication_characteristics']['preferred_category_type']:
-                if preferred.lower() in semantic_category or semantic_category in preferred.lower():
-                    score += 1.0
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        similar_clusters = similarities[:3]
+        dissimilar_clusters = [(cid, sim) for cid, sim in similarities if sim < self.similarity_threshold]
 
-            # interesting_topics 매칭
-            interesting_topic = persona['communication_characteristics']['interesting_topics'].lower()
-            themes = [theme.lower() for theme in semantics['themes']]
+        return similar_clusters, dissimilar_clusters
 
-            if any(interesting_topic in theme or theme in interesting_topic for theme in themes):
-                score += 1.5
+    def _select_weighted_card(self, candidate_indices: List[int]) -> int:
+        if not candidate_indices:
+            return random.choice(range(len(self.filenames)))
 
-            if interesting_topic in semantic_category or semantic_category in interesting_topic:
-                score += 1.0
-
-            # complexity_level 매칭
-            persona_complexity = persona['communication_characteristics']['selection_complexity']
-            cluster_complexity = semantics['complexity_level']
-
-            if (persona_complexity == "simple" and cluster_complexity == "basic") or \
-               (persona_complexity == "moderate" and cluster_complexity == "intermediate") or \
-               (persona_complexity == "complex" and cluster_complexity == "advanced"):
-                score += 0.5
-
-            scores[cluster_id] = max(score, 0.1)  # 최소 점수 보장
-
-        return scores
-
-    def _select_weighted_cluster(self, preference_scores: Dict[int, float], used_clusters: Set[int]) -> int:
-        available_clusters = [cid for cid in preference_scores.keys() if cid not in used_clusters]
-
-        if not available_clusters:
-            available_clusters = list(preference_scores.keys())
+        usage_counts = [self.card_usage_count[self.filenames[idx]] for idx in candidate_indices]
+        min_usage = min(usage_counts)
 
         weights = []
-        for cluster_id in available_clusters:
-            preference_score = preference_scores[cluster_id]
-            usage_penalty = 1.0 / (1.0 + self.cluster_usage_count[cluster_id] * 0.1)
-            final_weight = preference_score * usage_penalty
-            weights.append(final_weight)
+        for count in usage_counts:
+            if count == min_usage:
+                weights.append(10.0)
+            elif count == min_usage + 1:
+                weights.append(5.0)
+            else:
+                weights.append(1.0 / (1.0 + (count - min_usage)))
 
-        weights_array = np.array(weights)
-        weights_array = weights_array / weights_array.sum()
+        weights_array = np.array(weights) / np.sum(weights)
+        selected_idx = np.random.choice(len(candidate_indices), p=weights_array)
+        return candidate_indices[selected_idx]
 
-        selected_idx = np.random.choice(len(available_clusters), p=weights_array)
-        return available_clusters[selected_idx]
-
-    def _select_cards_from_cluster(self, cluster_id: int, count: int, used_files: Set[str],
-                                 selected_cards: List[str] = None) -> List[str]:
+    def _sample_cards_with_similarity(self, cluster_id: int, selected_cards: List[str],
+                                    count: int, used_files: Set[str],
+                                    prefer_similar: bool = True) -> List[str]:
         if cluster_id not in self.clustered_files:
             return []
 
@@ -113,126 +104,191 @@ class CardCombinationGenerator:
             return []
 
         if not selected_cards:
-            # 첫 번째 클러스터에서 선택
-            candidate_indices = [self.filename_to_idx[f] for f in available_files if f in self.filename_to_idx]
-            selected_indices = []
+            available_indices = [self.filename_to_idx[f] for f in available_files if f in self.filename_to_idx]
+            if not available_indices:
+                return []
 
-            for _ in range(min(count, len(candidate_indices))):
-                if not candidate_indices:
+            results = []
+            remaining_indices = available_indices.copy()
+            for _ in range(min(count, len(remaining_indices))):
+                if not remaining_indices:
                     break
+                selected_idx = self._select_weighted_card(remaining_indices)
+                results.append(self.filenames[selected_idx])
+                remaining_indices.remove(selected_idx)
+            return results
 
-                weights = [1.0 / (1.0 + self.card_usage_count[self.filenames[idx]]) for idx in candidate_indices]
-                weights_array = np.array(weights) / np.sum(weights)
+        card_similarities = []
+        for candidate in available_files:
+            if candidate not in self.filename_to_idx:
+                continue
 
-                selected_idx_pos = np.random.choice(len(candidate_indices), p=weights_array)
-                selected_idx = candidate_indices.pop(selected_idx_pos)
-                selected_indices.append(selected_idx)
+            similarities = []
+            for selected in selected_cards:
+                if selected in self.filename_to_idx:
+                    idx1 = self.filename_to_idx[candidate]
+                    idx2 = self.filename_to_idx[selected]
+                    sim = float(np.dot(self.embeddings[idx1], self.embeddings[idx2]))
+                    similarities.append(sim)
 
-            return [self.filenames[idx] for idx in selected_indices]
+            avg_sim = np.mean(similarities) if similarities else 0.0
+            card_similarities.append((candidate, avg_sim))
 
+        if prefer_similar:
+            card_similarities.sort(key=lambda x: x[1], reverse=True)
+            top_k = min(len(card_similarities), max(3, len(card_similarities) // 2))
+            candidates = [card for card, _ in card_similarities[:top_k]]
         else:
-            # 기존 카드와의 유사도 고려
-            card_similarities = []
-            for candidate in available_files:
-                if candidate not in self.filename_to_idx:
-                    continue
+            filtered = [(card, sim) for card, sim in card_similarities if sim >= self.card_min_similarity]
+            if not filtered:
+                filtered = card_similarities
+            candidates = [card for card, _ in filtered]
 
-                similarities = []
-                for selected in selected_cards:
-                    if selected in self.filename_to_idx:
-                        idx1 = self.filename_to_idx[candidate]
-                        idx2 = self.filename_to_idx[selected]
-                        sim = float(np.dot(self.embeddings[idx1], self.embeddings[idx2]))
-                        similarities.append(sim)
+        actual_count = min(count, len(candidates))
+        if actual_count == 0:
+            return []
 
-                avg_sim = np.mean(similarities) if similarities else 0.0
-                card_similarities.append((candidate, avg_sim))
+        candidate_indices = [self.filename_to_idx[card] for card in candidates if card in self.filename_to_idx]
+        if not candidate_indices:
+            return []
 
-            # 적당한 유사도의 카드들 선택 (너무 비슷하거나 너무 다르지 않게)
-            card_similarities.sort(key=lambda x: abs(x[1] - 0.3))  # 0.3 정도의 유사도 선호
-            top_candidates = [card for card, _ in card_similarities[:min(10, len(card_similarities))]]
+        results = []
+        remaining_indices = candidate_indices.copy()
+        for _ in range(min(actual_count, len(remaining_indices))):
+            if not remaining_indices:
+                break
+            selected_idx = self._select_weighted_card(remaining_indices)
+            results.append(self.filenames[selected_idx])
+            remaining_indices.remove(selected_idx)
 
-            selected = []
-            for _ in range(min(count, len(top_candidates))):
-                if not top_candidates:
-                    break
+        return results
 
-                candidate_indices = [self.filename_to_idx[card] for card in top_candidates if card in self.filename_to_idx]
-                weights = [1.0 / (1.0 + self.card_usage_count[self.filenames[idx]]) for idx in candidate_indices]
+    def generate_single_combination(self, n_cards: int) -> List[str]:
+        if n_cards < 1:
+            return []
 
-                if weights:
-                    weights_array = np.array(weights) / np.sum(weights)
-                    selected_idx_pos = np.random.choice(len(candidate_indices), p=weights_array)
-                    selected_card = self.filenames[candidate_indices[selected_idx_pos]]
-                    selected.append(selected_card)
-                    top_candidates.remove(selected_card)
+        cluster_weights = np.array([1.0 / (1.0 + self.cluster_usage_count[i])
+                                   for i in range(self.n_clusters)])
+        cluster_weights /= cluster_weights.sum()
 
-            return selected
-
-    def generate_single_combination(self, persona: Dict) -> List[str]:
-        target_count = self._get_complexity_card_count(
-            persona['communication_characteristics']['selection_complexity']
-        )
-
-        preference_scores = self._calculate_cluster_preference_scores(persona)
-        used_clusters: Set[int] = set()
+        base_cluster = np.random.choice(self.n_clusters, p=cluster_weights)
         used_files: Set[str] = set()
         combination = []
 
-        # 첫 번째 클러스터 선택 (선호도 기반)
-        primary_cluster = self._select_weighted_cluster(preference_scores, used_clusters)
-        used_clusters.add(primary_cluster)
+        base_count = min(n_cards, max(1, min(3, n_cards)))
+        if n_cards == 1:
+            base_count = 1
+        elif n_cards == 4:
+            base_count = random.randint(1, 2)
+        else:
+            base_count = random.randint(1, min(3, n_cards))
 
-        primary_count = min(target_count, random.randint(1, max(1, target_count - 1)))
-        primary_cards = self._select_cards_from_cluster(primary_cluster, primary_count, used_files)
+        base_cards = self._sample_cards_with_similarity(
+            base_cluster, [], base_count, used_files, prefer_similar=False
+        )
 
-        for card in primary_cards:
+        for card in base_cards:
             self.card_usage_count[card] += 1
-            self.cluster_usage_count[primary_cluster] += 1
+            self.cluster_usage_count[base_cluster] += 1
 
-        combination.extend(primary_cards)
-        used_files.update(primary_cards)
+        combination.extend(base_cards)
+        used_files.update(base_cards)
 
-        # 필요한 경우 추가 클러스터에서 선택
-        while len(combination) < target_count:
-            remaining_count = target_count - len(combination)
+        if len(combination) >= n_cards:
+            return combination[:n_cards]
 
-            # 선호도가 높은 클러스터 우선 선택
-            secondary_cluster = self._select_weighted_cluster(preference_scores, used_clusters)
-            used_clusters.add(secondary_cluster)
+        similar_clusters, dissimilar_clusters = self._find_similar_and_dissimilar_clusters(base_cluster)
 
-            secondary_cards = self._select_cards_from_cluster(
-                secondary_cluster, remaining_count, used_files, combination
+        if similar_clusters and random.random() < 0.7 and len(combination) < n_cards:
+            similar_cluster, _ = random.choice(similar_clusters)
+            remaining_slots = n_cards - len(combination)
+            similar_count = min(random.randint(0, min(2, remaining_slots)), remaining_slots)
+
+            if similar_count > 0:
+                similar_cards = self._sample_cards_with_similarity(
+                    similar_cluster, combination, similar_count, used_files, prefer_similar=True
+                )
+                for card in similar_cards:
+                    self.card_usage_count[card] += 1
+                    self.cluster_usage_count[similar_cluster] += 1
+                combination.extend(similar_cards)
+                used_files.update(similar_cards)
+
+        if dissimilar_clusters and random.random() < 0.5 and len(combination) < n_cards:
+            dissimilar_cluster, _ = random.choice(dissimilar_clusters)
+            remaining_slots = n_cards - len(combination)
+            dissimilar_count = min(1, remaining_slots)
+
+            if dissimilar_count > 0:
+                dissimilar_cards = self._sample_cards_with_similarity(
+                    dissimilar_cluster, combination, dissimilar_count, used_files, prefer_similar=False
+                )
+                for card in dissimilar_cards:
+                    self.card_usage_count[card] += 1
+                    self.cluster_usage_count[dissimilar_cluster] += 1
+                combination.extend(dissimilar_cards)
+                used_files.update(dissimilar_cards)
+
+        available_clusters = [cid for cid in self.clustered_files.keys()
+                            if cid != base_cluster and
+                            cid not in [c for c, _ in similar_clusters[:1]] and
+                            cid not in [c for c, _ in dissimilar_clusters[:1]]]
+
+        while len(combination) < n_cards and available_clusters:
+            cluster = random.choice(available_clusters)
+            available_clusters.remove(cluster)
+            remaining_slots = n_cards - len(combination)
+
+            extra_cards = self._sample_cards_with_similarity(
+                cluster, combination, min(1, remaining_slots), used_files, prefer_similar=False
             )
-
-            for card in secondary_cards:
+            for card in extra_cards:
                 self.card_usage_count[card] += 1
-                self.cluster_usage_count[secondary_cluster] += 1
+                self.cluster_usage_count[cluster] += 1
+            combination.extend(extra_cards)
+            used_files.update(extra_cards)
 
-            combination.extend(secondary_cards)
-            used_files.update(secondary_cards)
+        return combination[:n_cards]
 
-            if len(used_clusters) >= self.n_clusters:
-                break
+    def generate_combinations(self, n_samples: int, reset_usage: bool = True) -> List[List[str]]:
+        if reset_usage:
+            self._initialize_tracking()
 
-        return combination[:target_count]
-
-    def generate_combinations(self, dataset: List[Dict]) -> List[List[str]]:
         combinations = []
+        card_count_distribution = self.config.get('card_count_distribution', [0.35, 0.4, 0.2, 0.05])
 
-        for item in tqdm(dataset, desc="Generating persona-based combinations"):
-            persona = item['input']['persona']
-            combination = self.generate_single_combination(persona)
-            combinations.append(combination)
+        for _ in tqdm(range(n_samples), desc="Generating card combinations"):
+            n_cards = np.random.choice([1, 2, 3, 4], p=card_count_distribution)
+            combination = self.generate_single_combination(n_cards)
+            if combination:
+                combinations.append(combination)
 
+        self._print_usage_stats()
         return combinations
+
+    def _print_usage_stats(self) -> None:
+        usage_values = list(self.card_usage_count.values())
+        if not usage_values:
+            return
+
+        print(f"\nCard usage statistics:")
+        print(f"  Average: {np.mean(usage_values):.1f} times")
+        print(f"  Std dev: {np.std(usage_values):.1f}")
+        print(f"  Min: {min(usage_values)} times")
+        print(f"  Max: {max(usage_values)} times")
+
+        unused = sum(1 for v in usage_values if v == 0)
+        print(f"  Unused cards: {unused} ({unused/len(usage_values)*100:.1f}%)")
 
     def update_dataset(self, dataset_path: str, output_path: str) -> None:
         with open(dataset_path, 'r', encoding='utf-8') as f:
             dataset = json.load(f)
 
+        print(f"Updating dataset: {len(dataset)} samples")
+        reset_usage = self.config.get('reset_card_usage', True)
         self._initialize_tracking()
-        combinations = self.generate_combinations(dataset)
+
+        combinations = self.generate_combinations(len(dataset), reset_usage=False)
 
         for item, combination in zip(dataset, combinations):
             item['input']['AAC_card_combination'] = combination
@@ -240,34 +296,61 @@ class CardCombinationGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(dataset, f, ensure_ascii=False, indent=2)
 
+        print(f"Dataset updated and saved to {output_path}")
         self.print_dataset_stats(dataset)
+        self._analyze_diversity_from_combinations(combinations)
 
     def print_dataset_stats(self, dataset: List[Dict]) -> None:
         combination_lengths = [len(item['input']['AAC_card_combination']) for item in dataset]
+        card_counts = defaultdict(int)
+        similarity_scores = []
 
-        complexity_stats = defaultdict(list)
         for item in dataset:
-            complexity = item['input']['persona']['communication_characteristics']['selection_complexity']
-            length = len(item['input']['AAC_card_combination'])
-            complexity_stats[complexity].append(length)
+            cards = item['input']['AAC_card_combination']
+            for card in cards:
+                card_counts[card] += 1
 
-        print(f"\nDataset Statistics:")
-        print(f"Total samples: {len(dataset)}")
+            if len(cards) > 1:
+                indices = [self.filename_to_idx[card] for card in cards if card in self.filename_to_idx]
+                for i in range(len(indices) - 1):
+                    sim = float(np.dot(self.embeddings[indices[i]], self.embeddings[indices[i+1]]))
+                    similarity_scores.append(sim)
+
+        print(f"\nDataset statistics:")
         print(f"Average cards per combination: {np.mean(combination_lengths):.2f}")
+        print(f"Card count distribution:")
+        for i in range(1, 5):
+            count = combination_lengths.count(i)
+            print(f"  {i} cards: {count} ({count/len(dataset)*100:.1f}%)")
 
-        print(f"\nComplexity-based distribution:")
-        for complexity, lengths in complexity_stats.items():
-            print(f"  {complexity}: avg {np.mean(lengths):.1f} cards, samples: {len(lengths)}")
+        if similarity_scores:
+            print(f"\nSimilarity between consecutive cards:")
+            print(f"  Average: {np.mean(similarity_scores):.3f}")
+            print(f"  Std dev: {np.std(similarity_scores):.3f}")
 
-        # 클러스터 사용 통계
-        cluster_usage = list(self.cluster_usage_count.values())
-        print(f"\nCluster usage:")
-        print(f"  Average: {np.mean(cluster_usage):.1f}")
-        print(f"  Min-Max: {min(cluster_usage)}-{max(cluster_usage)}")
+        if card_counts:
+            usage_values = list(card_counts.values())
+            print(f"\nCard usage distribution:")
+            print(f"  Average usage: {np.mean(usage_values):.1f} times")
+            print(f"  Coefficient of variation: {np.std(usage_values)/np.mean(usage_values):.2f}")
 
-        # 카드 사용 통계
-        card_usage = list(self.card_usage_count.values())
-        unused_cards = sum(1 for count in card_usage if count == 0)
-        print(f"\nCard usage:")
-        print(f"  Average: {np.mean(card_usage):.1f}")
-        print(f"  Unused cards: {unused_cards} ({unused_cards/len(card_usage)*100:.1f}%)")
+    def _analyze_diversity_from_combinations(self, combinations: List[List[str]]) -> None:
+        print("\nAnalyzing combination diversity...")
+
+        cluster_diversities = []
+        for combination in combinations:
+            if len(combination) > 1:
+                indices = [self.filename_to_idx[card] for card in combination if card in self.filename_to_idx]
+                clusters = [self.cluster_labels[idx] for idx in indices]
+                unique_clusters = len(set(clusters))
+                diversity = unique_clusters / len(clusters)
+                cluster_diversities.append(diversity)
+
+        if cluster_diversities:
+            print(f"Average cluster diversity: {np.mean(cluster_diversities):.3f}")
+            print("  (1.0 = all cards from different clusters)")
+
+    def analyze_diversity(self, n_samples: int = 100) -> None:
+        print("\nAnalyzing combination diversity...")
+        combinations = self.generate_combinations(n_samples, reset_usage=True)
+        self._analyze_diversity_from_combinations(combinations)
