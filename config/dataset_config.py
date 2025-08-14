@@ -6,7 +6,7 @@ DATASET_CONFIG = {
 
     # 데이터셋 설정
     'samples_per_persona': 200,
-    'n_clusters': 256,
+    'n_clusters': 64,
 
     # 페르소나 기반 카드 선택
     'persona_preference_ratio': 0.9,

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-
+from tqdm import tqdm
 
 class Clusterer:
     def __init__(self, embeddings_path: Optional[str] = None, embedding_data: Optional[Dict] = None, config: Optional[Dict] = None):
