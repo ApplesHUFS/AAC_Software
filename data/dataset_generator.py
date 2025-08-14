@@ -55,10 +55,7 @@ class DatasetGenerator:
             base64_image = self._encode_image(image_path)
 
             content.extend([
-                {
-                    "type": "text",
-                    "text": f"\n카드 {i}:"
-                },
+                {"type": "text", "text": f"\n카드 {i}:"},
                 {
                     "type": "image_url",
                     "image_url": {
@@ -161,22 +158,10 @@ class DatasetGenerator:
                 "schema": {
                     "type": "object",
                     "properties": {
-                        "time": {
-                            "type": "string",
-                            "description": "오전/오후 X시 형식 또는 아침/점심/저녁 등"
-                        },
-                        "place": {
-                            "type": "string",
-                            "description": "구체적인 장소"
-                        },
-                        "interaction_partner": {
-                            "type": "string",
-                            "description": "대화 상대"
-                        },
-                        "current_activity": {
-                            "type": "string",
-                            "description": "현재 하고 있는 활동이나 상황"
-                        }
+                        "time": {"type": "string", "description": "오전/오후 X시 형식 또는 아침/점심/저녁 등"},
+                        "place": {"type": "string", "description": "구체적인 장소"},
+                        "interaction_partner": {"type": "string", "description": "대화 상대"},
+                        "current_activity": {"type": "string", "description": "현재 하고 있는 활동이나 상황"}
                     },
                     "required": ["time", "place", "interaction_partner", "current_activity"],
                     "additionalProperties": False
@@ -255,10 +240,7 @@ class DatasetGenerator:
                         "interpretations": {
                             "type": "array",
                             "description": "3가지 해석 후보",
-                            "items": {
-                                "type": "string",
-                                "description": "개별 해석"
-                            },
+                            "items": {"type": "string", "description": "개별 해석"},
                             "minItems": 3,
                             "maxItems": 3
                         }
@@ -339,10 +321,10 @@ class DatasetGenerator:
 
                 if processed_count % save_interval == 0:
                     self._save_dataset(f"{self.output_path}.tmp")
-                    print(f"\nIntermediate save: {processed_count} processed, {error_count} errors, {skipped_count} skipped")
+                    tqdm.write(f"Intermediate save: {processed_count} processed, {error_count} errors, {skipped_count} skipped")
 
             except Exception as e:
-                print(f"\nError processing sample {idx}: {e}")
+                tqdm.write(f"Error processing sample {idx}: {e}")
                 error_count += 1
                 if self.config.get('enable_error_recovery', True):
                     item['input']['context'] = {

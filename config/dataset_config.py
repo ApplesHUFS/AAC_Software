@@ -25,6 +25,7 @@ DATASET_CONFIG = {
     'filter_confirm': True,
     'visualize_clusters': True,
     'save_interval': 10,
+    'enable_error_recovery': True,
 
     # OpenAI API
     'openai_model': 'gpt-4o-2024-08-06',
@@ -33,11 +34,16 @@ DATASET_CONFIG = {
     'interpretation_max_tokens': 400,
     'request_delay': 1,
 
+    # GPU/CPU 설정
+    'device': 'auto',  # 'auto', 'cuda', 'cpu'
+
     # CLIP 인코딩
     'clip_model': 'openai/clip-vit-base-patch32',
-    'device': 'auto',
 
     # 클러스터링
     'clustering_random_state': 42,
     'clustering_n_init': 10,
+
+    # 텍스트 유사도 모델
+    'similarity_model': 'jhgan/ko-sroberta-multitask',  # 한국어 sentence transformer
 }

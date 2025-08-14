@@ -1,12 +1,16 @@
 import json
 import numpy as np
 import base64
+import torch
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
 from sklearn.metrics import pairwise_distances
+from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+import time
+
 
 class ClusterTagger:
     def __init__(self, embeddings_path: str, clustering_results_path: str,
@@ -16,6 +20,16 @@ class ClusterTagger:
         self.config = config or {}
         self.images_folder = Path(images_folder)
         self.client = OpenAI()
+
+        device_setting = self.config.get('device', 'auto')
+        if device_setting == 'auto':
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self.device = device_setting
+
+        similarity_model_name = self.config.get('similarity_model', 'jhgan/ko-sroberta-multitask')
+        self.similarity_model = SentenceTransformer(similarity_model_name, device=self.device)
+        print(f"Similarity model '{similarity_model_name}' loaded on: {self.device}")
 
         self._load_data(embeddings_path, clustering_results_path)
 
@@ -58,9 +72,7 @@ class ClusterTagger:
 
     def _extract_keyword(self, filename: str) -> str:
         stem = Path(filename).stem
-        if '_' not in stem:
-            return ""
-        return stem.split('_', 1)[1]
+        return stem.split('_', 1)[1] if '_' in stem else ""
 
     def _tag_cluster_with_llm(self, medoid_files: List[str]) -> List[str]:
         if not medoid_files:
@@ -111,9 +123,7 @@ class ClusterTagger:
                         "topics": {
                             "type": "array",
                             "description": "클러스터의 주요 주제들",
-                            "items": {
-                                "type": "string"
-                            },
+                            "items": {"type": "string"},
                             "maxItems": 3
                         }
                     },
@@ -126,10 +136,7 @@ class ClusterTagger:
         try:
             response = self.client.chat.completions.create(
                 model=self.config.get('openai_model', 'gpt-4o-2024-08-06'),
-                messages=[{
-                    "role": "user",
-                    "content": content
-                }],
+                messages=[{"role": "user", "content": content}],
                 response_format=schema,
                 temperature=0.3,
                 max_tokens=200
@@ -144,16 +151,18 @@ class ClusterTagger:
 
     def tag_all_clusters(self) -> Dict[int, List[str]]:
         cluster_tags = {}
+        delay = self.config.get('request_delay', 1)
 
-        for cluster_id in self.clustered_files.keys():
-            print(f"Tagging cluster {cluster_id}...")
-
-            medoid_files = self._find_top_medoids(cluster_id)
+        for cluster_id in tqdm(self.clustered_files.keys(), desc="Tagging clusters"):
+            medoid_files = self._find_top_medoids(cluster_id, self.config.get('cluster_medoid_count', 3))
             if not medoid_files:
                 continue
 
             tags = self._tag_cluster_with_llm(medoid_files)
             cluster_tags[cluster_id] = tags
+
+            if delay > 0:
+                time.sleep(delay)
 
         return cluster_tags
 
@@ -167,50 +176,29 @@ class ClusterTagger:
         print(f"Cluster tags saved to {output_path}")
 
     def compute_topic_similarity(self, topic1: str, topic2: str) -> float:
-        prompt = f"""
-        다음 두 주제의 의미적 유사도를 0.0에서 1.0 사이의 점수로 평가해주세요.
-        0.0은 완전히 다른 주제, 1.0은 같은 주제입니다.
-
-        주제 1: {topic1}
-        주제 2: {topic2}
-
-        JSON 형식으로 점수만 응답해주세요.
-        """
-
-        schema = {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "similarity_score",
-                "strict": True,
-                "schema": {
-                    "type": "object",
-                    "properties": {
-                        "similarity": {
-                            "type": "number",
-                            "minimum": 0.0,
-                            "maximum": 1.0
-                        }
-                    },
-                    "required": ["similarity"],
-                    "additionalProperties": False
-                }
-            }
-        }
-
         try:
-            response = self.client.chat.completions.create(
-                model=self.config.get('openai_model', 'gpt-4o-2024-08-06'),
-                messages=[{"role": "user", "content": prompt}],
-                response_format=schema,
-                temperature=0.1,
-                max_tokens=50
-            )
-
-            result = json.loads(response.choices[0].message.content)
-            return result.get("similarity", 0.0)
-
-        except Exception:
+            embeddings = self.similarity_model.encode([topic1, topic2], convert_to_tensor=True)
+            similarity = torch.nn.functional.cosine_similarity(embeddings[0:1], embeddings[1:2]).item()
+            return max(0.0, min(1.0, (similarity + 1) / 2))
+        except Exception as e:
+            print(f"Error computing similarity between '{topic1}' and '{topic2}': {e}")
             return 0.0
+
+    def compute_topic_similarities_batch(self, topics1: List[str], topics2: List[str]) -> np.ndarray:
+        try:
+            if not topics1 or not topics2:
+                return np.zeros((len(topics1), len(topics2)))
+
+            embeddings1 = self.similarity_model.encode(topics1, convert_to_tensor=True)
+            embeddings2 = self.similarity_model.encode(topics2, convert_to_tensor=True)
+
+            similarities = torch.mm(embeddings1, embeddings2.T)
+            similarities = (similarities + 1) / 2
+
+            return torch.clamp(similarities, 0.0, 1.0).cpu().numpy()
+        except Exception as e:
+            print(f"Error computing batch similarities: {e}")
+            return np.zeros((len(topics1), len(topics2)))
 
     def assign_preferred_categories(self, cluster_tags: Dict[int, List[str]],
                                    personas: List[Dict],
@@ -220,14 +208,31 @@ class ClusterTagger:
             interesting_topics = persona['persona']['interesting_topics']
             preferred_categories = []
 
+            if not interesting_topics:
+                persona['persona']['preferred_category_types'] = preferred_categories
+                continue
+
+            all_cluster_topics = []
+            cluster_topic_mapping = []
+
             for cluster_id, cluster_topics in cluster_tags.items():
-                max_similarity = 0.0
+                for topic in cluster_topics:
+                    all_cluster_topics.append(topic)
+                    cluster_topic_mapping.append(cluster_id)
 
-                for interest_topic in interesting_topics:
-                    for cluster_topic in cluster_topics:
-                        similarity = self.compute_topic_similarity(interest_topic, cluster_topic)
-                        max_similarity = max(max_similarity, similarity)
+            if not all_cluster_topics:
+                persona['persona']['preferred_category_types'] = preferred_categories
+                continue
 
+            similarities = self.compute_topic_similarities_batch(interesting_topics, all_cluster_topics)
+
+            cluster_max_similarities = {}
+            for i, cluster_id in enumerate(cluster_topic_mapping):
+                max_sim = similarities[:, i].max()
+                if cluster_id not in cluster_max_similarities or max_sim > cluster_max_similarities[cluster_id]:
+                    cluster_max_similarities[cluster_id] = max_sim
+
+            for cluster_id, max_similarity in cluster_max_similarities.items():
                 if max_similarity >= similarity_threshold:
                     preferred_categories.append(cluster_id)
 

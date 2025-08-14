@@ -3,6 +3,7 @@ import sys
 import json
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
+from tqdm import tqdm
 
 from config.dataset_config import DATASET_CONFIG
 
@@ -208,40 +209,43 @@ class DataPreparationPipeline:
 
             cluster_tags = {}
 
-            for step in steps:
-                if step not in step_methods:
-                    print(f"Invalid step: {step}")
-                    continue
+            with tqdm(total=len(steps), desc="Pipeline Progress") as pbar:
+                for step in steps:
+                    if step not in step_methods:
+                        print(f"Invalid step: {step}")
+                        continue
 
-                print(f"\nRunning step {step}...")
+                    pbar.set_description(f"Running step {step}")
 
-                if step == '1':
-                    result = step_methods[step](confirm=confirm_filter)
-                    print(f"Step 1 completed: {result} images filtered")
-                elif step == '2':
-                    filenames, img_emb, txt_emb = step_methods[step]()
-                    print(f"Step 2 completed: {len(filenames)} images encoded")
-                elif step == '3':
-                    cluster_results = step_methods[step](visualize=visualize)
-                    print(f"Step 3 completed: {cluster_results['n_clusters']} clusters created")
-                elif step == '4':
-                    total_samples = step_methods[step]()
-                    print(f"Step 4 completed: {total_samples} samples created")
-                elif step == '5':
-                    cluster_tags = step_methods[step]()
-                    print(f"Step 5 completed: {len(cluster_tags)} clusters tagged")
-                elif step == '6':
-                    step_methods[step](cluster_tags)
-                    print("Step 6 completed: Persona categories assigned")
-                elif step == '7':
-                    step_methods[step]()
-                    print("Step 7 completed: Persona-based card combinations generated")
-                elif step == '8':
-                    step_methods[step](
-                        start_idx=openai_start_idx,
-                        end_idx=openai_end_idx
-                    )
-                    print("Step 8 completed: Final dataset generated")
+                    if step == '1':
+                        result = step_methods[step](confirm=confirm_filter)
+                        print(f"Step 1 completed: {result} images filtered")
+                    elif step == '2':
+                        filenames, img_emb, txt_emb = step_methods[step]()
+                        print(f"Step 2 completed: {len(filenames)} images encoded")
+                    elif step == '3':
+                        cluster_results = step_methods[step](visualize=visualize)
+                        print(f"Step 3 completed: {cluster_results['n_clusters']} clusters created")
+                    elif step == '4':
+                        total_samples = step_methods[step]()
+                        print(f"Step 4 completed: {total_samples} samples created")
+                    elif step == '5':
+                        cluster_tags = step_methods[step]()
+                        print(f"Step 5 completed: {len(cluster_tags)} clusters tagged")
+                    elif step == '6':
+                        step_methods[step](cluster_tags)
+                        print("Step 6 completed: Persona categories assigned")
+                    elif step == '7':
+                        step_methods[step]()
+                        print("Step 7 completed: Persona-based card combinations generated")
+                    elif step == '8':
+                        step_methods[step](
+                            start_idx=openai_start_idx,
+                            end_idx=openai_end_idx
+                        )
+                        print("Step 8 completed: Final dataset generated")
+
+                    pbar.update(1)
 
             print("\n" + "="*50)
             print("PIPELINE COMPLETED SUCCESSFULLY")

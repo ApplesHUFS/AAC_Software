@@ -4,6 +4,7 @@ import random
 from typing import List, Dict, Any, Optional, Set, Tuple
 from pathlib import Path
 from collections import defaultdict
+from tqdm import tqdm
 
 
 class PersonaCardSelector:
@@ -38,7 +39,7 @@ class PersonaCardSelector:
 
     def _compute_centroids(self) -> Dict[int, np.ndarray]:
         centroids = {}
-        for cluster_id, files in self.clustered_files.items():
+        for cluster_id, files in tqdm(self.clustered_files.items(), desc="Computing centroids"):
             indices = [self.filename_to_idx[f] for f in files if f in self.filename_to_idx]
             if indices:
                 centroid = self.embeddings[indices].mean(axis=0)
@@ -59,9 +60,7 @@ class PersonaCardSelector:
 
     def _extract_keyword(self, filename: str) -> str:
         stem = Path(filename).stem
-        if '_' not in stem:
-            return ""
-        return stem.split('_', 1)[1].lower()
+        return stem.split('_', 1)[1].lower() if '_' in stem else ""
 
     def _find_similar_and_dissimilar_clusters(self, base_cluster_id: int) -> Tuple[List[Tuple[int, float]], List[Tuple[int, float]]]:
         if base_cluster_id not in self.centroids:
@@ -121,6 +120,16 @@ class PersonaCardSelector:
         selected_idx = np.random.choice(len(candidates), p=weights_array)
         return candidates[selected_idx]
 
+    def _compute_similarity_batch(self, candidate_indices: List[int], selected_indices: List[int]) -> np.ndarray:
+        if not selected_indices:
+            return np.zeros(len(candidate_indices))
+
+        candidate_embeddings = self.embeddings[candidate_indices]
+        selected_embeddings = self.embeddings[selected_indices]
+
+        similarities = np.dot(candidate_embeddings, selected_embeddings.T)
+        return similarities.mean(axis=1)
+
     def _sample_cards_with_similarity(self, cluster_id: int, selected_cards: List[str],
                                     count: int, used_files: Set[str],
                                     prefer_similar: bool = True) -> List[str]:
@@ -147,21 +156,15 @@ class PersonaCardSelector:
                 remaining_indices.remove(selected_file_idx)
             return results
 
-        card_similarities = []
-        for candidate in available_files:
-            if candidate not in self.filename_to_idx:
-                continue
+        candidate_indices = [self.filename_to_idx[f] for f in available_files if f in self.filename_to_idx]
+        selected_indices = [self.filename_to_idx[f] for f in selected_cards if f in self.filename_to_idx]
 
-            similarities = []
-            for selected in selected_cards:
-                if selected in self.filename_to_idx:
-                    idx1 = self.filename_to_idx[candidate]
-                    idx2 = self.filename_to_idx[selected]
-                    sim = float(np.dot(self.embeddings[idx1], self.embeddings[idx2]))
-                    similarities.append(sim)
+        if not candidate_indices or not selected_indices:
+            return []
 
-            avg_sim = np.mean(similarities) if similarities else 0.0
-            card_similarities.append((candidate, avg_sim))
+        similarities = self._compute_similarity_batch(candidate_indices, selected_indices)
+
+        card_similarities = list(zip(available_files, similarities))
 
         if prefer_similar:
             card_similarities.sort(key=lambda x: x[1], reverse=True)
@@ -192,7 +195,6 @@ class PersonaCardSelector:
     def generate_persona_combination(self, persona: Dict[str, Any]) -> List[str]:
         complexity = persona.get('selection_complexity', 'moderate')
         preferred_clusters = persona.get('preferred_category_types', [])
-        interesting_topics = persona.get('interesting_topics', [])
 
         min_cards, max_cards = self._get_complexity_range(complexity)
         n_cards = random.randint(min_cards, max_cards)
@@ -288,7 +290,7 @@ class PersonaCardSelector:
         self._initialize_tracking()
         all_combinations = []
 
-        for persona in personas:
+        for persona in tqdm(personas, desc="Generating combinations for personas"):
             persona_data = persona['persona']
             for _ in range(samples_per_persona):
                 combination = self.generate_persona_combination(persona_data)
@@ -307,7 +309,7 @@ class PersonaCardSelector:
 
         print(f"Generating persona-based card combinations for {len(dataset)} samples...")
 
-        for item in dataset:
+        for item in tqdm(dataset, desc="Updating dataset with personas"):
             item_persona = item['input']['persona']
             persona_data = None
 

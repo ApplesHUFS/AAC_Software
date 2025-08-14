@@ -1,11 +1,16 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from tqdm import tqdm
+
+plt.rcParams['font.family'] = ['DejaVu Sans', 'Arial Unicode MS', 'Malgun Gothic', 'sans-serif']
+plt.rcParams['axes.unicode_minus'] = False
+
 
 class Clusterer:
     def __init__(self, embeddings_path: Optional[str] = None, embedding_data: Optional[Dict] = None, config: Optional[Dict] = None):
@@ -18,9 +23,10 @@ class Clusterer:
 
         self.config = config or {}
         self.filenames = self.data['filenames']
-        self.image_embeddings = np.array(self.data['image_embeddings'])
-        self.text_embeddings = np.array(self.data['text_embeddings'])
-        self.embeddings = (self.image_embeddings + self.text_embeddings) / 2
+
+        img_embeddings = np.array(self.data['image_embeddings'])
+        txt_embeddings = np.array(self.data['text_embeddings'])
+        self.embeddings = (img_embeddings + txt_embeddings) / 2
 
     def _load_embeddings(self, embeddings_path: str) -> Dict[str, Any]:
         with open(embeddings_path, 'r', encoding='utf-8') as f:
@@ -30,11 +36,11 @@ class Clusterer:
         random_state = self.config.get('clustering_random_state', 42)
         n_init = self.config.get('clustering_n_init', 10)
 
-        kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init)
+        kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=n_init, n_jobs=-1)
         cluster_labels = kmeans.fit_predict(self.embeddings)
 
-        clustered_files: Dict[int, List[str]] = {}
-        for i, filename in tqdm(enumerate(self.filenames), desc="Clustering files"):
+        clustered_files = {}
+        for i, filename in tqdm(enumerate(self.filenames), desc="Organizing clusters", total=len(self.filenames)):
             cluster_id = int(cluster_labels[i])
             if cluster_id not in clustered_files:
                 clustered_files[cluster_id] = []
@@ -87,20 +93,26 @@ class Clusterer:
     def _plot_scatter(self, embeddings_2d: np.ndarray, cluster_labels: np.ndarray,
                      n_clusters: int, pca: PCA, output_folder: Path) -> None:
         plt.figure(figsize=(15, 8))
-        colors = plt.cm.tab10(np.linspace(0, 1, n_clusters))
+        colors = plt.cm.tab10(np.linspace(0, 1, min(n_clusters, 10)))
+        if n_clusters > 10:
+            colors = plt.cm.Set3(np.linspace(0, 1, n_clusters))
 
         for i in range(n_clusters):
             cluster_mask = cluster_labels == i
+            color_idx = i % len(colors)
             plt.scatter(embeddings_2d[cluster_mask, 0],
                        embeddings_2d[cluster_mask, 1],
-                       c=[colors[i]],
+                       c=[colors[color_idx]],
                        label=f'Cluster {i} ({np.sum(cluster_mask)} files)',
                        alpha=0.7, s=50)
 
         plt.title('AAC Card Clustering Results (PCA 2D Visualization)', fontsize=14, fontweight='bold')
         plt.xlabel(f'PCA Component 1 (Explained Variance: {pca.explained_variance_ratio_[0]:.2%})')
         plt.ylabel(f'PCA Component 2 (Explained Variance: {pca.explained_variance_ratio_[1]:.2%})')
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
+        if n_clusters <= 20:
+            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
 
@@ -113,14 +125,17 @@ class Clusterer:
         plt.figure(figsize=(10, 6))
         n_clusters = results['n_clusters']
         cluster_counts = [len(results['clustered_files'][i]) for i in range(n_clusters)]
-        colors = plt.cm.tab10(np.linspace(0, 1, n_clusters))
+
+        colors = plt.cm.tab10(np.linspace(0, 1, min(n_clusters, 10)))
+        if n_clusters > 10:
+            colors = plt.cm.Set3(np.linspace(0, 1, n_clusters))
 
         bars = plt.bar(range(n_clusters), cluster_counts, color=colors)
 
         for i, bar in enumerate(bars):
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                    f'{int(height)}', ha='center', va='bottom')
+                    f'{int(height)}', ha='center', va='bottom', fontsize=8)
 
         plt.title('Number of Files per Cluster', fontsize=14, fontweight='bold')
         plt.xlabel('Cluster ID')
