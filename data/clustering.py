@@ -34,7 +34,7 @@ class Clusterer:
         cluster_labels = kmeans.fit_predict(self.embeddings)
 
         clustered_files: Dict[int, List[str]] = {}
-        for i, filename in enumerate(self.filenames):
+        for i, filename in tqdm(enumerate(self.filenames), desc="Clustering files"):
             cluster_id = int(cluster_labels[i])
             if cluster_id not in clustered_files:
                 clustered_files[cluster_id] = []

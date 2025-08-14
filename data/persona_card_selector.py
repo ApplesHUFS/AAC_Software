@@ -34,8 +34,6 @@ class PersonaCardSelector:
 
         self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
         self.filename_to_idx = {fn: i for i, fn in enumerate(self.filenames)}
-        self.cluster_labels = np.array(cluster_data['cluster_labels'])
-
         self.centroids = self._compute_centroids()
 
     def _compute_centroids(self) -> Dict[int, np.ndarray]:
@@ -79,9 +77,9 @@ class PersonaCardSelector:
             similarities.append((cluster_id, sim))
 
         similarities.sort(key=lambda x: x[1], reverse=True)
-        similar_clusters = similarities[:3]
 
         similarity_threshold = self.config.get('similarity_threshold', 0.5)
+        similar_clusters = similarities[:3]
         dissimilar_clusters = [(cid, sim) for cid, sim in similarities if sim < similarity_threshold]
 
         return similar_clusters, dissimilar_clusters
@@ -125,7 +123,6 @@ class PersonaCardSelector:
 
     def _sample_cards_with_similarity(self, cluster_id: int, selected_cards: List[str],
                                     count: int, used_files: Set[str],
-                                    persona_topics: Optional[List[str]] = None,
                                     prefer_similar: bool = True) -> List[str]:
         if cluster_id not in self.clustered_files:
             return []
@@ -140,13 +137,14 @@ class PersonaCardSelector:
                 return []
 
             results = []
-            remaining_files = available_files.copy()
-            for _ in range(min(count, len(remaining_files))):
-                if not remaining_files:
+            remaining_indices = available_indices.copy()
+            for _ in range(min(count, len(remaining_indices))):
+                if not remaining_indices:
                     break
-                selected_card = self._select_weighted_card(remaining_files)
-                results.append(selected_card)
-                remaining_files.remove(selected_card)
+                selected_idx = self._select_weighted_card([self.filenames[idx] for idx in remaining_indices])
+                results.append(selected_idx)
+                selected_file_idx = self.filename_to_idx[selected_idx]
+                remaining_indices.remove(selected_file_idx)
             return results
 
         card_similarities = []
@@ -175,33 +173,6 @@ class PersonaCardSelector:
             if not filtered:
                 filtered = card_similarities
             candidates = [card for card, _ in filtered]
-
-        if persona_topics:
-            topic_related = self._find_topic_related_cards(persona_topics, [cluster_id])
-            topic_related = [card for card in topic_related if card in candidates]
-
-            if topic_related:
-                topic_ratio = self.config.get('persona_topic_ratio', 0.7)
-                topic_count = min(int(count * topic_ratio), len(topic_related))
-
-                selected_cards = []
-                for _ in range(topic_count):
-                    if not topic_related:
-                        break
-                    card = self._select_weighted_card(topic_related)
-                    selected_cards.append(card)
-                    topic_related.remove(card)
-                    candidates = [c for c in candidates if c != card]
-
-                remaining_count = count - len(selected_cards)
-                for _ in range(remaining_count):
-                    if not candidates:
-                        break
-                    card = self._select_weighted_card(candidates)
-                    selected_cards.append(card)
-                    candidates.remove(card)
-
-                return selected_cards
 
         actual_count = min(count, len(candidates))
         if actual_count == 0:
@@ -235,10 +206,7 @@ class PersonaCardSelector:
         if use_persona_preference and preferred_clusters:
             base_cluster = random.choice(preferred_clusters)
         else:
-            cluster_weights = np.array([1.0 / (1.0 + self.cluster_usage_count[i])
-                                       for i in self.clustered_files.keys()])
-            cluster_weights /= cluster_weights.sum()
-            base_cluster = np.random.choice(list(self.clustered_files.keys()), p=cluster_weights)
+            base_cluster = random.choice(list(self.clustered_files.keys()))
 
         base_count = min(n_cards, max(1, min(3, n_cards)))
         if n_cards == 1:
@@ -249,7 +217,7 @@ class PersonaCardSelector:
             base_count = random.randint(1, min(3, n_cards))
 
         base_cards = self._sample_cards_with_similarity(
-            base_cluster, [], base_count, used_cards, interesting_topics, prefer_similar=False
+            base_cluster, [], base_count, used_cards, prefer_similar=False
         )
 
         for card in base_cards:
@@ -264,7 +232,6 @@ class PersonaCardSelector:
 
         similar_clusters, dissimilar_clusters = self._find_similar_and_dissimilar_clusters(base_cluster)
 
-        # 유사한 클러스터에서 추가 카드 선택 (70% 확률)
         if similar_clusters and random.random() < 0.7 and len(combination) < n_cards:
             similar_cluster, _ = random.choice(similar_clusters)
             remaining_slots = n_cards - len(combination)
@@ -272,7 +239,7 @@ class PersonaCardSelector:
 
             if similar_count > 0:
                 similar_cards = self._sample_cards_with_similarity(
-                    similar_cluster, combination, similar_count, used_cards, interesting_topics, prefer_similar=True
+                    similar_cluster, combination, similar_count, used_cards, prefer_similar=True
                 )
                 for card in similar_cards:
                     self.card_usage_count[card] += 1
@@ -280,7 +247,6 @@ class PersonaCardSelector:
                 combination.extend(similar_cards)
                 used_cards.update(similar_cards)
 
-        # 비유사한 클러스터에서 추가 카드 선택 (50% 확률)
         if dissimilar_clusters and random.random() < 0.5 and len(combination) < n_cards:
             dissimilar_cluster, _ = random.choice(dissimilar_clusters)
             remaining_slots = n_cards - len(combination)
@@ -288,7 +254,7 @@ class PersonaCardSelector:
 
             if dissimilar_count > 0:
                 dissimilar_cards = self._sample_cards_with_similarity(
-                    dissimilar_cluster, combination, dissimilar_count, used_cards, interesting_topics, prefer_similar=False
+                    dissimilar_cluster, combination, dissimilar_count, used_cards, prefer_similar=False
                 )
                 for card in dissimilar_cards:
                     self.card_usage_count[card] += 1
@@ -296,7 +262,6 @@ class PersonaCardSelector:
                 combination.extend(dissimilar_cards)
                 used_cards.update(dissimilar_cards)
 
-        # 나머지 클러스터에서 추가 카드 선택
         available_clusters = [cid for cid in self.clustered_files.keys()
                             if cid != base_cluster and
                             cid not in [c for c, _ in similar_clusters[:1]] and
@@ -308,7 +273,7 @@ class PersonaCardSelector:
             remaining_slots = n_cards - len(combination)
 
             extra_cards = self._sample_cards_with_similarity(
-                cluster, combination, min(1, remaining_slots), used_cards, interesting_topics, prefer_similar=False
+                cluster, combination, min(1, remaining_slots), used_cards, prefer_similar=False
             )
             for card in extra_cards:
                 self.card_usage_count[card] += 1
