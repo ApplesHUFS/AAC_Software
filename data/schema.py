@@ -23,16 +23,18 @@ class DatasetSchema:
         }
 
     @staticmethod
-    def generate_dataset(persona_json_path: str, output_path: str, samples_per_persona: int = 200) -> int:
+    def generate_dataset(persona_json_path: str = None, output_path: str = "", samples_per_persona: int = 200) -> int:
         with open(persona_json_path, 'r', encoding='utf-8') as f:
-            personas: List[Dict[str, Any]] = json.load(f)
+            personas_data = json.load(f)
+            personas = [item for item in personas_data]
 
         dataset: List[Dict[str, Any]] = []
         data_id = 1
 
-        for persona in personas:
+        for persona_item in personas:
+            persona = persona_item if 'persona' in persona_item else persona_item
             for _ in range(samples_per_persona):
-                entry = DatasetSchema.create_empty_entry(data_id, persona["persona"])
+                entry = DatasetSchema.create_empty_entry(data_id, persona)
                 dataset.append(entry)
                 data_id += 1
 
@@ -41,5 +43,4 @@ class DatasetSchema:
             json.dump(dataset, f, ensure_ascii=False, indent=2)
 
         total_samples = len(dataset)
-        print(f"Generated {total_samples} samples ({len(personas)} personas × {samples_per_persona} samples)")
         return total_samples

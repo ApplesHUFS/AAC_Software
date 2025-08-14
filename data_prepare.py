@@ -21,7 +21,7 @@ class DataPreparationPipeline:
 
     def _validate_config(self) -> None:
         required_keys = [
-            'images_folder', 'persona_json_path', 'output_folder',
+            'images_folder', 'output_folder',
             'samples_per_persona', 'n_clusters'
         ]
         for key in required_keys:
@@ -56,48 +56,48 @@ class DataPreparationPipeline:
         print("="*50)
 
         model_name = self.config.get('clip_model', 'openai/clip-vit-base-patch32')
-        encoder = CLIPEncoder(model_name=model_name)
+        encoder = CLIPEncoder(model_name=model_name, config=self.config)
         return encoder.process_and_save(
             str(self.images_folder),
             str(self.embeddings_path)
         )
 
-    def step3_perform_clustering(self, visualize: Optional[bool] = None) -> dict:
+    def step3_perform_semantic_clustering(self, visualize: Optional[bool] = None) -> dict:
         print("\n" + "="*50)
-        print("STEP 3: Performing K-means clustering")
+        print("STEP 3: Performing semantic clustering with LLM analysis")
         print("="*50)
 
         if visualize is None:
             visualize = self.config.get('visualize_clusters', True)
 
-        clusterer = Clusterer(embeddings_path=str(self.embeddings_path))
+        clusterer = Clusterer(embeddings_path=str(self.embeddings_path), config=self.config)
         return clusterer.cluster_and_save(
             n_clusters=self.config['n_clusters'],
+            images_folder=str(self.images_folder),
             output_folder=str(self.output_folder),
             visualize=visualize
         )
 
     def step4_generate_dataset_schema(self) -> int:
         print("\n" + "="*50)
-        print("STEP 4: Generating dataset schema")
+        print("STEP 4: Generating dataset schema with enhanced personas")
         print("="*50)
 
+        persona_json_path = self.config.get('persona_json_path')
         return DatasetSchema.generate_dataset(
-            persona_json_path=self.config['persona_json_path'],
+            persona_json_path=persona_json_path,
             output_path=str(self.dataset_path),
             samples_per_persona=self.config['samples_per_persona']
         )
 
-    def step5_generate_card_combinations(self) -> None:
+    def step5_generate_persona_based_combinations(self) -> None:
         print("\n" + "="*50)
-        print("STEP 5: Generating card combinations")
+        print("STEP 5: Generating persona-based card combinations")
         print("="*50)
 
         generator = CardCombinationGenerator(
             embeddings_path=str(self.embeddings_path),
             clustering_results_path=str(self.clustering_path),
-            similarity_threshold=self.config.get('similarity_threshold', 0.5),
-            card_min_similarity=self.config.get('card_min_similarity', 0.3),
             config=self.config
         )
 
@@ -138,72 +138,67 @@ class DataPreparationPipeline:
         step_methods = {
             1: self.step1_filter_images,
             2: self.step2_generate_embeddings,
-            3: self.step3_perform_clustering,
+            3: self.step3_perform_semantic_clustering,
             4: self.step4_generate_dataset_schema,
-            5: self.step5_generate_card_combinations,
+            5: self.step5_generate_persona_based_combinations,
             6: self.step6_generate_final_dataset
         }
 
-        try:
-            print("Starting AAC Dataset Preparation Pipeline")
-            print(f"Configuration: {self.config}")
-            print(f"Running steps: {steps}")
+        print("Starting Enhanced AAC Dataset Preparation Pipeline")
+        print(f"Configuration: {self.config}")
+        print(f"Running steps: {steps}")
 
-            for step in steps:
-                if step not in step_methods:
-                    print(f"Invalid step: {step}")
-                    continue
+        for step in steps:
+            if step not in step_methods:
+                print(f"Invalid step: {step}")
+                continue
 
-                print(f"\nRunning step {step}...")
+            print(f"\nRunning step {step}...")
 
-                if step == 1:
-                    result = step_methods[step](confirm=confirm_filter)
-                    print(f"Step 1 completed: {result} images filtered")
-                elif step == 2:
-                    filenames, img_emb, txt_emb = step_methods[step]()
-                    print(f"Step 2 completed: {len(filenames)} images encoded")
-                elif step == 3:
-                    cluster_results = step_methods[step](visualize=visualize)
-                    print(f"Step 3 completed: {cluster_results['n_clusters']} clusters created")
-                elif step == 4:
-                    total_samples = step_methods[step]()
-                    print(f"Step 4 completed: {total_samples} samples created")
-                elif step == 5:
-                    step_methods[step]()
-                    print("Step 5 completed: Card combinations generated")
-                elif step == 6:
-                    step_methods[step](
-                        start_idx=openai_start_idx,
-                        end_idx=openai_end_idx
-                    )
-                    print("Step 6 completed: Final dataset generated")
+            if step == 1:
+                result = step_methods[step](confirm=confirm_filter)
+                print(f"Step 1 completed: {result} images filtered")
+            elif step == 2:
+                filenames, img_emb, txt_emb = step_methods[step]()
+                print(f"Step 2 completed: {len(filenames)} images encoded")
+            elif step == 3:
+                cluster_results = step_methods[step](visualize=visualize)
+                print(f"Step 3 completed: {cluster_results['n_clusters']} semantic clusters created")
+            elif step == 4:
+                total_samples = step_methods[step]()
+                print(f"Step 4 completed: {total_samples} samples created")
+            elif step == 5:
+                step_methods[step]()
+                print("Step 5 completed: Persona-based card combinations generated")
+            elif step == 6:
+                step_methods[step](
+                    start_idx=openai_start_idx,
+                    end_idx=openai_end_idx
+                )
+                print("Step 6 completed: Final dataset generated")
 
-            print("\n" + "="*50)
-            print("PIPELINE COMPLETED SUCCESSFULLY")
-            print("="*50)
-            print(f"Final outputs saved to: {self.output_folder}")
-
-        except Exception as e:
-            print(f"\nPipeline failed: {e}")
-            raise
+        print("\n" + "="*50)
+        print("ENHANCED PIPELINE COMPLETED SUCCESSFULLY")
+        print("="*50)
+        print(f"Final outputs saved to: {self.output_folder}")
 
 
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(description='AAC 데이터셋 준비 파이프라인')
+    parser = argparse.ArgumentParser(description='Enhanced AAC Dataset Preparation Pipeline')
     parser.add_argument('--steps', nargs='+', type=int, default=[1, 2, 3, 4, 5, 6],
-                       help='실행할 단계 (1-6) 예: --steps 1 2 3')
+                       help='Steps to execute (1-6) e.g.: --steps 1 2 3')
     parser.add_argument('--no-confirm', action='store_true',
-                       help='확인 과정 건너뛰기')
+                       help='Skip confirmation prompts')
     parser.add_argument('--no-visualize', action='store_true',
-                       help='시각화 건너뛰기')
+                       help='Skip visualization')
     parser.add_argument('--openai-start', type=int, default=0,
-                       help='OpenAI 처리 시작 인덱스')
+                       help='OpenAI processing start index')
     parser.add_argument('--openai-end', type=int, default=None,
-                       help='OpenAI 처리 종료 인덱스')
+                       help='OpenAI processing end index')
     parser.add_argument('--overwrite', action='store_true',
-                       help='기존 데이터 덮어쓰기')
+                       help='Overwrite existing data')
 
     args = parser.parse_args()
 
