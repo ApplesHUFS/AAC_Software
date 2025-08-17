@@ -20,18 +20,18 @@
 
 ```
 src/
-├── user_manager.py          # 사용자 관리
-├── card_recommender.py      # 카드 추천 시스템
-├── card_interpreter.py      # 카드 해석 엔진
-├── feedback_manager.py      # 피드백 관리
-├── network_utils.py         # 네트워크 유틸리티
-├── aac_interpreter_service.py # 메인 서비스
-├── context_manager.py       # 상황 관리
-├── config_manager.py        # 설정 관리
-├── logging_manager.py       # 로깅 시스템
-├── data_validator.py        # 데이터 검증
-├── security_manager.py      # 보안 관리
-└── export_manager.py        # 데이터 내보내기
+├── user_manager.py          # 사용자 관리      -> 송민주
+├── card_recommender.py      # 카드 추천 시스템 -> 김윤서
+├── card_interpreter.py      # 카드 해석 엔진   -> 김윤서
+├── feedback_manager.py      # 피드백 관리      -> 유연주
+├── network_utils.py         # 네트워크 유틸리티-> 신영환
+├── aac_interpreter_service.py # 메인 서비스    -> 
+├── context_manager.py       # 상황 관리        -> 박시후
+├── config_manager.py        # 설정 관리        -> 박시후
+├── logging_manager.py       # 로깅 시스템      ->
+├── data_validator.py        # 데이터 검증      -> 
+├── security_manager.py      # 보안 관리        -> 
+└── export_manager.py        # 데이터 내보내기  -> 
 ```
 
 ## 사용자 플로우
