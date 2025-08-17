@@ -10,8 +10,8 @@ class FeedbackManager:
     def __init__(self, feedback_file_path: Optional[str] = None):
         self.feedback_file_path = feedback_file_path
         self._data = {
-            "interpretations": [],  # 모든 해석 시도 기록
-            "feedbacks": []         # 모든 피드백 기록
+            "interpretations": [],
+            "feedbacks": []
         }
         self._feedback_id_counter = 1
         self._load_from_file()
@@ -64,7 +64,7 @@ class FeedbackManager:
         return {
             "status": "success",
             "feedback_id": feedback_id,
-            "message": "Interpretation attempt recorded successfully."
+            "message": "피드백이 성공적으로 기록되었습니다."
         }
 
     def record_user_feedback(
@@ -79,16 +79,16 @@ class FeedbackManager:
                 fb["user_correction"] = user_correction
                 fb["timestamp"] = datetime.now().isoformat()
                 self._save_to_file()
-                return {"status": "success", "message": "Feedback recorded."}
+                return {"status": "success", "message": "피드백이 기록되었습니다."}
 
-        return {"status": "error", "message": f"Feedback ID {feedback_id} not found."}
+        return {"status": "error", "message": f"피드백 ID {feedback_id}를 찾을 수 없습니다."}
 
     def get_user_interpretation_summary(self, user_id: int) -> Dict[str, Any]:
         user_interps = [i for i in self._data["interpretations"] if i["user_id"] == user_id]
         if not user_interps:
-            return {"status": "success", "summary": "No history found.", "pattern_count": 0}
+            return {"status": "success", "summary": "이전 해석 이력이 없습니다.", "pattern_count": 0}
 
-        summary_text = f"Total {len(user_interps)} attempts. Frequently used cards: "
+        summary_text = f"총 {len(user_interps)}회의 해석 시도가 있었습니다. 자주 사용된 카드: "
         card_usage = {}
         for interp in user_interps:
             for card in interp["cards"]:
@@ -157,5 +157,5 @@ class FeedbackManager:
         return {
             "status": "success",
             "deleted_count": deleted_count,
-            "message": f"Deleted {deleted_count} feedback(s) for user {user_id}."
+            "message": f"사용자 {user_id}의 피드백 {deleted_count}개가 삭제되었습니다."
         }
