@@ -32,21 +32,40 @@ class ConfigManager:
                 'message': str
             }
         """
-        with open(config_path, 'r', encoding='utf-8') as f:
-
-            config = json.load(f)
-        
-        if config:
-            status = 'success'
-            message = 'Configuration loaded successfully.'
-        else:
-            raise Exception("Configuration file is empty or invalid.")
-        
-        return {
-            'status': status,
-            'config': config,
-            'message': message
-        }
+        if config_path is None:
+            config_path = self.config_file_path
+            
+        try:
+            if config_path.endswith('.py'):
+                # Python 파일인 경우 동적 임포트
+                import importlib.util
+                import sys
+                
+                spec = importlib.util.spec_from_file_location("config_module", config_path)
+                config_module = importlib.util.module_from_spec(spec)
+                sys.modules["config_module"] = config_module
+                spec.loader.exec_module(config_module)
+                
+                # DATASET_CONFIG 변수 찾기
+                config = getattr(config_module, 'DATASET_CONFIG', {})
+            else:
+                # JSON 파일인 경우
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+            
+            if config:
+                status = 'success'
+                message = 'Configuration loaded successfully.'
+            else:
+                raise Exception("Configuration file is empty or invalid.")
+            
+            return {
+                'status': status,
+                'config': config,
+                'message': message
+            }
+        except Exception as e:
+            raise Exception(f"Failed to load config from {config_path}: {str(e)}")
 
 
     def save_config(self, config: Dict[str, Any], config_path: Optional[str] = None) -> Dict[str, Any]:
@@ -90,9 +109,6 @@ class ConfigManager:
         Returns:
             설정값 또는 기본값
         """
-        
-        self.config = self.load_config()
-
         return self.config.get(key, default)
     
 
@@ -137,15 +153,12 @@ class ConfigManager:
                 'timeout': int
             }
         """
-        
-        self.config = self.load_config()
-
         return {
             'openai_model': self.config.get('openai_model', 'gpt-4o-2024-08-06'),
-            'local_model_path': self.config.get('local_model_path', ''), # 로컬 모델 경로를 모름
+            'local_model_path': self.config.get('local_model_path', ''),
             'temperature': self.config.get('openai_temperature', 0.8),
             'max_tokens': self.config.get('interpretation_max_tokens', 400),
-            'timeout': self.config.get('timeout', 60) # 임의로 60초로 설정함
+            'timeout': self.config.get('request_delay', 1)
         }
     
     def get_cluster_config(self) -> Dict[str, Any]:
@@ -163,11 +176,10 @@ class ConfigManager:
         self.output_folder = Path(self.config['output_folder'])
         self.output_folder.mkdir(parents=True, exist_ok=True)
 
-        self.config = self.load_config()
         cluster_tags_path = self.output_folder / self.config.get('cluster_tags_path', 'cluster_tags.json')
         embeddings_path = self.output_folder / self.config.get('embeddings_path', 'embeddings.json')
         clustering_results_path = self.output_folder / self.config.get('clustering_results_path', 'clustering_results.json')
-        similarity_threshold = self.config.get('similarity_threshold', 0.5) #이건 클러스터링 선택일텐데
+        similarity_threshold = self.config.get('similarity_threshold', 0.5)
 
         return {
             'cluster_tags_path': cluster_tags_path,
@@ -189,9 +201,6 @@ class ConfigManager:
                 'backup_directory': str
             }
         """
-        
-        self.config = self.load_config()
-
         return {
             'users_file_path': self.config.get('users_file_path', 'data/users.json'),
             'feedback_file_path': self.config.get('feedback_file_path', 'data/feedback.json'),
@@ -240,7 +249,7 @@ class ConfigManager:
 
 
         for setting in required_settings:
-            if setting in config:
+            if setting not in config:
                 error.append(f"Missing required setting: {setting}")
 
         if 'openai_temperature' in config:

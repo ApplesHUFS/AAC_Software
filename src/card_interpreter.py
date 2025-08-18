@@ -1,5 +1,5 @@
 from openai import OpenAI
-from src.network_utils import NetworkUtils
+from .network_utils import NetworkUtils
 from data.dataset_generator import DatasetGenerator
 import json
 import time

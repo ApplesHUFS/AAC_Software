@@ -11,7 +11,7 @@ class UserManager:
         self.next_id=0  # 1부터 user id 시작
 
         # 기존에 파일이 존재하면 로드하기
-        if os.path.exist(self.users_file_path):
+        if os.path.exists(self.users_file_path):
             try:
                 with open(self.users_file_path, 'r', encoding='utf-8') as f:
                     data=json.load(f)

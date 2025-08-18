@@ -1,8 +1,8 @@
-import openai
+from openai import OpenAI
 import json
 from typing import Dict, List, Optional, Any
 import uuid
-import ConfigManager
+from .config_manager import ConfigManager
 from sklearn.cluster import KMeans
 from collections import Counter
 import numpy as np
@@ -16,6 +16,12 @@ class ContextManager:
         self.config = config or {}
         self.user_context_history = {}
         self.config_manager = ConfigManager()
+        
+        # OpenAI 클라이언트 초기화
+        try:
+            self.openai_client = OpenAI()
+        except Exception:
+            self.openai_client = None
 
 
     def create_context(self, 
@@ -150,28 +156,36 @@ class ContextManager:
             "relevance_scores": [0.9, 0.8, 0.7]
             }}
             '''
+        if not self.openai_client:
+            return {
+                'status': 'error',
+                'card_suggestions': [],
+                'activity_suggestions': [],
+                'relevance_scores': [],
+                'error_message': 'OpenAI client not initialized'
+            }
+            
         try:
             model_config = self.config_manager.get_model_config()
 
-
-            response = openai.ChatCompletion.create(
-                model = model_config['openai_model'],
-                messages = [
-                    {'role':'system', 'content': '당신은 개인화 추천 전문가입니다.'},
-                    {'role':'user', 'content': prompt}
+            response = self.openai_client.chat.completions.create(
+                model=model_config['openai_model'],
+                messages=[
+                    {'role': 'system', 'content': '당신은 개인화 추천 전문가입니다.'},
+                    {'role': 'user', 'content': prompt}
                 ],
                 max_tokens=model_config['max_tokens'],
                 temperature=model_config['temperature']
             )
-            ai_response = response['choices'][0]['message']['content']
+            ai_response = response.choices[0].message.content
             suggestions = self.parse_ai_response(ai_response)
 
             return {
-                'status' : 'success',
-                'card_suggestions' : suggestions.get('card_suggestions', []),
+                'status': 'success',
+                'card_suggestions': suggestions.get('card_suggestions', []),
                 'activity_suggestions': suggestions.get('activity_suggestions', []),
                 'relevance_scores': suggestions.get('relevance_scores', [])
-                }
+            }
         except Exception as e:
             return {
                 'status': 'error',
@@ -182,11 +196,16 @@ class ContextManager:
             }
     
     def parse_ai_response(self, ai_response: str) -> Dict[str, Any]:
-        if '{' in ai_response and '}' in ai_response:
-            json_start = ai_response.find('{')
-            json_end = ai_response.rfind('}') + 1
-            json_str = ai_response[json_start:json_end]
-            return json.loads(json_str)
+        try:
+            if '{' in ai_response and '}' in ai_response:
+                json_start = ai_response.find('{')
+                json_end = ai_response.rfind('}') + 1
+                json_str = ai_response[json_start:json_end]
+                return json.loads(json_str)
+            else:
+                return {}
+        except json.JSONDecodeError:
+            return {}
 
     def analyze_context_patterns(self, user_id: int) -> Dict[str, Any]:
         """
@@ -266,7 +285,7 @@ class ContextManager:
             'frequent_contexts': frequent_contexts,
             'time_patterns': time_patterns,
             'place_patterns': place_patterns,
-            'acitivity_patterns': activity_patterns
+            'activity_patterns': activity_patterns
         }
     
     def _contexts_to_onehot_vectors(self, contexts: List[Dict[str, Any]]) -> np.ndarray:

@@ -1,0 +1,407 @@
+import json
+import os
+from typing import Dict, List, Optional, Any
+from datetime import datetime
+from openai import OpenAI
+from langchain.memory import ConversationSummaryMemory as LangChainConversationSummaryMemory
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, AIMessage
+
+
+class ConversationSummaryMemory:
+    """대화 요약 메모리 - AAC 카드 해석과 연결성을 학습하고 요약하여 저장"""
+    
+    def __init__(self, memory_file_path: Optional[str] = None, config: Optional[Dict] = None):
+        self.memory_file_path = memory_file_path or "user_data/conversation_memory.json"
+        self.config = config or {}
+        self.memory_data = {
+            "user_memories": {},  # user_id별 메모리
+            "global_patterns": {}  # 전역 패턴
+        }
+        
+        # LangChain ChatOpenAI 모델 초기화
+        self.model = self.config.get('openai_model', 'gpt-4o-2024-08-06')
+        self.temperature = self.config.get('openai_temperature', 0.7)
+        self.max_tokens = self.config.get('summary_max_tokens', 200)
+        
+        try:
+            self.llm = ChatOpenAI(
+                model=self.model,
+                temperature=self.temperature,
+                max_tokens=self.max_tokens
+            )
+            self.langchain_enabled = True
+        except Exception:
+            self.llm = None
+            self.langchain_enabled = False
+            # Fallback to OpenAI client
+            try:
+                self.openai_client = OpenAI()
+                self.openai_enabled = True
+            except Exception:
+                self.openai_client = None
+                self.openai_enabled = False
+        
+        self._load_memory()
+    
+    def _load_memory(self):
+        """메모리 파일에서 데이터 로드"""
+        if os.path.exists(self.memory_file_path):
+            try:
+                with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                    self.memory_data = json.load(f)
+            except Exception as e:
+                print(f"메모리 파일 로드 실패: {e}")
+                self.memory_data = {
+                    "user_memories": {},
+                    "global_patterns": {}
+                }
+    
+    def _save_memory(self):
+        """메모리 데이터를 파일에 저장"""
+        try:
+            os.makedirs(os.path.dirname(self.memory_file_path), exist_ok=True)
+            with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.memory_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"메모리 파일 저장 실패: {e}")
+    
+    def add_conversation_memory(self, 
+                              user_id: int, 
+                              cards: List[str], 
+                              context: Dict[str, Any],
+                              interpretations: List[str],
+                              selected_interpretation: Optional[str] = None,
+                              user_correction: Optional[str] = None) -> Dict[str, Any]:
+        """
+        새로운 대화 기억을 추가하고 요약
+        
+        Args:
+            user_id: 사용자 ID
+            cards: 사용된 AAC 카드들
+            context: 상황 정보
+            interpretations: 생성된 해석들
+            selected_interpretation: 선택된 해석 (있는 경우)
+            user_correction: 사용자 수정 내용 (있는 경우)
+        
+        Returns:
+            Dict[str, Any]: {
+                'status': str,
+                'summary': str,
+                'memory_updated': bool,
+                'message': str
+            }
+        """
+        user_id_str = str(user_id)
+        
+        # 사용자별 메모리 초기화
+        if user_id_str not in self.memory_data["user_memories"]:
+            self.memory_data["user_memories"][user_id_str] = {
+                "conversation_history": [],
+                "card_interpretation_patterns": {},
+                "context_patterns": {},
+                "summary": ""
+            }
+        
+        # 대화 기록 추가
+        conversation_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "cards": cards,
+            "context": context,
+            "interpretations": interpretations,
+            "selected_interpretation": selected_interpretation,
+            "user_correction": user_correction
+        }
+        
+        self.memory_data["user_memories"][user_id_str]["conversation_history"].append(conversation_entry)
+        
+        # 카드-해석 패턴 업데이트
+        self._update_card_patterns(user_id_str, cards, selected_interpretation or user_correction)
+        
+        # 컨텍스트 패턴 업데이트
+        self._update_context_patterns(user_id_str, context, cards)
+        
+        # 요약 생성 또는 업데이트
+        summary_result = self._generate_or_update_summary(user_id_str)
+        
+        # 메모리 저장
+        self._save_memory()
+        
+        return {
+            'status': 'success',
+            'summary': summary_result['summary'],
+            'memory_updated': True,
+            'message': f'사용자 {user_id}의 대화 메모리가 업데이트되었습니다.'
+        }
+    
+    def _update_card_patterns(self, user_id_str: str, cards: List[str], final_interpretation: Optional[str]):
+        """카드 조합과 해석 간의 패턴 업데이트"""
+        if not final_interpretation:
+            return
+            
+        user_memory = self.memory_data["user_memories"][user_id_str]
+        patterns = user_memory["card_interpretation_patterns"]
+        
+        # 카드 조합을 키로 사용
+        card_key = ",".join(sorted(cards))
+        
+        if card_key not in patterns:
+            patterns[card_key] = {
+                "cards": cards,
+                "interpretations": [],
+                "frequency": 0
+            }
+        
+        patterns[card_key]["interpretations"].append(final_interpretation)
+        patterns[card_key]["frequency"] += 1
+    
+    def _update_context_patterns(self, user_id_str: str, context: Dict[str, Any], cards: List[str]):
+        """컨텍스트와 카드 사용 패턴 업데이트"""
+        user_memory = self.memory_data["user_memories"][user_id_str]
+        patterns = user_memory["context_patterns"]
+        
+        # 컨텍스트 키 생성
+        context_key = f"{context.get('place', '')}-{context.get('current_activity', '')}"
+        
+        if context_key not in patterns:
+            patterns[context_key] = {
+                "context": context,
+                "used_cards": [],
+                "frequency": 0
+            }
+        
+        patterns[context_key]["used_cards"].extend(cards)
+        patterns[context_key]["frequency"] += 1
+    
+    def _generate_or_update_summary(self, user_id_str: str) -> Dict[str, Any]:
+        """사용자의 대화 기록을 LangChain ConversationSummaryMemory로 요약"""
+        user_memory = self.memory_data["user_memories"][user_id_str]
+        conversation_history = user_memory["conversation_history"]
+        
+        if len(conversation_history) == 0:
+            simple_summary = self._create_simple_summary(user_memory)
+            user_memory["summary"] = simple_summary
+            return {"summary": simple_summary}
+        
+        # LangChain ConversationSummaryMemory 사용
+        if self.langchain_enabled and self.llm:
+            try:
+                # LangChain ConversationSummaryMemory 생성
+                langchain_memory = LangChainConversationSummaryMemory(
+                    llm=self.llm,
+                    return_messages=False
+                )
+                
+                # 대화 기록을 LangChain 메시지 형태로 변환
+                messages = []
+                for conv in conversation_history[-10:]:  # 최근 10개 대화만
+                    cards_str = ", ".join(conv["cards"])
+                    context_str = f"{conv['context'].get('place', '?')}에서 {conv['context'].get('current_activity', '?')} 중"
+                    selected = conv.get("selected_interpretation") or conv.get("user_correction") or "선택되지 않음"
+                    
+                    # 사용자 메시지 (카드 선택)
+                    user_msg = f"상황: {context_str}, 선택한 카드: {cards_str}"
+                    messages.append(HumanMessage(content=user_msg))
+                    
+                    # AI 메시지 (해석 결과)
+                    ai_msg = f"해석 결과: {', '.join(conv['interpretations'][:2])}. 최종 선택: {selected}"
+                    messages.append(AIMessage(content=ai_msg))
+                
+                # 기존 요약이 있으면 반영
+                existing_summary = user_memory.get("summary", "")
+                if existing_summary and existing_summary != "아직 대화 기록이 없습니다.":
+                    langchain_memory.buffer = existing_summary
+                
+                # 새로운 대화들을 메모리에 추가하고 요약 생성
+                for i in range(0, len(messages), 2):
+                    if i + 1 < len(messages):
+                        langchain_memory.save_context(
+                            {"input": messages[i].content},
+                            {"output": messages[i + 1].content}
+                        )
+                
+                # 생성된 요약 가져오기
+                new_summary = langchain_memory.buffer
+                user_memory["summary"] = new_summary
+                
+                return {"summary": new_summary}
+                
+            except Exception as e:
+                print(f"LangChain 요약 생성 실패: {e}")
+                # Fallback to OpenAI client
+                return self._fallback_openai_summary(user_memory, conversation_history)
+        
+        # LangChain 사용 불가능한 경우 fallback
+        return self._fallback_openai_summary(user_memory, conversation_history)
+    
+    def _fallback_openai_summary(self, user_memory: Dict, conversation_history: List[Dict]) -> Dict[str, Any]:
+        """LangChain 실패 시 OpenAI client로 요약 생성"""
+        if not self.openai_enabled:
+            simple_summary = self._create_simple_summary(user_memory)
+            user_memory["summary"] = simple_summary
+            return {"summary": simple_summary}
+        
+        try:
+            recent_conversations = conversation_history[-10:]
+            existing_summary = user_memory.get("summary", "")
+            
+            prompt = self._create_summary_prompt(recent_conversations, existing_summary)
+            
+            response = self.openai_client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system", 
+                        "content": "당신은 AAC 사용자의 대화 패턴을 분석하고 요약하는 전문가입니다."
+                    },
+                    {
+                        "role": "user", 
+                        "content": prompt
+                    }
+                ],
+                temperature=self.temperature,
+                max_tokens=self.max_tokens
+            )
+            
+            new_summary = response.choices[0].message.content.strip()
+            user_memory["summary"] = new_summary
+            
+            return {"summary": new_summary}
+            
+        except Exception as e:
+            print(f"OpenAI 요약 생성 실패: {e}")
+            simple_summary = self._create_simple_summary(user_memory)
+            user_memory["summary"] = simple_summary
+            return {"summary": simple_summary}
+    
+    def _create_summary_prompt(self, conversations: List[Dict], existing_summary: str) -> str:
+        """요약 생성을 위한 프롬프트 작성"""
+        prompt = f"""
+다음은 AAC 사용자의 최근 대화 기록입니다:
+
+기존 요약:
+{existing_summary if existing_summary else "없음"}
+
+최근 대화 기록:
+"""
+        
+        for i, conv in enumerate(conversations, 1):
+            cards_str = ", ".join(conv["cards"])
+            context_str = f"{conv['context'].get('place', '?')}에서 {conv['context'].get('current_activity', '?')} 중"
+            selected = conv.get("selected_interpretation") or conv.get("user_correction") or "선택되지 않음"
+            
+            prompt += f"""
+대화 {i}:
+- 카드: {cards_str}
+- 상황: {context_str}
+- 최종 해석: {selected}
+"""
+
+        prompt += """
+위 정보를 바탕으로 다음 내용을 포함하여 사용자의 AAC 사용 패턴을 요약해주세요:
+
+1. 자주 사용하는 카드들과 그 맥락
+2. 선호하는 해석 스타일이나 패턴
+3. 특정 상황에서의 의사소통 특징
+4. 시간에 따른 변화나 학습 패턴
+
+요약은 200자 이내로 간결하게 작성해주세요.
+"""
+        
+        return prompt
+    
+    def _create_simple_summary(self, user_memory: Dict) -> str:
+        """OpenAI 없이 간단한 통계 기반 요약 생성"""
+        history = user_memory["conversation_history"]
+        patterns = user_memory["card_interpretation_patterns"]
+        
+        if not history:
+            return "아직 대화 기록이 없습니다."
+        
+        total_conversations = len(history)
+        most_used_cards = []
+        
+        # 가장 많이 사용된 카드들 찾기
+        card_count = {}
+        for conv in history:
+            for card in conv["cards"]:
+                card_count[card] = card_count.get(card, 0) + 1
+        
+        if card_count:
+            sorted_cards = sorted(card_count.items(), key=lambda x: x[1], reverse=True)
+            most_used_cards = [card for card, count in sorted_cards[:3]]
+        
+        summary = f"총 {total_conversations}회 대화. "
+        if most_used_cards:
+            summary += f"주로 사용하는 카드: {', '.join(most_used_cards)}. "
+        
+        summary += f"해석 패턴 {len(patterns)}개 학습됨."
+        
+        return summary
+    
+    def get_user_memory_summary(self, user_id: int) -> Dict[str, Any]:
+        """사용자의 메모리 요약 조회"""
+        user_id_str = str(user_id)
+        
+        if user_id_str not in self.memory_data["user_memories"]:
+            return {
+                'status': 'success',
+                'summary': '아직 대화 기록이 없습니다.',
+                'conversation_count': 0,
+                'patterns_count': 0
+            }
+        
+        user_memory = self.memory_data["user_memories"][user_id_str]
+        
+        return {
+            'status': 'success',
+            'summary': user_memory.get("summary", "요약이 생성되지 않았습니다."),
+            'conversation_count': len(user_memory["conversation_history"]),
+            'patterns_count': len(user_memory["card_interpretation_patterns"])
+        }
+    
+    def get_card_usage_patterns(self, user_id: int, card_combination: List[str]) -> Dict[str, Any]:
+        """특정 카드 조합에 대한 사용자의 과거 패턴 조회"""
+        user_id_str = str(user_id)
+        
+        if user_id_str not in self.memory_data["user_memories"]:
+            return {
+                'status': 'success',
+                'patterns': [],
+                'suggestions': []
+            }
+        
+        patterns = self.memory_data["user_memories"][user_id_str]["card_interpretation_patterns"]
+        card_key = ",".join(sorted(card_combination))
+        
+        if card_key in patterns:
+            pattern_data = patterns[card_key]
+            return {
+                'status': 'success',
+                'patterns': pattern_data["interpretations"],
+                'frequency': pattern_data["frequency"],
+                'suggestions': pattern_data["interpretations"][-3:]  # 최근 3개 해석
+            }
+        
+        return {
+            'status': 'success',
+            'patterns': [],
+            'suggestions': []
+        }
+    
+    def clear_user_memory(self, user_id: int) -> Dict[str, Any]:
+        """사용자의 메모리 삭제"""
+        user_id_str = str(user_id)
+        
+        if user_id_str in self.memory_data["user_memories"]:
+            del self.memory_data["user_memories"][user_id_str]
+            self._save_memory()
+            return {
+                'status': 'success',
+                'message': f'사용자 {user_id}의 메모리가 삭제되었습니다.'
+            }
+        else:
+            return {
+                'status': 'success',
+                'message': f'사용자 {user_id}의 메모리가 존재하지 않습니다.'
+            }
