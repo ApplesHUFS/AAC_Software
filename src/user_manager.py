@@ -103,7 +103,7 @@ class UserManager:
         if user_id in self.users:
             return {
                 'status':'success',
-                'user':self.users[user_id], # user_id가 존재한다면 사용자 정보 가져오기 (비밀번호까지 포함되어 있음)
+                'user':self.users[user_id], # user_id가 존재한다면 사용자 정보 가져오기 (비밀번호까지 포함되어 있음) -> pw 제외하는 방향으로 수정하기
                 'message':'사용자 정보를 성공적으로 조회했습니다.'
             }
         else:
