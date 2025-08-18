@@ -8,7 +8,7 @@ class UserManager:
     def __init__(self, users_file_path: Optional[str] = None):
         self.users_file_path=users_file_path or "users.json"
         self.users={}
-        self.next_id=1  # 1부터 user id 시작
+        self.next_id=0  # 1부터 user id 시작
 
         # 기존에 파일이 존재하면 로드하기
         if os.path.exist(self.users_file_path):
