@@ -27,7 +27,6 @@ src/
 ├── aac_interpreter_service.py # 메인 서비스    -> 
 ├── context_manager.py       # 상황 관리        -> 박시후
 └── config_manager.py        # 설정 관리        -> 박시후
-
 ```
 
 ## 사용자 플로우
