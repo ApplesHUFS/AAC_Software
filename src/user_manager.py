@@ -8,7 +8,7 @@ class UserManager:
     def __init__(self, users_file_path: Optional[str] = None):
         self.users_file_path=users_file_path or "users.json"
         self.users={}
-        self.next_id=0  # 1부터 user id 시작
+        self.next_id=1  # 1부터 user id 시작
 
         # 기존에 파일이 존재하면 로드하기
         if os.path.exists(self.users_file_path):
@@ -88,7 +88,7 @@ class UserManager:
     
     def get_user(self, user_id: int) -> Dict[str, Any]:
         """
-        사용자 정보 조회
+        사용자 정보 조회 (비밀번호 제외)
         
         Args:
             user_id: 사용자 ID
@@ -101,9 +101,13 @@ class UserManager:
             }
         """
         if user_id in self.users:
+            # 보안을 위해 비밀번호 제외하고 반환
+            user_data = self.users[user_id].copy()
+            user_data.pop('password', None)
+            
             return {
                 'status':'success',
-                'user':self.users[user_id], # user_id가 존재한다면 사용자 정보 가져오기 (비밀번호까지 포함되어 있음) -> pw 제외하는 방향으로 수정하기
+                'user': user_data,
                 'message':'사용자 정보를 성공적으로 조회했습니다.'
             }
         else:
@@ -173,7 +177,7 @@ class UserManager:
     
     def get_all_users(self) -> Dict[str, Any]:
         """
-        모든 사용자 조회
+        모든 사용자 조회 (비밀번호 제외)
         
         Returns:
             Dict[str, Any]: {
@@ -185,8 +189,10 @@ class UserManager:
         try:
             users_list = []
             for user_data in self.users.values():
-                users_list.append(user_data)
-                #                 ▲ user의 비밀번호까지 포함되어 있음
+                # 보안을 위해 비밀번호 제외하고 추가
+                safe_user_data = user_data.copy()
+                safe_user_data.pop('password', None)
+                users_list.append(safe_user_data)
             
             return {
                 'status': 'success',
@@ -197,7 +203,8 @@ class UserManager:
             return {
                 'status': 'error',
                 'users': [],
-                'count': 0
+                'count': 0,
+                'message': f'오류가 발생했습니다: {str(e)}'
             }
     
     def delete_user(self, user_id: int) -> Dict[str, Any]:

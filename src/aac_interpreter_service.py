@@ -345,7 +345,40 @@ class AACInterpreterService:
                 'system_health': str
             }
         """
-        pass
+        try:
+            # 네트워크 상태 확인
+            network_status = self.network_utils.get_network_info()
+            
+            # 피드백 통계 확인
+            feedback_statistics = self.feedback_manager.get_feedback_statistics()
+            
+            # 사용자 수 확인
+            users_info = self.user_manager.get_all_users()
+            total_users = users_info.get('count', 0)
+            
+            # 시스템 건강 상태 평가
+            system_health = 'healthy'
+            if not network_status.get('online_available', False):
+                system_health = 'degraded'  # 오프라인 모드로 동작
+            elif feedback_statistics.get('average_accuracy', 0) < 0.5:
+                system_health = 'warning'  # 해석 정확도 낮음
+            
+            return {
+                'status': 'success',
+                'network_status': network_status,
+                'feedback_statistics': feedback_statistics,
+                'total_users': total_users,
+                'system_health': system_health
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'network_status': {},
+                'feedback_statistics': {},
+                'total_users': 0,
+                'system_health': 'error',
+                'message': f'시스템 상태 조회 중 오류 발생: {str(e)}'
+            }
     
     def get_user_history(self, user_id: int, limit: int = 10) -> Dict[str, Any]:
         """
@@ -406,7 +439,50 @@ class AACInterpreterService:
                 'message': str
             }
         """
-        pass
+        try:
+            # 사용자 존재 확인
+            user_info = self.user_manager.get_user(user_id)
+            if user_info['status'] != 'success':
+                return {
+                    'status': 'error',
+                    'message': '사용자 정보를 찾을 수 없습니다.'
+                }
+            
+            # 컨텍스트 유효성 검증
+            validation = self.context_manager.validate_context(context)
+            if not validation['valid']:
+                return {
+                    'status': 'error',
+                    'message': f'컨텍스트 유효성 검증 실패: {", ".join(validation["errors"])}'
+                }
+            
+            # 컨텍스트 생성 및 사용자 히스토리에 추가
+            context_result = self.context_manager.create_context(
+                time=context.get('time'),
+                place=context.get('place'),
+                interaction_partner=context.get('interaction_partner'),
+                current_activity=context.get('current_activity'),
+                additional_info=context.get('additional_info'),
+                user_id=str(user_id)
+            )
+            
+            if context_result['status'] == 'success':
+                return {
+                    'status': 'success',
+                    'context_id': context_result['context_id'],
+                    'message': '사용자 컨텍스트가 성공적으로 업데이트되었습니다.'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'message': '컨텍스트 생성 중 오류가 발생했습니다.'
+                }
+                
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'컨텍스트 업데이트 중 오류 발생: {str(e)}'
+            }
     
     def get_cluster_information(self) -> Dict[str, Any]:
         """
@@ -419,7 +495,15 @@ class AACInterpreterService:
                 'total_clusters': int
             }
         """
-        pass
+        try:
+            return self.card_recommender.get_all_clusters_info()
+        except Exception as e:
+            return {
+                'status': 'error',
+                'clusters': [],
+                'total_clusters': 0,
+                'message': f'클러스터 정보 조회 중 오류 발생: {str(e)}'
+            }
     
     def update_user_persona(self, user_id: int, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -435,7 +519,7 @@ class AACInterpreterService:
                 'message': str
             }
         """
-        pass
+        return self.user_manager.update_user_persona(user_id, persona_updates)
     
     def delete_user(self, user_id: int, password: str) -> Dict[str, Any]:
         """
@@ -451,4 +535,35 @@ class AACInterpreterService:
                 'message': str
             }
         """
-        pass
+        try:
+            # 사용자 인증 확인
+            auth_result = self.authenticate_user(user_id, password)
+            if not auth_result.get('authenticated', False):
+                return {
+                    'status': 'error',
+                    'message': '인증에 실패했습니다. 비밀번호를 확인해주세요.'
+                }
+            
+            # 사용자 관련 데이터 삭제
+            # 1. 피드백 데이터 삭제
+            self.feedback_manager.delete_user_feedback(user_id)
+            
+            # 2. 대화 메모리 삭제
+            self.conversation_memory.clear_user_memory(user_id)
+            
+            # 3. 사용자 정보 삭제
+            delete_result = self.user_manager.delete_user(user_id)
+            
+            if delete_result['status'] == 'success':
+                return {
+                    'status': 'success',
+                    'message': f'사용자 {user_id}와 관련된 모든 데이터가 성공적으로 삭제되었습니다.'
+                }
+            else:
+                return delete_result
+                
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'사용자 삭제 중 오류 발생: {str(e)}'
+            }

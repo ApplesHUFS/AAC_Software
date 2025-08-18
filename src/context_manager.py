@@ -379,9 +379,15 @@ class ContextManager:
                 errors.append(f"Required context field missing or empty: {key}") 
         
         if context.get('time'):
-            time = context.get('time')
-            if int(time)<0 or int(time)>24:
-                warnings.append("Time value must be between 0 and 24")
+            time_str = str(context.get('time'))
+            # 시간이 숫자 형태인 경우에만 범위 검증
+            try:
+                time_val = int(time_str)
+                if time_val < 0 or time_val > 24:
+                    warnings.append("시간 값은 0과 24 사이여야 합니다.")
+            except ValueError:
+                # 시간이 "오전 9시", "저녁" 등 문자열 형태인 경우는 검증하지 않음
+                pass
 
 
         return {
