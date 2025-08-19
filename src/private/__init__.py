@@ -7,14 +7,12 @@ AI/ML 처리, 데이터 관리 등을 담당합니다.
 
 from .config_manager import ConfigManager
 from .card_recommender import CardRecommender
-from .card_selector import CardSelector
 from .card_interpreter import CardInterpreter
 from .conversation_memory import ConversationSummaryMemory
 
 __all__ = [
     'ConfigManager',
     'CardRecommender',
-    'CardSelector', 
     'CardInterpreter',
     'ConversationSummaryMemory'
 ]

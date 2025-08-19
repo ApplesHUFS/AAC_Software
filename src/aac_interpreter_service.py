@@ -7,7 +7,6 @@ from .public import UserManager, ContextManager, FeedbackManager
 from .private import (
     ConfigManager,
     CardRecommender, 
-    CardSelector,
     CardInterpreter,
     ConversationSummaryMemory
 )
@@ -21,8 +20,7 @@ class AACInterpreterService:
     
     Attributes:
         user_manager: 사용자 관리 컴포넌트
-        card_recommender: 카드 추천 컴포넌트
-        card_selector: 카드 선택 컴포넌트
+        card_recommender: 카드 추천 및 선택 컴포넌트 (통합)
         card_interpreter: 카드 해석 컴포넌트
         feedback_manager: 피드백 관리 컴포넌트
         context_manager: 상황 정보 관리 컴포넌트
@@ -50,13 +48,12 @@ class AACInterpreterService:
             config=config
         )
         
-        # 카드 추천, 선택 및 해석 시스템
+        # 카드 추천 및 해석 시스템
         self.card_recommender = CardRecommender(
             cluster_tags_path=str(cluster_config['cluster_tags_path']),
             embeddings_path=str(cluster_config['embeddings_path']),
             clustering_results_path=str(cluster_config['clustering_results_path'])
         )
-        self.card_selector = CardSelector(self.card_recommender)
         self.card_interpreter = CardInterpreter(config)
     
     def register_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
@@ -119,64 +116,21 @@ class AACInterpreterService:
         """
         return self.user_manager.get_user(user_id)
     
-    def recommend_cards(self, user_id: int, num_cards: int = 4) -> Dict[str, Any]:
-        """
-        사용자에게 카드 추천 (제시된 흐름의 3.2단계)
-        
-        Args:
-            user_id: 사용자 ID
-            num_cards: 추천할 카드 수 (1-4)
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'recommended_cards': List[str],
-                'clusters_used': List[int],
-                'message': str
-            }
-        """
-        # 사용자 정보 조회
-        user_info = self.user_manager.get_user(user_id)
-        if user_info['status'] != 'success':
-            return {
-                'status': 'error',
-                'recommended_cards': [],
-                'clusters_used': [],
-                'message': '사용자 정보를 찾을 수 없습니다.'
-            }
-        
-        # 페르소나 기반 카드 추천
-        persona = {
-            'interesting_topics': user_info['user'].get('interesting_topics', []),
-            'preferred_category_types': user_info['user'].get('preferred_category_types', [])
-        }
-        
-        recommendation = self.card_recommender.recommend_cards(persona, num_cards)
-        
-        if recommendation['status'] == 'success':
-            return {
-                'status': 'success',
-                'recommended_cards': recommendation['cards'],
-                'clusters_used': recommendation['clusters_used'],
-                'message': recommendation['message']
-            }
-        else:
-            return recommendation
-    
     def get_card_selection_interface(self, user_id: int, context: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        카드 선택 인터페이스 데이터 생성 (흐름의 3.3단계)
+        """카드 선택 인터페이스 데이터 생성.
+        
+        실제 화면에 표시할 20개 카드 (추천 70% + 랜덤 30%)를 생성합니다.
+        사용자는 이 중에서 1-4개 카드를 선택할 수 있습니다.
         
         Args:
             user_id: 사용자 ID
             context: 현재 상황 정보
             
         Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'interface_data': Dict,
-                'message': str
-            }
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - interface_data (Dict): 선택 인터페이스 데이터
+                - message (str): 결과 메시지
         """
         # 사용자 정보 조회
         user_info = self.user_manager.get_user(user_id)
@@ -194,21 +148,20 @@ class AACInterpreterService:
             'preferred_category_types': user_data.get('preferred_category_types', [])
         }
         
-        # 카드 선택 인터페이스 데이터 생성
-        return self.card_selector.get_selection_interface_data(persona, context)
+        # 카드 선택 인터페이스 데이터 생성 (CardRecommender로 통합)
+        return self.card_recommender.get_card_selection_interface(persona, context)
     
     def validate_card_selection(self, selected_cards: List[str], available_options: List[str]) -> Dict[str, Any]:
-        """
-        사용자 카드 선택 검증
+        """사용자 카드 선택 검증.
         
         Args:
             selected_cards: 선택된 카드들
             available_options: 선택 가능했던 옵션들
             
         Returns:
-            Dict[str, Any]: 검증 결과
+            Dict containing validation result.
         """
-        return self.card_selector.validate_user_selection(selected_cards, available_options)
+        return self.card_recommender.validate_card_selection(selected_cards, available_options)
     
     def interpret_cards(self, 
                        user_id: int,
