@@ -1,13 +1,16 @@
 from typing import Dict, List, Optional, Any
 
-from .user_manager import UserManager
-from .card_recommender import CardRecommender
-from .card_selector import CardSelector
-from .card_interpreter import CardInterpreter
-from .feedback_manager import FeedbackManager
-from .context_manager import ContextManager
-from .conversation_memory import ConversationSummaryMemory
-from .config_manager import ConfigManager
+# Public 모듈 - 외부 API 및 사용자 인터페이스
+from .public import UserManager, ContextManager, FeedbackManager
+
+# Private 모듈 - 내부 비즈니스 로직 및 데이터 처리  
+from .private import (
+    ConfigManager,
+    CardRecommender, 
+    CardSelector,
+    CardInterpreter,
+    ConversationSummaryMemory
+)
 
 
 class AACInterpreterService:
