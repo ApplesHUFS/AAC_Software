@@ -2,18 +2,36 @@ from typing import Dict, List, Optional, Any
 
 from .user_manager import UserManager
 from .card_recommender import CardRecommender
+from .card_selector import CardSelector
 from .card_interpreter import CardInterpreter
 from .feedback_manager import FeedbackManager
-from .network_utils import NetworkUtils
 from .context_manager import ContextManager
 from .conversation_memory import ConversationSummaryMemory
 from .config_manager import ConfigManager
 
 
 class AACInterpreterService:
-    """AAC 카드 해석 시스템의 메인 컨트롤러"""
+    """AAC 카드 해석 시스템의 메인 컨트롤러.
+    
+    사용자 페르소나 기반 AAC 카드 추천, 해석, 피드백 수집을 통한
+    개인화된 의사소통 지원 시스템입니다.
+    
+    Attributes:
+        user_manager: 사용자 관리 컴포넌트
+        card_recommender: 카드 추천 컴포넌트
+        card_selector: 카드 선택 컴포넌트
+        card_interpreter: 카드 해석 컴포넌트
+        feedback_manager: 피드백 관리 컴포넌트
+        context_manager: 상황 정보 관리 컴포넌트
+        conversation_memory: 대화 메모리 관리 컴포넌트
+    """
     
     def __init__(self, config: Optional[Dict] = None):
+        """AACInterpreterService 초기화.
+        
+        Args:
+            config: 선택적 설정 딕셔너리. None이면 기본 설정 사용.
+        """
         self.config = config or {}
         self.config_manager = ConfigManager()
         
@@ -29,53 +47,38 @@ class AACInterpreterService:
             config=config
         )
         
-        # 카드 추천 및 해석 시스템
+        # 카드 추천, 선택 및 해석 시스템
         self.card_recommender = CardRecommender(
             cluster_tags_path=str(cluster_config['cluster_tags_path']),
             embeddings_path=str(cluster_config['embeddings_path']),
             clustering_results_path=str(cluster_config['clustering_results_path'])
         )
+        self.card_selector = CardSelector(self.card_recommender)
         self.card_interpreter = CardInterpreter(config)
-        
-        self.network_utils = NetworkUtils(config)
     
     def register_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        새 사용자 등록
+        """새 사용자 등록 및 페르소나 생성.
         
         Args:
-            persona: 사용자 페르소나 정보 {
-                'age': str,
-                'gender': str,
-                'disability_type': str,
-                'communication_characteristics': str,
-                'selection_complexity': str,
-                'interesting_topics': List[str],
-                'password': str
-            }
+            persona: 사용자 페르소나 정보. UserManager.create_user() 참조.
             
         Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'user_id': int,
-                'message': str
-            }
+            Dict containing user registration result.
         """
         return self.user_manager.create_user(persona)
     
     def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
-        """
-        사용자 인증
+        """사용자 인증 및 세션 정보 반환.
         
         Args:
             user_id: 사용자 ID
-            password: 비밀번호
+            password: 사용자 비밀번호
             
         Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'authenticated': bool,
-                'user_info': Dict or None,
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - authenticated (bool): 인증 성공 여부
+                - user_info (Dict): 사용자 페르소나 정보 (인증 성공시)
                 'message': str
             }
         """
@@ -142,8 +145,7 @@ class AACInterpreterService:
         # 페르소나 기반 카드 추천
         persona = {
             'interesting_topics': user_info['user'].get('interesting_topics', []),
-            'preferred_category_types': user_info['user'].get('preferred_category_types', []),
-            'selection_complexity': user_info['user'].get('selection_complexity', 'moderate')
+            'preferred_category_types': user_info['user'].get('preferred_category_types', [])
         }
         
         recommendation = self.card_recommender.recommend_cards(persona, num_cards)
@@ -157,6 +159,53 @@ class AACInterpreterService:
             }
         else:
             return recommendation
+    
+    def get_card_selection_interface(self, user_id: int, context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        카드 선택 인터페이스 데이터 생성 (흐름의 3.3단계)
+        
+        Args:
+            user_id: 사용자 ID
+            context: 현재 상황 정보
+            
+        Returns:
+            Dict[str, Any]: {
+                'status': str,
+                'interface_data': Dict,
+                'message': str
+            }
+        """
+        # 사용자 정보 조회
+        user_info = self.user_manager.get_user(user_id)
+        if user_info['status'] != 'success':
+            return {
+                'status': 'error',
+                'interface_data': {},
+                'message': '사용자 정보를 찾을 수 없습니다.'
+            }
+        
+        # 페르소나 정보 준비
+        user_data = user_info['user']
+        persona = {
+            'interesting_topics': user_data.get('interesting_topics', []),
+            'preferred_category_types': user_data.get('preferred_category_types', [])
+        }
+        
+        # 카드 선택 인터페이스 데이터 생성
+        return self.card_selector.get_selection_interface_data(persona, context)
+    
+    def validate_card_selection(self, selected_cards: List[str], available_options: List[str]) -> Dict[str, Any]:
+        """
+        사용자 카드 선택 검증
+        
+        Args:
+            selected_cards: 선택된 카드들
+            available_options: 선택 가능했던 옵션들
+            
+        Returns:
+            Dict[str, Any]: 검증 결과
+        """
+        return self.card_selector.validate_user_selection(selected_cards, available_options)
     
     def interpret_cards(self, 
                        user_id: int,
@@ -355,9 +404,88 @@ class AACInterpreterService:
                 'message': f'피드백은 기록되었으나 메모리 업데이트 중 오류 발생: {str(e)}'
             }
     
+    def request_partner_confirmation(self,
+                                   user_id: int,
+                                   cards: List[str],
+                                   context: Dict[str, Any],
+                                   interpretations: List[str],
+                                   partner_info: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Partner에게 해석 확인 요청 (흐름의 3.5단계)
+        
+        Args:
+            user_id: 사용자 ID
+            cards: 선택된 카드들
+            context: 상황 정보
+            interpretations: 생성된 3개 해석
+            partner_info: Partner 정보
+            
+        Returns:
+            Dict[str, Any]: 확인 요청 결과
+        """
+        return self.feedback_manager.request_interpretation_confirmation(
+            user_id=user_id,
+            cards=cards,
+            context=context,
+            interpretations=interpretations,
+            partner_info=partner_info
+        )
     
+    def submit_partner_feedback(self,
+                              confirmation_id: str,
+                              selected_interpretation_index: Optional[int] = None,
+                              direct_feedback: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Partner 피드백 제출 처리
+        
+        Args:
+            confirmation_id: 확인 요청 ID
+            selected_interpretation_index: 선택된 해석 인덱스 (0-2)
+            direct_feedback: 직접 입력 피드백
+            
+        Returns:
+            Dict[str, Any]: 피드백 처리 결과
+        """
+        feedback_result = self.feedback_manager.submit_partner_confirmation(
+            confirmation_id=confirmation_id,
+            selected_interpretation_index=selected_interpretation_index,
+            direct_feedback=direct_feedback
+        )
+        
+        if feedback_result['status'] == 'success':
+            # Partner 피드백을 기존 피드백 시스템에도 기록
+            feedback_data = feedback_result['feedback_result']
+            final_interpretation = (
+                feedback_data.get('selected_interpretation') or 
+                feedback_data.get('direct_feedback')
+            )
+            
+            if final_interpretation:
+                # 대화 메모리 업데이트
+                self.conversation_memory.add_conversation_memory(
+                    user_id=feedback_data['user_id'],
+                    cards=feedback_data['cards'],
+                    context=feedback_data['context'],
+                    interpretations=feedback_data['interpretations'],
+                    selected_interpretation=feedback_data.get('selected_interpretation'),
+                    user_correction=feedback_data.get('direct_feedback')
+                )
+        
+        return feedback_result
     
-    def update_user_context(self, user_id: int, place: str, interaction_partner: str, current_activity: str) -> Dict[str, Any]:
+    def get_pending_partner_confirmations(self, partner_filter: Optional[str] = None) -> Dict[str, Any]:
+        """
+        대기 중인 Partner 확인 요청들 조회
+        
+        Args:
+            partner_filter: 특정 Partner로 필터링
+            
+        Returns:
+            Dict[str, Any]: 대기 중인 확인 요청들
+        """
+        return self.feedback_manager.get_pending_confirmations(partner_filter)
+    
+    def update_user_context(self, user_id: int, place: str, interaction_partner: str, current_activity: Optional[str] = None) -> Dict[str, Any]:
         """
         사용자 컨텍스트 업데이트
         
@@ -365,7 +493,7 @@ class AACInterpreterService:
             user_id: 사용자 ID
             place: 장소 (직접 입력, 필수)
             interaction_partner: 대화 상대 (직접 입력, 필수) 
-            current_activity: 현재 활동 (직접 입력, 필수)
+            current_activity: 현재 활동 (직접 입력, 옵션)
             
         Returns:
             Dict[str, Any]: {

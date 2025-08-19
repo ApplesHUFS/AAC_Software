@@ -4,26 +4,45 @@ import numpy as np
 import random
 from pathlib import Path
 
+
 class CardRecommender:
-    """페르소나 기반 카드 추천 시스템"""
+    """페르소나 기반 AAC 카드 추천 시스템.
+    
+    사용자의 관심 주제(interesting_topics)와 페르소나 정보를 기반으로
+    개인화된 AAC 카드를 추천합니다. 클러스터링된 카드 데이터와 
+    CLIP 임베딩을 활용하여 관련성 높은 카드들을 우선 추천합니다.
+    
+    Attributes:
+        cluster_tags: 클러스터 ID별 태그 리스트
+        embeddings: 정규화된 카드 임베딩 배열
+        clustered_files: 클러스터 ID별 카드 파일 리스트
+        filename_to_idx: 카드 파일명 -> 임베딩 인덱스 매핑
+    """
 
     def __init__(self, 
                  cluster_tags_path: Optional[str] = None,
                  embeddings_path: Optional[str] = None,
                  clustering_results_path: Optional[str] = None):
-        # 설정과 데이터를 로드하여 내부 변수 초기화
+        """CardRecommender 초기화.
+        
+        Args:
+            cluster_tags_path: 클러스터 태그 JSON 파일 경로
+            embeddings_path: CLIP 임베딩 JSON 파일 경로  
+            clustering_results_path: 클러스터링 결과 JSON 파일 경로
+        """
+        # 데이터 구조 초기화
         self.cluster_tags = {}          # 클러스터 ID별 태그 리스트
         self.embeddings = None          # 카드 임베딩 배열 (np.ndarray)
         self.clustered_files = {}       # 클러스터 ID별 카드 파일 리스트
         self.filename_to_idx = {}       # 카드 파일명 -> 임베딩 인덱스 매핑
         
-        # 클러스터 태그 읽기
+        # 클러스터 태그 로드
         if cluster_tags_path and Path(cluster_tags_path).exists():
             with open(cluster_tags_path, 'r', encoding='utf-8') as f:
                 cluster_tags_raw = json.load(f)
             self.cluster_tags = {int(k): v for k, v in cluster_tags_raw.items()}
         
-        # 임베딩 및 클러스터링 결과 읽기
+        # 임베딩 데이터 로드 및 정규화
         if embeddings_path and Path(embeddings_path).exists():
             with open(embeddings_path, 'r', encoding='utf-8') as f:
                 embed_data = json.load(f)
@@ -31,23 +50,33 @@ class CardRecommender:
             img_embs = np.array(embed_data['image_embeddings'])
             txt_embs = np.array(embed_data['text_embeddings'])
             self.embeddings = (img_embs + txt_embs) / 2
-            # 정규화
+            # L2 정규화 적용
             norms = np.linalg.norm(self.embeddings, axis=1, keepdims=True) + 1e-12
             self.embeddings = self.embeddings / norms
             self.filename_to_idx = {fn: i for i, fn in enumerate(self.filenames)}
         
+        # 클러스터링 결과 로드
         if clustering_results_path and Path(clustering_results_path).exists():
             with open(clustering_results_path, 'r', encoding='utf-8') as f:
                 cluster_data = json.load(f)
             self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
 
     def recommend_cards(self, persona: Dict[str, Any], num_cards: int = 4) -> Dict[str, Any]:
-        """
-        사용자 페르소나 기반으로 카드 추천 생성
+        """사용자 페르소나 기반 개인화 카드 추천.
         
-        전략 요약:
-        - 선호 클러스터 기반 초기 카드 선택
-        - 클러스터 간 유사도 이용해 다양성 확보 (비슷한/서로 다른 클러스터 혼합)
+        사용자의 interesting_topics를 우선 고려하여 관련 카드들을 추천하고,
+        다양성 확보를 위해 여러 클러스터에서 카드를 선택합니다.
+        
+        Args:
+            persona: 사용자 페르소나 정보 (interesting_topics 포함)
+            num_cards: 추천할 카드 수 (기본값: 4)
+            
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - recommended_cards (List[str]): 추천된 카드 파일명 리스트
+                - recommendation_reasons (List[str]): 추천 이유
+                - message (str): 결과 메시지
         - 추천 카드 간 중복 최소화, 카드 사용 빈도에 따른 가중치 부여
         - 반환되는 카드 수는 요청에 준함 (1-4장)
         """

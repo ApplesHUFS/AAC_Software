@@ -9,9 +9,29 @@ from langchain_core.messages import HumanMessage, AIMessage
 
 
 class ConversationSummaryMemory:
-    """대화 요약 메모리 - AAC 카드 해석과 연결성을 학습하고 요약하여 저장"""
+    """대화 요약 메모리 관리 시스템.
+    
+    LangChain의 ConversationSummaryMemory를 활용하여 카드 해석과 컨텍스트의 
+    연결성을 학습하고 요약하여 저장합니다. 향후 카드 해석 시 과거 패턴을 
+    참조하여 더 정확한 해석을 제공할 수 있도록 돕습니다.
+    
+    Attributes:
+        memory_file_path: 메모리 데이터 저장 파일 경로
+        config: 설정 딕셔너리
+        memory_data: 사용자별 메모리 데이터
+        llm: LangChain ChatOpenAI 모델
+        langchain_enabled: LangChain 사용 가능 여부
+        openai_client: OpenAI API 클라이언트
+        openai_enabled: OpenAI API 사용 가능 여부
+    """
     
     def __init__(self, memory_file_path: Optional[str] = None, config: Optional[Dict] = None):
+        """ConversationSummaryMemory 초기화.
+        
+        Args:
+            memory_file_path: 메모리 파일 저장 경로. None이면 기본값 사용.
+            config: 설정 딕셔너리. None이면 기본값 사용.
+        """
         self.memory_file_path = memory_file_path or "user_data/conversation_memory.json"
         self.config = config or {}
         self.memory_data = {
@@ -35,7 +55,7 @@ class ConversationSummaryMemory:
             self.llm = None
             self.langchain_enabled = False
         
-        # Fallback to OpenAI client
+        # OpenAI 클라이언트 초기화 (fallback용)
         try:
             self.openai_client = OpenAI()
             self.openai_enabled = True
@@ -74,20 +94,24 @@ class ConversationSummaryMemory:
                               interpretations: List[str],
                               selected_interpretation: Optional[str] = None,
                               user_correction: Optional[str] = None) -> Dict[str, Any]:
-        """
-        새로운 대화 기억을 추가하고 요약
+        """새로운 대화 기억을 추가하고 요약.
+        
+        카드 조합과 컨텍스트, 최종 해석의 연관성을 학습하여 메모리에 저장합니다.
+        LangChain의 ConversationSummaryMemory를 사용하여 요약을 생성합니다.
         
         Args:
             user_id: 사용자 ID
-            cards: 사용된 AAC 카드들
-            context: 상황 정보
-            interpretations: 생성된 해석들
-            selected_interpretation: 선택된 해석 (있는 경우)
-            user_correction: 사용자 수정 내용 (있는 경우)
+            cards: 사용된 AAC 카드 파일명 리스트
+            context: 상황 정보 (time, place, interaction_partner, current_activity)
+            interpretations: 생성된 3개 해석 리스트
+            selected_interpretation: Partner가 선택한 올바른 해석
+            user_correction: Partner가 직접 입력한 올바른 해석
         
         Returns:
-            Dict[str, Any]: {
-                'status': str,
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - summary_updated (bool): 요약 업데이트 여부
+                - message (str): 결과 메시지
                 'summary': str,
                 'memory_updated': bool,
                 'message': str
@@ -180,7 +204,6 @@ class ConversationSummaryMemory:
         conversation_history = user_memory["conversation_history"]
         
         if len(conversation_history) == 0:
-            # 의도: 대화 기록이 없으면 빈 요약
             user_memory["summary"] = "아직 대화 기록이 없습니다."
             return {"summary": "아직 대화 기록이 없습니다."}
         
@@ -229,16 +252,13 @@ class ConversationSummaryMemory:
                 
             except Exception as e:
                 print(f"LangChain 요약 생성 실패: {e}")
-                # 의도: LangChain 실패 시 OpenAI client로 대안 제공 (메모리는 필수이므로)
                 return self._fallback_openai_summary(user_memory, conversation_history)
         
-        # 의도: LangChain 초기화 실패 시 OpenAI client 사용 (메모리 기능은 필수)
         return self._fallback_openai_summary(user_memory, conversation_history)
     
     def _fallback_openai_summary(self, user_memory: Dict, conversation_history: List[Dict]) -> Dict[str, Any]:
-        """LangChain 실패 시 OpenAI client로 요약 생성 (메모리는 워크플로우 필수 요소)"""
+        """LangChain 실패 시 OpenAI client로 요약 생성"""
         if not self.openai_enabled:
-            # 의도: OpenAI도 없으면 완전 실패 - 워크플로우 6단계는 완벽해야 함
             raise RuntimeError("대화 메모리 생성 실패: OpenAI API가 필요합니다. 환경변수 OPENAI_API_KEY를 확인하세요.")
         
         try:
@@ -269,8 +289,7 @@ class ConversationSummaryMemory:
             return {"summary": new_summary}
             
         except Exception as e:
-            # 의도: OpenAI 실패 시 완전 실패 - 불완전한 메모리보다 에러로 문제 파악
-            raise RuntimeError(f"대화 메모리 생성 완전 실패: {str(e)}. 완벽한 시스템을 위해 메모리 기능은 필수입니다.")
+            raise RuntimeError(f"대화 메모리 생성 실패: {str(e)}")
     
     def _create_summary_prompt(self, conversations: List[Dict], existing_summary: str) -> str:
         """요약 생성을 위한 프롬프트 작성"""
@@ -309,7 +328,20 @@ class ConversationSummaryMemory:
         return prompt
     
     def get_user_memory_summary(self, user_id: int) -> Dict[str, Any]:
-        """사용자의 메모리 요약 조회"""
+        """사용자의 대화 메모리 요약 조회.
+        
+        카드 해석 시 참고할 수 있도록 사용자의 과거 대화 패턴을 요약하여 반환합니다.
+        
+        Args:
+            user_id: 사용자 ID
+            
+        Returns:
+            Dict containing:
+                - status (str): 'success'
+                - summary (str): 대화 패턴 요약
+                - conversation_count (int): 대화 횟수
+                - patterns_count (int): 학습된 패턴 수
+        """
         user_id_str = str(user_id)
         
         if user_id_str not in self.memory_data["user_memories"]:
@@ -330,7 +362,22 @@ class ConversationSummaryMemory:
         }
     
     def get_card_usage_patterns(self, user_id: int, card_combination: List[str]) -> Dict[str, Any]:
-        """특정 카드 조합에 대한 사용자의 과거 패턴 조회"""
+        """특정 카드 조합의 과거 사용 패턴 조회.
+        
+        사용자가 해당 카드 조합을 과거에 어떤 의미로 사용했는지 패턴을 조회하여
+        카드 해석 시 참고할 수 있도록 합니다.
+        
+        Args:
+            user_id: 사용자 ID
+            card_combination: 조회할 카드 파일명 리스트
+            
+        Returns:
+            Dict containing:
+                - status (str): 'success'
+                - patterns (List[str]): 과거 해석 패턴들
+                - frequency (int): 사용 빈도 (있는 경우)
+                - suggestions (List[str]): 최근 3개 해석 제안
+        """
         user_id_str = str(user_id)
         
         if user_id_str not in self.memory_data["user_memories"]:

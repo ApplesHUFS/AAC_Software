@@ -1,29 +1,43 @@
 from openai import OpenAI
-from .network_utils import NetworkUtils
 from .config_manager import ConfigManager
 import json
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 
+
 class CardInterpreter:
-    """AAC 카드 해석 시스템 (온라인/오프라인 분기)"""
+    """AAC 카드 해석 엔진.
+    
+    사용자가 선택한 카드 조합을 페르소나, 컨텍스트, 대화 메모리를 기반으로
+    해석하여 Top-3 가능한 의미를 생성합니다. OpenAI GPT를 활용합니다.
+    
+    Attributes:
+        config: 설정 딕셔너리
+        config_manager: 설정 관리자
+        openai_client: OpenAI API 클라이언트
+        openai_enabled: OpenAI API 사용 가능 여부
+    """
 
     def __init__(self, config: Optional[Dict] = None):
+        """CardInterpreter 초기화.
+        
+        Args:
+            config: 설정 딕셔너리. None이면 기본 설정 사용.
+        """
         self.config = config or {}
         self.config_manager = ConfigManager()
         
-        # 모델 설정 가져오기
+        # 모델 설정 로드
         model_config = self.config_manager.get_model_config()
         self.model = model_config['openai_model']
         self.temperature = model_config['temperature']
         self.max_tokens = model_config['max_tokens']
         self.api_timeout = model_config['timeout']
         
-        self.network_utils = NetworkUtils(self.config)
         self.feedback_counter = 100000
 
-        # OpenAI API 클라이언트
+        # OpenAI API 클라이언트 초기화
         try:
             self.openai_client = OpenAI()
             self.openai_enabled = True
@@ -31,13 +45,31 @@ class CardInterpreter:
             self.openai_client = None
             self.openai_enabled = False
 
-
     def interpret_cards(self, 
         persona: Dict[str, Any],
         context: Dict[str, Any],
         cards: List[str],
         past_interpretation: str = ""
     ) -> Dict[str, Any]:
+        """선택된 AAC 카드 조합 해석.
+        
+        페르소나, 컨텍스트, 과거 해석 이력을 종합하여 
+        카드 조합의 의미를 3가지 해석으로 생성합니다.
+        
+        Args:
+            persona: 사용자 페르소나 정보
+            context: 현재 상황 정보 (time, place, interaction_partner, current_activity)
+            cards: 선택된 카드 파일명 리스트 (1-4개)
+            past_interpretation: 과거 해석 이력 요약
+            
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - interpretations (List[str]): 3개의 해석 결과
+                - method (str): 'online' 또는 'offline'
+                - timestamp (str): 해석 생성 시간
+                - message (str): 결과 메시지
+        """
         timestamp = datetime.now().isoformat()
         validation = self.validate_interpretation_input(persona, context, cards)
         if not validation['valid']:
@@ -49,16 +81,11 @@ class CardInterpreter:
                 'message': f"입력 검증 실패: {', '.join(validation['errors'])}"
             }
 
-        # 의도: OpenAI API 필수 사용 검증 (워크플로우 4단계 - 완벽한 해석을 위해 fallback 없음)
+        # OpenAI API를 통한 해석 생성
         if not self.openai_enabled:
             raise RuntimeError("OpenAI API 클라이언트가 초기화되지 않았습니다. 환경변수 OPENAI_API_KEY를 확인하세요.")
         
-        # 의도: 네트워크 연결 필수 검증 (온라인 해석만 허용)
-        net_info = self.network_utils.is_online_mode_available()
-        if not net_info['available']:
-            raise ConnectionError(f"네트워크 연결 실패: {net_info.get('reason', '알 수 없는 오류')}")
-
-        # 의도: OpenAI API로만 해석 수행 (완벽성을 위해 대안 방법 제공하지 않음)
+        # OpenAI API 해석 수행
         try:
             interpretations = self._generate_online_interpretations(persona, context, cards, past_interpretation)
             if not interpretations or len(interpretations) != 3:
@@ -74,8 +101,7 @@ class CardInterpreter:
                 'message': f'OpenAI API 해석 완료. 피드백 ID: {feedback_id}'
             }
         except Exception as e:
-            # 의도: 완벽하지 않은 해석 결과 대신 명확한 에러로 문제 지점 식별
-            raise RuntimeError(f"카드 해석 완전 실패: {str(e)}. context 및 persona 및 대화 요약된 메모리 기반 OpenAI API 해석이 필수입니다. 시스템을 완벽하게 수정 후 재시도하세요.")
+            raise RuntimeError(f"카드 해석 실패: {str(e)}")
 
     def validate_interpretation_input(self, 
         persona: Dict[str, Any],

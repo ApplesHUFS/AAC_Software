@@ -263,60 +263,6 @@ class TestAACInterpreterService(unittest.TestCase):
         self.assertEqual(feedback_result['status'], 'success')
         self.assertIn('피드백이 기록되었으며', feedback_result['message'])
     
-    def test_get_system_status(self):
-        """시스템 상태 조회 테스트"""
-        # NetworkUtils 모킹
-        self.service.network_utils.get_network_info = Mock(return_value={
-            'online_available': True,
-            'connectivity': {'connected': True},
-            'api_access': {'accessible': True}
-        })
-        
-        # FeedbackManager 모킹
-        self.service.feedback_manager.get_feedback_statistics = Mock(return_value={
-            'total_attempts': 10,
-            'completed_feedback': 8,
-            'average_accuracy': 0.8
-        })
-        
-        # UserManager 모킹
-        self.service.user_manager.get_all_users = Mock(return_value={
-            'count': 5
-        })
-        
-        status_result = self.service.get_system_status()
-        
-        self.assertEqual(status_result['status'], 'success')
-        self.assertEqual(status_result['total_users'], 5)
-        self.assertEqual(status_result['system_health'], 'healthy')
-        self.assertTrue(status_result['network_status']['online_available'])
-    
-    def test_get_user_history(self):
-        """사용자 이력 조회 테스트"""
-        user_id = 1
-        
-        # 각 매니저 모킹
-        self.service.feedback_manager.get_user_feedback_history = Mock(return_value={
-            'history': [{'feedback_id': 1, 'user_id': 1}],
-            'total_count': 1
-        })
-        
-        self.service.feedback_manager.get_user_interpretation_summary = Mock(return_value={
-            'summary': '총 1회의 해석 시도'
-        })
-        
-        self.service.conversation_memory.get_user_memory_summary = Mock(return_value={
-            'summary': '음식 관련 카드 주로 사용',
-            'conversation_count': 1
-        })
-        
-        history_result = self.service.get_user_history(user_id)
-        
-        self.assertEqual(history_result['status'], 'success')
-        self.assertEqual(history_result['total_attempts'], 1)
-        self.assertEqual(history_result['conversation_count'], 1)
-        self.assertIn('음식', history_result['memory_summary'])
-    
     def test_update_user_context(self):
         """사용자 컨텍스트 업데이트 테스트"""
         # 사용자 생성
@@ -357,37 +303,9 @@ class TestAACInterpreterService(unittest.TestCase):
         self.assertEqual(update_result['status'], 'success')
         self.assertEqual(update_result['context_id'], 'ctx_123')
     
-    def test_delete_user(self):
-        """사용자 삭제 테스트"""
-        # 사용자 생성
-        persona = {
-            'age': '25',
-            'gender': 'male',
-            'disability_type': '자폐스펙트럼 장애',
-            'communication_characteristics': '단순한 문장 선호',
-            'selection_complexity': 'simple',
-            'interesting_topics': ['음식'],
-            'password': 'test123'
-        }
-        
-        register_result = self.service.register_user(persona)
-        user_id = register_result['user_id']
-        
-        # 관련 매니저들 모킹
-        self.service.feedback_manager.delete_user_feedback = Mock(return_value={
-            'status': 'success'
-        })
-        
-        self.service.conversation_memory.clear_user_memory = Mock(return_value={
-            'status': 'success'
-        })
-        
-        # 사용자 삭제 테스트
-        delete_result = self.service.delete_user(user_id, 'test123')
-        
-        self.assertEqual(delete_result['status'], 'success')
-        self.assertIn('모든 데이터가 성공적으로 삭제', delete_result['message'])
-    
+        self.assertEqual(update_result['status'], 'success')
+        self.assertIn('컨텍스트가 업데이트', update_result['message'])
+
     def test_update_user_persona(self):
         """사용자 페르소나 업데이트 테스트"""
         # 사용자 생성

@@ -2,58 +2,72 @@ from typing import Dict, List, Optional, Any
 import json
 import os
 
+
 class UserManager:
-    """사용자 관리를 담당하는 추상화된 클래스"""
+    """사용자 페르소나 및 계정 관리 시스템.
+    
+    AAC 시스템 사용자의 페르소나 정보를 관리하고 인증을 처리합니다.
+    페르소나는 개인화된 카드 추천과 해석에 핵심적으로 사용됩니다.
+    
+    Attributes:
+        users_file_path: 사용자 데이터 저장 파일 경로
+        users: 메모리상 사용자 데이터 딕셔너리
+        next_id: 다음 사용자 ID
+    """
     
     def __init__(self, users_file_path: Optional[str] = None):
-        self.users_file_path=users_file_path or "users.json"
-        self.users={}
-        self.next_id=1  # 1부터 user id 시작
+        """UserManager 초기화.
+        
+        Args:
+            users_file_path: 사용자 데이터 파일 경로. None이면 기본값 사용.
+        """
+        self.users_file_path = users_file_path or "users.json"
+        self.users = {}
+        self.next_id = 1  # 사용자 ID는 1부터 시작
 
-        # 기존에 파일이 존재하면 로드하기
+        # 기존 사용자 데이터 로드
         if os.path.exists(self.users_file_path):
             try:
                 with open(self.users_file_path, 'r', encoding='utf-8') as f:
-                    data=json.load(f)
-                    self.users={int(k):v for k,v in data.items()}   # users에 기존 사용자 정보들 저장
+                    data = json.load(f)
+                    self.users = {int(k): v for k, v in data.items()}
                     
                     if self.users:
-                        self.next_id=max(self.users.keys()) +1  # 만약 users에 정보가 있다면 다음 user id는 +1
+                        self.next_id = max(self.users.keys()) + 1
             except Exception as e:
-                # 의도: 사용자 데이터 로드 실패 시 명확한 에러로 문제 파악
                 print(f"사용자 데이터 파일 로드 실패: {e}")
-                self.users={}
-                self.next_id=1
+                self.users = {}
+                self.next_id = 1
     
     def create_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        새 사용자 생성
+        """새 사용자 생성 및 페르소나 등록.
+        
+        데이터셋 스키마에 맞는 페르소나 정보를 검증하고 사용자를 생성합니다.
         
         Args:
-            persona: 사용자 페르소나 정보 {
-                'age': str (필수),
-                'gender': str (선택지, 필수),
-                'disability_type': str (선택지, 필수),
-                'communication_characteristics': str (직접입력, 필수),
-                'interesting_topics': List[str] (직접입력, 필수),
-                'password': str (필수)
-            }
-            
+            persona: 사용자 페르소나 정보. 다음 필드들이 필수:
+                - age (int): 사용자 나이 (1-100)
+                - gender (str): 성별 ('male' 또는 'female')
+                - disability_type (str): 장애 유형
+                  ('의사소통 장애', '자폐스펙트럼 장애', '지적 장애')
+                - communication_characteristics (str): 의사소통 특징
+                - interesting_topics (List[str]): 관심 주제 목록
+                - password (str): 사용자 비밀번호
+                
         Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'user_id': int,
-                'message': str
-            }
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - user_id (int): 생성된 사용자 ID (-1 if error)
+                - message (str): 결과 메시지
         """
         try:
-            # 필수 필드 검증 (데이터셋 스키마 기준)
-            required_fields = ['age', 'gender', 'disability_type', 'communication_characteristics', 'interesting_topics', 'password']
-            missing_fields = []
-            
-            for field in required_fields:
-                if field not in persona or not persona[field]:
-                    missing_fields.append(field)
+            # 필수 필드 검증
+            required_fields = [
+                'age', 'gender', 'disability_type', 
+                'communication_characteristics', 'interesting_topics', 'password'
+            ]
+            missing_fields = [field for field in required_fields 
+                            if field not in persona or not persona[field]]
             
             if missing_fields:
                 return {
@@ -62,7 +76,7 @@ class UserManager:
                     'message': f'필수 필드가 누락되었습니다: {", ".join(missing_fields)}'
                 }
             
-            # age는 정수형이어야 함 (데이터셋 스키마)
+            # 나이 검증
             try:
                 age_int = int(persona['age'])
                 if age_int < 1 or age_int > 100:
@@ -75,9 +89,8 @@ class UserManager:
                 }
             
             # 선택지 검증 (데이터셋 스키마 기준)
-            valid_genders = ['male', 'female']  # 데이터셋 스키마
-            valid_disability_types = ['의사소통 장애', '자폐스펙트럼 장애', '지적 장애']  # 데이터셋 스키마
-            valid_selection_complexity = ['simple', 'moderate', 'complex']  # 데이터셋 스키마
+            valid_genders = ['male', 'female']
+            valid_disability_types = ['의사소통 장애', '자폐스펙트럼 장애', '지적 장애']
             
             if persona['gender'] not in valid_genders:
                 return {
@@ -93,15 +106,7 @@ class UserManager:
                     'message': f'장애유형은 다음 중 하나여야 합니다: {", ".join(valid_disability_types)}'
                 }
             
-            # selection_complexity 검증 (있는 경우)
-            if 'selection_complexity' in persona and persona['selection_complexity'] not in valid_selection_complexity:
-                return {
-                    'status': 'error',
-                    'user_id': -1,
-                    'message': f'선택 복잡도는 다음 중 하나여야 합니다: {", ".join(valid_selection_complexity)}'
-                }
-            
-            # interesting_topics가 리스트인지 확인
+            # 관심 주제 검증
             if not isinstance(persona['interesting_topics'], list) or len(persona['interesting_topics']) == 0:
                 return {
                     'status': 'error',
@@ -140,7 +145,6 @@ class UserManager:
                 'gender': persona['gender'],
                 'disability_type': persona['disability_type'],
                 'communication_characteristics': persona['communication_characteristics'],
-                'selection_complexity': persona.get('selection_complexity', 'moderate'),  # 기본값
                 'interesting_topics': persona['interesting_topics'],
                 'preferred_category_types': persona.get('preferred_category_types', []),  # 선택사항
                 'password': persona['password']
