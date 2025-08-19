@@ -260,12 +260,12 @@ class AACInterpreterService:
                        selected_interpretation_index: Optional[int] = None,
                        user_correction: Optional[str] = None) -> Dict[str, Any]:
         """
-        사용자 피드백 제출 (제시된 흐름의 3.5, 3.6단계)
+        partner 피드백 제출 (제시된 흐름의 3.5, 3.6단계)
         
         Args:
             feedback_id: 피드백 ID
-            selected_interpretation_index: 선택된 해석 인덱스 (0-2)
-            user_correction: 사용자 수정 내용
+            selected_interpretation_index: 선택된 해석 인덱스 (0-2) - top-3 중 선택
+            user_correction: 올바른 해석 직접 입력 - 어떤 것도 맞지 않을 때
             
         Returns:
             Dict[str, Any]: {
@@ -273,11 +273,34 @@ class AACInterpreterService:
                 'message': str
             }
         """
+        # 입력 유효성 검증: 둘 중 하나는 반드시 있어야 함
+        if selected_interpretation_index is None and not user_correction:
+            return {
+                'status': 'error',
+                'message': 'top-3 해석 중 선택하거나 올바른 해석을 직접 입력해야 합니다.'
+            }
+        
+        # selected_interpretation_index 범위 검증 (0-2)
+        if selected_interpretation_index is not None:
+            if not (0 <= selected_interpretation_index <= 2):
+                return {
+                    'status': 'error',
+                    'message': '해석 인덱스는 0-2 범위여야 합니다.'
+                }
+        
+        # user_correction 유효성 검증
+        if user_correction is not None:
+            if not user_correction.strip():
+                return {
+                    'status': 'error',
+                    'message': '올바른 해석을 입력해주세요.'
+                }
+        
         # 피드백 기록
         feedback_result = self.feedback_manager.record_user_feedback(
             feedback_id=feedback_id,
             selected_interpretation_index=selected_interpretation_index,
-            user_correction=user_correction
+            user_correction=user_correction.strip() if user_correction else None
         )
         
         if feedback_result['status'] != 'success':
@@ -332,110 +355,22 @@ class AACInterpreterService:
                 'message': f'피드백은 기록되었으나 메모리 업데이트 중 오류 발생: {str(e)}'
             }
     
-    def get_system_status(self) -> Dict[str, Any]:
-        """
-        시스템 상태 조회
-        
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'network_status': Dict,
-                'feedback_statistics': Dict,
-                'total_users': int,
-                'system_health': str
-            }
-        """
-        try:
-            # 네트워크 상태 확인
-            network_status = self.network_utils.get_network_info()
-            
-            # 피드백 통계 확인
-            feedback_statistics = self.feedback_manager.get_feedback_statistics()
-            
-            # 사용자 수 확인
-            users_info = self.user_manager.get_all_users()
-            total_users = users_info.get('count', 0)
-            
-            # 시스템 건강 상태 평가
-            system_health = 'healthy'
-            if not network_status.get('online_available', False):
-                system_health = 'degraded'  # 오프라인 모드로 동작
-            elif feedback_statistics.get('average_accuracy', 0) < 0.5:
-                system_health = 'warning'  # 해석 정확도 낮음
-            
-            return {
-                'status': 'success',
-                'network_status': network_status,
-                'feedback_statistics': feedback_statistics,
-                'total_users': total_users,
-                'system_health': system_health
-            }
-        except Exception as e:
-            return {
-                'status': 'error',
-                'network_status': {},
-                'feedback_statistics': {},
-                'total_users': 0,
-                'system_health': 'error',
-                'message': f'시스템 상태 조회 중 오류 발생: {str(e)}'
-            }
     
-    def get_user_history(self, user_id: int, limit: int = 10) -> Dict[str, Any]:
-        """
-        사용자 이력 조회
-        
-        Args:
-            user_id: 사용자 ID
-            limit: 조회할 최대 개수
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'feedback_history': List[Dict],
-                'interpretation_summary': str,
-                'total_attempts': int
-            }
-        """
-        try:
-            # 피드백 이력 조회
-            feedback_history = self.feedback_manager.get_user_feedback_history(user_id, limit)
-            
-            # 해석 요약 조회
-            interpretation_summary = self.feedback_manager.get_user_interpretation_summary(user_id)
-            
-            # ConversationSummaryMemory에서 메모리 요약 가져오기
-            memory_summary = self.conversation_memory.get_user_memory_summary(user_id)
-            
-            return {
-                'status': 'success',
-                'feedback_history': feedback_history.get('history', []),
-                'interpretation_summary': interpretation_summary.get('summary', ''),
-                'memory_summary': memory_summary.get('summary', ''),
-                'total_attempts': feedback_history.get('total_count', 0),
-                'conversation_count': memory_summary.get('conversation_count', 0)
-            }
-        except Exception as e:
-            return {
-                'status': 'error',
-                'feedback_history': [],
-                'interpretation_summary': '',
-                'memory_summary': '',
-                'total_attempts': 0,
-                'conversation_count': 0,
-                'message': str(e)
-            }
     
-    def update_user_context(self, user_id: int, context: Dict[str, Any]) -> Dict[str, Any]:
+    def update_user_context(self, user_id: int, place: str, interaction_partner: str, current_activity: str) -> Dict[str, Any]:
         """
         사용자 컨텍스트 업데이트
         
         Args:
             user_id: 사용자 ID
-            context: 업데이트할 컨텍스트 정보
+            place: 장소 (직접 입력, 필수)
+            interaction_partner: 대화 상대 (직접 입력, 필수) 
+            current_activity: 현재 활동 (직접 입력, 필수)
             
         Returns:
             Dict[str, Any]: {
                 'status': str,
+                'context_id': str,
                 'message': str
             }
         """
@@ -445,24 +380,15 @@ class AACInterpreterService:
             if user_info['status'] != 'success':
                 return {
                     'status': 'error',
+                    'context_id': '',
                     'message': '사용자 정보를 찾을 수 없습니다.'
                 }
             
-            # 컨텍스트 유효성 검증
-            validation = self.context_manager.validate_context(context)
-            if not validation['valid']:
-                return {
-                    'status': 'error',
-                    'message': f'컨텍스트 유효성 검증 실패: {", ".join(validation["errors"])}'
-                }
-            
-            # 컨텍스트 생성 및 사용자 히스토리에 추가
+            # 컨텍스트 생성 (time은 자동 생성)
             context_result = self.context_manager.create_context(
-                time=context.get('time'),
-                place=context.get('place'),
-                interaction_partner=context.get('interaction_partner'),
-                current_activity=context.get('current_activity'),
-                additional_info=context.get('additional_info'),
+                place=place,
+                interaction_partner=interaction_partner,
+                current_activity=current_activity,
                 user_id=str(user_id)
             )
             
@@ -484,86 +410,5 @@ class AACInterpreterService:
                 'message': f'컨텍스트 업데이트 중 오류 발생: {str(e)}'
             }
     
-    def get_cluster_information(self) -> Dict[str, Any]:
-        """
-        클러스터 정보 조회
-        
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'clusters': List[Dict],
-                'total_clusters': int
-            }
-        """
-        try:
-            return self.card_recommender.get_all_clusters_info()
-        except Exception as e:
-            return {
-                'status': 'error',
-                'clusters': [],
-                'total_clusters': 0,
-                'message': f'클러스터 정보 조회 중 오류 발생: {str(e)}'
-            }
     
-    def update_user_persona(self, user_id: int, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        사용자 페르소나 업데이트
-        
-        Args:
-            user_id: 사용자 ID
-            persona_updates: 업데이트할 페르소나 정보
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'message': str
-            }
-        """
-        return self.user_manager.update_user_persona(user_id, persona_updates)
     
-    def delete_user(self, user_id: int, password: str) -> Dict[str, Any]:
-        """
-        사용자 삭제
-        
-        Args:
-            user_id: 사용자 ID
-            password: 비밀번호 확인
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'message': str
-            }
-        """
-        try:
-            # 사용자 인증 확인
-            auth_result = self.authenticate_user(user_id, password)
-            if not auth_result.get('authenticated', False):
-                return {
-                    'status': 'error',
-                    'message': '인증에 실패했습니다. 비밀번호를 확인해주세요.'
-                }
-            
-            # 사용자 관련 데이터 삭제
-            # 1. 피드백 데이터 삭제
-            self.feedback_manager.delete_user_feedback(user_id)
-            
-            # 2. 대화 메모리 삭제
-            self.conversation_memory.clear_user_memory(user_id)
-            
-            # 3. 사용자 정보 삭제
-            delete_result = self.user_manager.delete_user(user_id)
-            
-            if delete_result['status'] == 'success':
-                return {
-                    'status': 'success',
-                    'message': f'사용자 {user_id}와 관련된 모든 데이터가 성공적으로 삭제되었습니다.'
-                }
-            else:
-                return delete_result
-                
-        except Exception as e:
-            return {
-                'status': 'error',
-                'message': f'사용자 삭제 중 오류 발생: {str(e)}'
-            }

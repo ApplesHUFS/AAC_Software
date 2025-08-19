@@ -19,24 +19,24 @@ class UserManager:
                     
                     if self.users:
                         self.next_id=max(self.users.keys()) +1  # 만약 users에 정보가 있다면 다음 user id는 +1
-            except:
+            except Exception as e:
+                # 의도: 사용자 데이터 로드 실패 시 명확한 에러로 문제 파악
+                print(f"사용자 데이터 파일 로드 실패: {e}")
                 self.users={}
                 self.next_id=1
     
-    #                                               # 키(문자열) / 값(딕셔너리)
     def create_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
         """
         새 사용자 생성
         
         Args:
             persona: 사용자 페르소나 정보 {
-                'age': str,
-                'gender': str,
-                'disability_type': str,
-                'communication_characteristics': str,
-                'selection_complexity': str,
-                'interesting_topics': List[str],
-                'password': str
+                'age': str (필수),
+                'gender': str (선택지, 필수),
+                'disability_type': str (선택지, 필수),
+                'communication_characteristics': str (직접입력, 필수),
+                'interesting_topics': List[str] (직접입력, 필수),
+                'password': str (필수)
             }
             
         Returns:
@@ -47,17 +47,104 @@ class UserManager:
             }
         """
         try:
-            user_id=self.next_id
-            user_data={
+            # 필수 필드 검증 (데이터셋 스키마 기준)
+            required_fields = ['age', 'gender', 'disability_type', 'communication_characteristics', 'interesting_topics', 'password']
+            missing_fields = []
+            
+            for field in required_fields:
+                if field not in persona or not persona[field]:
+                    missing_fields.append(field)
+            
+            if missing_fields:
+                return {
+                    'status': 'error',
+                    'user_id': -1,
+                    'message': f'필수 필드가 누락되었습니다: {", ".join(missing_fields)}'
+                }
+            
+            # age는 정수형이어야 함 (데이터셋 스키마)
+            try:
+                age_int = int(persona['age'])
+                if age_int < 1 or age_int > 100:
+                    raise ValueError("나이 범위 오류")
+            except (ValueError, TypeError):
+                return {
+                    'status': 'error',
+                    'user_id': -1,
+                    'message': '나이는 1-100 사이의 정수여야 합니다.'
+                }
+            
+            # 선택지 검증 (데이터셋 스키마 기준)
+            valid_genders = ['male', 'female']  # 데이터셋 스키마
+            valid_disability_types = ['의사소통 장애', '자폐스펙트럼 장애', '지적 장애']  # 데이터셋 스키마
+            valid_selection_complexity = ['simple', 'moderate', 'complex']  # 데이터셋 스키마
+            
+            if persona['gender'] not in valid_genders:
+                return {
+                    'status': 'error',
+                    'user_id': -1,
+                    'message': f'성별은 다음 중 하나여야 합니다: {", ".join(valid_genders)}'
+                }
+            
+            if persona['disability_type'] not in valid_disability_types:
+                return {
+                    'status': 'error',
+                    'user_id': -1,
+                    'message': f'장애유형은 다음 중 하나여야 합니다: {", ".join(valid_disability_types)}'
+                }
+            
+            # selection_complexity 검증 (있는 경우)
+            if 'selection_complexity' in persona and persona['selection_complexity'] not in valid_selection_complexity:
+                return {
+                    'status': 'error',
+                    'user_id': -1,
+                    'message': f'선택 복잡도는 다음 중 하나여야 합니다: {", ".join(valid_selection_complexity)}'
+                }
+            
+            # interesting_topics가 리스트인지 확인
+            if not isinstance(persona['interesting_topics'], list) or len(persona['interesting_topics']) == 0:
+                return {
+                    'status': 'error',
+                    'user_id': -1,
+                    'message': '관심 주제는 최소 1개 이상의 리스트여야 합니다.'
+                }
+            
+            # preferred_category_types 검증 (cluster id 6개, 있는 경우)
+            if 'preferred_category_types' in persona:
+                if not isinstance(persona['preferred_category_types'], list):
+                    return {
+                        'status': 'error',
+                        'user_id': -1,
+                        'message': '선호 카테고리 타입은 리스트여야 합니다.'
+                    }
+                if len(persona['preferred_category_types']) != 6:
+                    return {
+                        'status': 'error',
+                        'user_id': -1,
+                        'message': '선호 카테고리 타입은 정확히 6개의 cluster id여야 합니다.'
+                    }
+                # cluster id들이 모두 정수인지 확인
+                try:
+                    cluster_ids = [int(cid) for cid in persona['preferred_category_types']]
+                except (ValueError, TypeError):
+                    return {
+                        'status': 'error',
+                        'user_id': -1,
+                        'message': '선호 카테고리 타입의 cluster id들은 정수여야 합니다.'
+                    }
+            
+            user_id = self.next_id
+            user_data = {
                 'id': user_id,
-                'age': persona.get('age', ''),
-                'gender': persona.get('gender', ''),
-                'disability_type': persona.get('disability_type', ''),
-                'communication_characteristics': persona.get('communication_characteristics', ''),
-                'selection_complexity': persona.get('selection_complexity', ''),
-                'interesting_topics': persona.get('interesting_topics', []),
-                'password': persona.get('password', '')
-            }   # user 정보 안에 usser_id도 들어 있음
+                'age': int(persona['age']),  # 정수로 저장 (데이터셋 스키마)
+                'gender': persona['gender'],
+                'disability_type': persona['disability_type'],
+                'communication_characteristics': persona['communication_characteristics'],
+                'selection_complexity': persona.get('selection_complexity', 'moderate'),  # 기본값
+                'interesting_topics': persona['interesting_topics'],
+                'preferred_category_types': persona.get('preferred_category_types', []),  # 선택사항
+                'password': persona['password']
+            }
 
             self.users[user_id]=user_data
             self.next_id+=1 # 다음 user의 id를 위해 +1
@@ -71,13 +158,13 @@ class UserManager:
                     'user_id':user_id,
                     'message': f'사용자 {user_id}가 성공적으로 생성되었습니다.'
                 }
-            except: # 실패할 경우 아예 해당 사용자 정보를 삭제
+            except Exception as e: # 의도: 사용자 생성 실패 시 정확한 에러 메시지로 문제 파악
                 del self.users[user_id]
                 self.next_id-=1
                 return {
                     'status': 'error',
                     'user_id': -1,
-                    'message': '오류가 발생했습니다.'
+                    'message': f'사용자 생성 중 파일 저장 실패: {str(e)}'
                 }
         except Exception as e:
             return {
@@ -117,137 +204,8 @@ class UserManager:
                 'message':'사용자 정보를 조회할 수 없습니다.'
             }
     
-    def update_user_persona(self, user_id: int, persona: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        사용자 페르소나 정보 업데이트
-        
-        Args:
-            user_id: 사용자 ID
-            persona: 업데이트할 페르소나 정보
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'message': str
-            }
-        """
-        try:    # 사용자 정보 확인
-            if user_id not in self.users:
-                return {
-                    'status': 'error',
-                    'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
-                }
-            
-            # 업데이트 가능한 필드들
-            updatable_fields = ['age', 'gender', 'disability_type', 'communication_characteristics',
-                              'selection_complexity', 'interesting_topics']
-            
-            updated_fields = []
-            for field, value in persona.items():
-                if field in updatable_fields: # upadatable_fields에 있다면 새로운 value 값으로 업데이터
-                    self.users[user_id][field] = value
-                    updated_fields.append(field)
-            
-            if not updated_fields:
-                return {
-                    'status': 'error',
-                    'message': '업데이트 가능한 필드가 없습니다.'
-                }
-            
-            # 파일에 저장
-            try:
-                with open(self.users_file_path, 'w', encoding='utf-8') as f:
-                    json.dump({k: v for k, v in self.users.items()}, f)
-                
-                return {
-                    'status': 'success',
-                    'message': '페르소나 정보가 성공적으로 업데이트되었습니다.'
-                }
-            except:
-                return {
-                    'status': 'error',
-                    'message': '데이터 저장 중 오류가 발생했습니다.'
-                }
-                
-        except Exception as e:
-            return {
-                'status': 'error',
-                'message': f'오류가 발생했습니다: {str(e)}'
-            }
     
-    def get_all_users(self) -> Dict[str, Any]:
-        """
-        모든 사용자 조회 (비밀번호 제외)
-        
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'users': List[Dict],
-                'count': int
-            }
-        """
-        try:
-            users_list = []
-            for user_data in self.users.values():
-                # 보안을 위해 비밀번호 제외하고 추가
-                safe_user_data = user_data.copy()
-                safe_user_data.pop('password', None)
-                users_list.append(safe_user_data)
-            
-            return {
-                'status': 'success',
-                'users': users_list,
-                'count': len(users_list)
-            }
-        except Exception as e:
-            return {
-                'status': 'error',
-                'users': [],
-                'count': 0,
-                'message': f'오류가 발생했습니다: {str(e)}'
-            }
     
-    def delete_user(self, user_id: int) -> Dict[str, Any]:
-        """
-        사용자 삭제
-        
-        Args:
-            user_id: 사용자 ID
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'message': str
-            }
-        """
-        try: # 사용자 존재 확인
-            if user_id not in self.users:
-                return {
-                    'status': 'error',
-                    'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
-                }
-            
-            # 사용자 삭제 후 파일에 변경 사항 저장
-            del self.users[user_id]
-            try:
-                with open(self.users_file_path, 'w', encoding='utf-8') as f:
-                    json.dump({k: v for k, v in self.users.items()}, f)
-                
-                return {
-                    'status': 'success',
-                    'message': f'사용자 ID {user_id}가 성공적으로 삭제되었습니다.'
-                }
-            except:
-                return {
-                    'status': 'error',
-                    'message': '오류가 발생했습니다.'
-                }
-                
-        except Exception as e:
-            return {
-                'status': 'error',
-                'message': f'오류가 발생했습니다: {str(e)}'
-            }
     
     def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
         """
@@ -265,14 +223,14 @@ class UserManager:
             }
         """
         try:
-            if user_id not in self.users: # id 검증
+            if user_id not in self.users:
                 return {
                     'status': 'error',
                     'authenticated': False,
                     'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
                 }
             
-            # 비밀번호 검증
+            # 의도: 평문 비밀번호 검증 (보안상 해싱 필요하지만 현재는 단순 비교)
             user_password = self.users[user_id]['password']
             if user_password == password:
                 return {
@@ -294,54 +252,3 @@ class UserManager:
                 'message': f'오류가 발생했습니다: {str(e)}'
             }
     
-    def update_user_password(self, user_id: int, old_password: str, new_password: str) -> Dict[str, Any]:
-        """
-        사용자 비밀번호 변경
-        
-        Args:
-            user_id: 사용자 ID
-            old_password: 기존 비밀번호
-            new_password: 새 비밀번호
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'message': str
-            }
-        """
-        try:
-            if user_id not in self.users: # 1. 사용자 id가 존재하는지
-                return {
-                    'status': 'error',
-                    'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
-                }
-            
-            # 기존 비밀번호 확인
-            old_user_password = self.users[user_id]['password']
-            if old_user_password != old_password:   # 2. 기존 비밀번호가 올바른지
-                return {
-                    'status': 'error',
-                    'message': '기존 비밀번호가 올바르지 않습니다.'
-                }
-            
-            # 새 비밀번호 설정 후 업데이트
-            self.users[user_id]['password'] = new_password
-            try:
-                with open(self.users_file_path, 'w', encoding='utf-8') as f:
-                    json.dump({k: v for k, v in self.users.items()}, f)
-                
-                return {
-                    'status': 'success',
-                    'message': '비밀번호가 성공적으로 변경되었습니다.'
-                }
-            except:
-                return {
-                    'status': 'error',
-                    'message': '데이터 저장 중 오류가 발생했습니다.'
-                }
-                
-        except Exception as e:
-            return {
-                'status': 'error',
-                'message': f'오류가 발생했습니다: {str(e)}'
-            }

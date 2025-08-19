@@ -51,13 +51,9 @@ class CardRecommender:
         - 추천 카드 간 중복 최소화, 카드 사용 빈도에 따른 가중치 부여
         - 반환되는 카드 수는 요청에 준함 (1-4장)
         """
+        # 의도: 필수 클러스터 파일 검증 (완벽한 추천을 위해 필수)
         if not self.cluster_tags or not self.clustered_files:
-            return {
-                'status': 'error',
-                'cards': [],
-                'clusters_used': [],
-                'message': '클러스터 태그 또는 클러스터링 데이터가 없습니다.'
-            }
+            raise FileNotFoundError('클러스터 파일(cluster_tags.json, clustering_results.json)이 필요합니다. data/cluster_tagger.py와 data/clustering.py를 실행하여 생성하세요. 완벽한 시스템을 위해 필수 파일입니다.')
         interesting_topics = persona.get('interesting_topics', [])
         preferred_clusters = persona.get('preferred_category_types', [])
         complexity = persona.get('selection_complexity', 'moderate')
@@ -80,11 +76,11 @@ class CardRecommender:
             probs = [w/total for w in weights]
             return random.choices(cards_list, probs)[0]
 
-        # 1) 기본 클러스터에서 카드 샘플링
+        # 의도: 기본 클러스터 선택 (워크플로우 3.2단계 - 페르소나 기반 맞춤 추천)
         if preferred_clusters:
-            base_cluster = random.choice(preferred_clusters)
+            base_cluster = random.choice(preferred_clusters)  # 사용자 선호 클러스터 우선 사용
         else:
-            base_cluster = random.choice(list(self.clustered_files.keys()))
+            base_cluster = random.choice(list(self.clustered_files.keys()))  # 선호도 없으면 랜덤 선택
         used_clusters.append(base_cluster)
 
         base_cards_pool = [f for f in self.clustered_files.get(base_cluster, []) if f in self.filename_to_idx]
@@ -117,45 +113,3 @@ class CardRecommender:
             'message': f'{len(selected_cards[:n_cards])}개 카드 추천 완료'
         }
 
-    def get_cluster_info(self, cluster_id: int) -> Dict[str, Any]:
-        """
-        특정 클러스터 정보 조회 (태그, 포함 파일수, 대표태그 등 간략 정보)
-        """
-        if cluster_id not in self.clustered_files:
-            return {
-                'status': 'error',
-                'cluster_info': None,
-                'message': f'클러스터 ID {cluster_id} 없음'
-            }
-        files = self.clustered_files[cluster_id]
-        tags = self.cluster_tags.get(cluster_id, [])
-        info = {
-            'cluster_id': cluster_id,
-            'num_files': len(files),
-            'tags': tags,
-            'sample_files': files[:5]
-        }
-        return {
-            'status': 'success',
-            'cluster_info': info,
-            'message': '클러스터 정보 조회 성공'
-        }
-
-    def get_all_clusters_info(self) -> Dict[str, Any]:
-        """
-        전체 클러스터들의 기본 정보 리스트 반환
-        """
-        clusters_list = []
-        for cid, files in self.clustered_files.items():
-            tags = self.cluster_tags.get(cid, [])
-            clusters_list.append({
-                'cluster_id': cid,
-                'num_files': len(files),
-                'tags': tags,
-                'sample_files': files[:5]
-            })
-        return {
-            'status': 'success',
-            'clusters': clusters_list,
-            'total_count': len(clusters_list)
-        }

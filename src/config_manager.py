@@ -8,7 +8,18 @@ class ConfigManager:
     """시스템 설정 및 구성 관리"""
     
     def __init__(self, config_file_path: Optional[str] = None):
-        self.config_file_path = config_file_path or 'config/dataset_config.py'
+        """
+        ConfigManager 초기화 (src/에서는 service_config.py만 사용)
+        
+        Args:
+            config_file_path: 설정 파일 경로 (선택사항, 기본값: service_config.py)
+        """
+        if config_file_path:
+            self.config_file_path = config_file_path
+        else:
+            self.config_file_path = 'config/service_config.py'  # src/에서는 항상 service_config만 사용
+        
+        self.config_type = 'service'  # 고정값
         self.config = {}
 
         if os.path.exists(self.config_file_path):
@@ -17,6 +28,10 @@ class ConfigManager:
                 self.config = result['config']
             else:
                 raise Exception(f"Failed to load config: {result['message']}")
+        else:
+            # 설정 파일이 없으면 기본값으로 초기화
+            print(f"Warning: Config file {self.config_file_path} not found. Using defaults.")
+            self.config = self._get_default_config('service')
     
     def load_config(self, config_path: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -46,8 +61,11 @@ class ConfigManager:
                 sys.modules["config_module"] = config_module
                 spec.loader.exec_module(config_module)
                 
-                # DATASET_CONFIG 변수 찾기
-                config = getattr(config_module, 'DATASET_CONFIG', {})
+                # CONFIG 변수 찾기 (DATASET_CONFIG 또는 SERVICE_CONFIG)
+                if self.config_type == 'dataset':
+                    config = getattr(config_module, 'DATASET_CONFIG', {})
+                else:
+                    config = getattr(config_module, 'SERVICE_CONFIG', {})
             else:
                 # JSON 파일인 경우
                 with open(config_path, 'r', encoding='utf-8') as f:
@@ -173,13 +191,12 @@ class ConfigManager:
                 'similarity_threshold': float
             }
         """
-        self.output_folder = Path(self.config['output_folder'])
-        self.output_folder.mkdir(parents=True, exist_ok=True)
-
-        cluster_tags_path = self.output_folder / self.config.get('cluster_tags_path', 'cluster_tags.json')
-        embeddings_path = self.output_folder / self.config.get('embeddings_path', 'embeddings.json')
-        clustering_results_path = self.output_folder / self.config.get('clustering_results_path', 'clustering_results.json')
-        similarity_threshold = self.config.get('similarity_threshold', 0.5)
+        # 의도: src/에서는 service 설정만 사용 (완성된 클러스터 파일들에 대한 절대 경로)
+        cluster_tags_path = Path(self.config.get('cluster_tags_path', 'dataset/processed/cluster_tags.json'))
+        embeddings_path = Path(self.config.get('embeddings_path', 'dataset/processed/embeddings.json'))
+        clustering_results_path = Path(self.config.get('clustering_results_path', 'dataset/processed/clustering_results.json'))
+        
+        similarity_threshold = self.config.get('similarity_threshold', 0.7)
 
         return {
             'cluster_tags_path': cluster_tags_path,
@@ -234,12 +251,12 @@ class ConfigManager:
             'timeout',
         ]
         
+        # 의도: service 설정에서 검증이 필요한 경로들 (output_folder 제외)
         path_settings = [
             'users_file_path',
             'feedback_file_path',
             'logs_directory',
             'backup_directory',
-            'output_folder',
             'cluster_tags_path',
             'embeddings_path',
             'clustering_results_path'
@@ -319,23 +336,25 @@ class ConfigManager:
             }
         """
         try:
+            # 의도: src/용 service 설정 기본값 (데이터셋 생성 관련 설정 제외)
             default_config = {
+                # OpenAI API 설정
                 'openai_model': 'gpt-4o-2024-08-06',
                 'openai_temperature': 0.8,
                 'interpretation_max_tokens': 400,
                 'timeout': 60,
 
-                'local_model_path': '',
+                # 파일 경로 설정
                 'users_file_path': 'data/users.json',
                 'feedback_file_path': 'data/feedback.json',
                 'logs_directory': 'logs/',
                 'backup_directory': 'backup/',
 
-                'cluster_tags_path': 'dataset/cluster_tags.json',
-                'embeddings_path': 'dataset/embeddings.json',
-                'clustering_results_path': 'dataset/clustering_results.json',
+                # 클러스터 파일 경로 (완성된 파일들)
+                'cluster_tags_path': 'dataset/processed/cluster_tags.json',
+                'embeddings_path': 'dataset/processed/embeddings.json',
+                'clustering_results_path': 'dataset/processed/clustering_results.json',
                 'similarity_threshold': 0.5,
-                'output_folder': 'dataset/processed',
             }
 
             self.config = default_config
@@ -353,4 +372,40 @@ class ConfigManager:
             return {
                 'status': 'error',
                 'message': str(e)
+            }
+    
+    def _get_default_config(self, config_type: str) -> Dict[str, Any]:
+        """기본 설정 반환"""
+        if config_type == 'service':
+            return {
+                'openai_model': 'gpt-4o-2024-08-06',
+                'openai_temperature': 0.8,
+                'interpretation_max_tokens': 400,
+                'summary_max_tokens': 200,
+                'api_timeout': 15,
+                'users_file_path': 'user_data/users.json',
+                'feedback_file_path': 'user_data/feedback.json', 
+                'memory_file_path': 'user_data/conversation_memory.json',
+                'logs_directory': 'logs/',
+                'backup_directory': 'backup/',
+                'cluster_tags_path': 'dataset/processed/cluster_tags.json',
+                'embeddings_path': 'dataset/processed/embeddings.json', 
+                'clustering_results_path': 'dataset/processed/clustering_results.json',
+                'network_timeout': 10,
+                'max_retry_attempts': 3,
+                'request_delay': 1,
+                'similarity_threshold': 0.7,
+                'offline_db_path': 'user_data/offline_interpretations.json'
+            }
+        else:  # dataset
+            return {
+                'images_folder': 'dataset/images',
+                'output_folder': 'dataset/processed',
+                'samples_per_persona': 200,
+                'n_clusters': 64,
+                'openai_model': 'gpt-4o-2024-08-06',
+                'openai_temperature': 0.8,
+                'context_max_tokens': 300,
+                'interpretation_max_tokens': 400,
+                'similarity_threshold': 0.5
             }

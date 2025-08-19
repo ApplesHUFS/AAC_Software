@@ -34,13 +34,14 @@ class ConversationSummaryMemory:
         except Exception:
             self.llm = None
             self.langchain_enabled = False
-            # Fallback to OpenAI client
-            try:
-                self.openai_client = OpenAI()
-                self.openai_enabled = True
-            except Exception:
-                self.openai_client = None
-                self.openai_enabled = False
+        
+        # Fallback to OpenAI client
+        try:
+            self.openai_client = OpenAI()
+            self.openai_enabled = True
+        except Exception:
+            self.openai_client = None
+            self.openai_enabled = False
         
         self._load_memory()
     
@@ -179,9 +180,9 @@ class ConversationSummaryMemory:
         conversation_history = user_memory["conversation_history"]
         
         if len(conversation_history) == 0:
-            simple_summary = self._create_simple_summary(user_memory)
-            user_memory["summary"] = simple_summary
-            return {"summary": simple_summary}
+            # 의도: 대화 기록이 없으면 빈 요약
+            user_memory["summary"] = "아직 대화 기록이 없습니다."
+            return {"summary": "아직 대화 기록이 없습니다."}
         
         # LangChain ConversationSummaryMemory 사용
         if self.langchain_enabled and self.llm:
@@ -228,18 +229,17 @@ class ConversationSummaryMemory:
                 
             except Exception as e:
                 print(f"LangChain 요약 생성 실패: {e}")
-                # Fallback to OpenAI client
+                # 의도: LangChain 실패 시 OpenAI client로 대안 제공 (메모리는 필수이므로)
                 return self._fallback_openai_summary(user_memory, conversation_history)
         
-        # LangChain 사용 불가능한 경우 fallback
+        # 의도: LangChain 초기화 실패 시 OpenAI client 사용 (메모리 기능은 필수)
         return self._fallback_openai_summary(user_memory, conversation_history)
     
     def _fallback_openai_summary(self, user_memory: Dict, conversation_history: List[Dict]) -> Dict[str, Any]:
-        """LangChain 실패 시 OpenAI client로 요약 생성"""
+        """LangChain 실패 시 OpenAI client로 요약 생성 (메모리는 워크플로우 필수 요소)"""
         if not self.openai_enabled:
-            simple_summary = self._create_simple_summary(user_memory)
-            user_memory["summary"] = simple_summary
-            return {"summary": simple_summary}
+            # 의도: OpenAI도 없으면 완전 실패 - 워크플로우 6단계는 완벽해야 함
+            raise RuntimeError("대화 메모리 생성 실패: OpenAI API가 필요합니다. 환경변수 OPENAI_API_KEY를 확인하세요.")
         
         try:
             recent_conversations = conversation_history[-10:]
@@ -269,10 +269,8 @@ class ConversationSummaryMemory:
             return {"summary": new_summary}
             
         except Exception as e:
-            print(f"OpenAI 요약 생성 실패: {e}")
-            simple_summary = self._create_simple_summary(user_memory)
-            user_memory["summary"] = simple_summary
-            return {"summary": simple_summary}
+            # 의도: OpenAI 실패 시 완전 실패 - 불완전한 메모리보다 에러로 문제 파악
+            raise RuntimeError(f"대화 메모리 생성 완전 실패: {str(e)}. 완벽한 시스템을 위해 메모리 기능은 필수입니다.")
     
     def _create_summary_prompt(self, conversations: List[Dict], existing_summary: str) -> str:
         """요약 생성을 위한 프롬프트 작성"""
@@ -309,35 +307,6 @@ class ConversationSummaryMemory:
 """
         
         return prompt
-    
-    def _create_simple_summary(self, user_memory: Dict) -> str:
-        """OpenAI 없이 간단한 통계 기반 요약 생성"""
-        history = user_memory["conversation_history"]
-        patterns = user_memory["card_interpretation_patterns"]
-        
-        if not history:
-            return "아직 대화 기록이 없습니다."
-        
-        total_conversations = len(history)
-        most_used_cards = []
-        
-        # 가장 많이 사용된 카드들 찾기
-        card_count = {}
-        for conv in history:
-            for card in conv["cards"]:
-                card_count[card] = card_count.get(card, 0) + 1
-        
-        if card_count:
-            sorted_cards = sorted(card_count.items(), key=lambda x: x[1], reverse=True)
-            most_used_cards = [card for card, count in sorted_cards[:3]]
-        
-        summary = f"총 {total_conversations}회 대화. "
-        if most_used_cards:
-            summary += f"주로 사용하는 카드: {', '.join(most_used_cards)}. "
-        
-        summary += f"해석 패턴 {len(patterns)}개 학습됨."
-        
-        return summary
     
     def get_user_memory_summary(self, user_id: int) -> Dict[str, Any]:
         """사용자의 메모리 요약 조회"""
@@ -389,19 +358,3 @@ class ConversationSummaryMemory:
             'suggestions': []
         }
     
-    def clear_user_memory(self, user_id: int) -> Dict[str, Any]:
-        """사용자의 메모리 삭제"""
-        user_id_str = str(user_id)
-        
-        if user_id_str in self.memory_data["user_memories"]:
-            del self.memory_data["user_memories"][user_id_str]
-            self._save_memory()
-            return {
-                'status': 'success',
-                'message': f'사용자 {user_id}의 메모리가 삭제되었습니다.'
-            }
-        else:
-            return {
-                'status': 'success',
-                'message': f'사용자 {user_id}의 메모리가 존재하지 않습니다.'
-            }
