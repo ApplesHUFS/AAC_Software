@@ -140,7 +140,6 @@ class UserManager:
             
             user_id = self.next_id
             user_data = {
-                'id': user_id,
                 'age': int(persona['age']),  # 정수로 저장 (데이터셋 스키마)
                 'gender': persona['gender'],
                 'disability_type': persona['disability_type'],
