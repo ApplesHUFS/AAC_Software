@@ -121,6 +121,45 @@ class CardRecommender:
                 card_usage_count[c] += 1
                 base_cards_pool.remove(c)
 
+        """수정 제안
+        
+        def find_most_similar_cluster(interesting_topics, cluster_tags):
+            if not interesting_topics:
+                return None
+            max_sim = -1
+            best_cluster = None
+            user_topics_set = set(interesting_topics)
+            for cid, tags in cluster_tags.items():
+                tags_set = set(tags)
+                intersection = len(user_topics_set & tags_set)
+                union = len(user_topics_set | tags_set)
+                sim = intersection / union if union > 0 else 0
+                if sim > max_sim:
+                    max_sim = sim
+                    best_cluster = cid
+            return best_cluster
+
+        # 1) interesting_topics 와 유사도가 가장 높은 클러스터를 base_cluster로 선택
+        base_cluster = find_most_similar_cluster(interesting_topics, self.cluster_tags)
+
+        if base_cluster is None:
+            # similar cluster 없으면 preferred_clusters 중 랜덤
+            if preferred_clusters:
+                base_cluster = random.choice(preferred_clusters)
+            else:
+                base_cluster = random.choice(list(self.clustered_files.keys()))
+        used_clusters.append(base_cluster)
+
+        # 기본 클러스터에서 카드 선택
+        base_cards_pool = [f for f in self.clustered_files.get(base_cluster, []) if f in self.filename_to_idx]
+        while base_cards_pool and len(selected_cards) < n_cards:
+            c = weighted_choice(base_cards_pool)
+            if c:
+                selected_cards.append(c)
+                card_usage_count[c] += 1
+                base_cards_pool.remove(c)
+                """
+
         # 2) 다른 클러스터에서 다양성 확보
         other_clusters = [cid for cid in self.clustered_files.keys() if cid not in used_clusters]
         random.shuffle(other_clusters)
