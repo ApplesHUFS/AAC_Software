@@ -104,24 +104,6 @@ class CardRecommender:
                 return random.choice(cards_list)
             probs = [w/total for w in weights]
             return random.choices(cards_list, probs)[0]
-
-        # 1) 기본 클러스터 선택 (페르소나 기반 맞춤 추천)
-        if preferred_clusters:
-            base_cluster = random.choice(preferred_clusters)
-        else:
-            base_cluster = random.choice(list(self.clustered_files.keys()))
-        used_clusters.append(base_cluster)
-
-        # 기본 클러스터에서 카드 선택
-        base_cards_pool = [f for f in self.clustered_files.get(base_cluster, []) if f in self.filename_to_idx]
-        while base_cards_pool and len(selected_cards) < n_cards:
-            c = weighted_choice(base_cards_pool)
-            if c:
-                selected_cards.append(c)
-                card_usage_count[c] += 1
-                base_cards_pool.remove(c)
-
-        """수정 제안
         
         def find_most_similar_cluster(interesting_topics, cluster_tags):
             if not interesting_topics:
@@ -158,7 +140,6 @@ class CardRecommender:
                 selected_cards.append(c)
                 card_usage_count[c] += 1
                 base_cards_pool.remove(c)
-                """
 
         # 2) 다른 클러스터에서 다양성 확보
         other_clusters = [cid for cid in self.clustered_files.keys() if cid not in used_clusters]
