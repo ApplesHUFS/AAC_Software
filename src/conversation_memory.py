@@ -41,7 +41,7 @@ class ConversationSummaryMemory:
         
         # LangChain ChatOpenAI 모델 초기화
         self.model = self.config.get('openai_model', 'gpt-4o-2024-08-06')
-        self.temperature = self.config.get('openai_temperature', 0.7)
+        self.temperature = self.config.get('openai_temperature', 0.8)
         self.max_tokens = self.config.get('summary_max_tokens', 200)
         
         try:
