@@ -168,7 +168,7 @@ class AACInterpreterService:
                        selected_cards: List[str],
                        context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        선택된 카드들을 해석 (제시된 흐름의 3.4단계)
+        선택된 카드들을 해석 (제시된 흐름의 3.d단계)
         
         Args:
             user_id: 사용자 ID
@@ -265,7 +265,7 @@ class AACInterpreterService:
                        selected_interpretation_index: Optional[int] = None,
                        user_correction: Optional[str] = None) -> Dict[str, Any]:
         """
-        partner 피드백 제출 (제시된 흐름의 3.5, 3.6단계)
+        partner 피드백 제출 (제시된 흐름의 3.e, 3.f단계)
         
         Args:
             feedback_id: 피드백 ID
@@ -333,7 +333,7 @@ class AACInterpreterService:
                 elif selected_interpretation_index is not None and 0 <= selected_interpretation_index < len(interpretations):
                     final_interpretation = interpretations[selected_interpretation_index]
                 
-                # ConversationSummaryMemory에 대화 기억 추가 (제시된 흐름의 3.6단계)
+                # ConversationSummaryMemory에 대화 기억 추가 (제시된 흐름의 3.f단계)
                 if final_interpretation:
                     memory_result = self.conversation_memory.add_conversation_memory(
                         user_id=user_id,
@@ -367,7 +367,7 @@ class AACInterpreterService:
                                    interpretations: List[str],
                                    partner_info: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Partner에게 해석 확인 요청 (흐름의 3.5단계)
+        Partner에게 해석 확인 요청 (흐름의 3.e단계)
         
         Args:
             user_id: 사용자 ID
