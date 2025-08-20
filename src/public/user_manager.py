@@ -1,7 +1,6 @@
 from typing import Dict, List, Optional, Any
 import json
 import os
-from ..private.cluster_similarity_calculator import ClusterSimilarityCalculator
 
 
 class UserManager:
@@ -28,14 +27,6 @@ class UserManager:
         self.config = config or {}
         self.users = {}
         self.next_id = 1  # 사용자 ID는 1부터 시작
-
-        # 클러스터 유사도 계산기 초기화
-        cluster_tags_path = self.config.get('cluster_tags_path', 'dataset/processed/cluster_tags.json')
-        try:
-            self.cluster_calculator = ClusterSimilarityCalculator(cluster_tags_path, self.config)
-        except FileNotFoundError as e:
-            print(f"경고: {e}. preferred_category_types 계산 기능이 비활성화됩니다.")
-            self.cluster_calculator = None
 
         # 기존 사용자 데이터 로드
         self._load_users()
@@ -68,7 +59,7 @@ class UserManager:
         """새 사용자 생성 및 페르소나 등록.
         
         데이터셋 스키마에 맞는 페르소나 정보를 검증하고 사용자를 생성합니다.
-        preferred_category_types는 interesting_topics와 클러스터 태그의 유사도를 계산하여 자동 생성됩니다.
+        preferred_category_types는 외부에서 계산되어 전달되어야 합니다.
         
         Args:
             persona: 사용자 페르소나 정보. 다음 필드들이 필수:
@@ -78,6 +69,7 @@ class UserManager:
                   ('의사소통 장애', '자폐스펙트럼 장애', '지적 장애')
                 - communication_characteristics (str): 의사소통 특징
                 - interesting_topics (List[str]): 관심 주제 목록
+                - preferred_category_types (List[int]): 선호 클러스터 ID 목록 (6개)
                 - password (str): 사용자 비밀번호
                 
         Returns:
@@ -98,16 +90,13 @@ class UserManager:
         try:
             user_id = self.next_id
             
-            # preferred_category_types 계산 (interesting_topics 기반)
-            preferred_category_types = self._calculate_preferred_categories(persona['interesting_topics'])
-            
             user_data = {
                 'age': int(persona['age']),
                 'gender': persona['gender'],
                 'disability_type': persona['disability_type'],
                 'communication_characteristics': persona['communication_characteristics'],
                 'interesting_topics': persona['interesting_topics'],
-                'preferred_category_types': preferred_category_types,
+                'preferred_category_types': persona['preferred_category_types'],
                 'password': persona['password']
             }
 
@@ -149,7 +138,7 @@ class UserManager:
         # 필수 필드 검증
         required_fields = [
             'age', 'gender', 'disability_type', 
-            'communication_characteristics', 'interesting_topics', 'password'
+            'communication_characteristics', 'interesting_topics', 'preferred_category_types', 'password'
         ]
         missing_fields = [field for field in required_fields 
                         if field not in persona or not persona[field]]
@@ -197,34 +186,33 @@ class UserManager:
                 'message': '관심 주제는 최소 1개 이상의 리스트여야 합니다.'
             }
         
+        # preferred_category_types 검증
+        if not isinstance(persona['preferred_category_types'], list):
+            return {
+                'valid': False,
+                'message': '선호 카테고리 타입은 리스트여야 합니다.'
+            }
+        
+        required_cluster_count = self.config.get('required_cluster_count', 6)
+        if len(persona['preferred_category_types']) != required_cluster_count:
+            return {
+                'valid': False,
+                'message': f'선호 카테고리 타입은 정확히 {required_cluster_count}개여야 합니다.'
+            }
+        
+        # cluster id들이 모두 정수인지 확인
+        try:
+            cluster_ids = [int(cid) for cid in persona['preferred_category_types']]
+        except (ValueError, TypeError):
+            return {
+                'valid': False,
+                'message': '선호 카테고리 타입의 cluster id들은 정수여야 합니다.'
+            }
+        
         return {
             'valid': True,
             'message': '페르소나 검증 완료'
         }
-    
-    def _calculate_preferred_categories(self, interesting_topics: List[str]) -> List[int]:
-        """관심 주제를 기반으로 선호 클러스터 계산.
-        
-        Args:
-            interesting_topics: 사용자의 관심 주제 리스트
-            
-        Returns:
-            List[int]: 선호 클러스터 ID 리스트 (최대 6개)
-        """
-        if self.cluster_calculator is None:
-            # 클러스터 계산기가 없으면 기본값 반환
-            cluster_count = self.config.get('cluster_count', 6)
-            required_cluster_count = self.config.get('required_cluster_count', 6)
-            return list(range(min(cluster_count, required_cluster_count)))
-        
-        similarity_threshold = self.config.get('similarity_threshold', 0.3)
-        required_cluster_count = self.config.get('required_cluster_count', 6)
-        
-        return self.cluster_calculator.calculate_preferred_categories(
-            interesting_topics=interesting_topics,
-            similarity_threshold=similarity_threshold,
-            max_categories=required_cluster_count
-        )
     
     def get_user(self, user_id: int) -> Dict[str, Any]:
         """사용자 정보 조회 (비밀번호 제외).

@@ -8,7 +8,8 @@ from .private import (
     ConfigManager,
     CardRecommender, 
     CardInterpreter,
-    ConversationSummaryMemory
+    ConversationSummaryMemory,
+    ClusterSimilarityCalculator
 )
 
 
@@ -70,17 +71,46 @@ class AACInterpreterService:
         
         # 카드 해석 시스템
         self.card_interpreter = CardInterpreter(config=service_config)
+        
+        # 클러스터 유사도 계산기 (preferred_category_types 생성용)
+        cluster_tags_path = cluster_config['cluster_tags_path']
+        try:
+            self.cluster_calculator = ClusterSimilarityCalculator(cluster_tags_path, service_config)
+        except FileNotFoundError as e:
+            print(f"경고: {e}. preferred_category_types 계산 기능이 비활성화됩니다.")
+            self.cluster_calculator = None
     
     def register_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 등록 및 페르소나 생성.
         
         Args:
-            persona: 사용자 페르소나 정보. UserManager.create_user() 참조.
+            persona: 사용자 페르소나 정보. 다음 필드들이 필수:
+                - age (int): 사용자 나이 (1-100)
+                - gender (str): 성별 ('male' 또는 'female')
+                - disability_type (str): 장애 유형
+                - communication_characteristics (str): 의사소통 특징
+                - interesting_topics (List[str]): 관심 주제 목록
+                - password (str): 사용자 비밀번호
             
         Returns:
             Dict containing user registration result.
         """
-        return self.user_manager.create_user(persona)
+        # interesting_topics 기반으로 preferred_category_types 계산
+        if 'interesting_topics' not in persona:
+            return {
+                'status': 'error',
+                'user_id': -1,
+                'message': 'interesting_topics가 필요합니다.'
+            }
+        
+        # preferred_category_types 계산
+        preferred_category_types = self._calculate_preferred_categories(persona['interesting_topics'])
+        
+        # persona에 계산된 preferred_category_types 추가
+        enhanced_persona = persona.copy()
+        enhanced_persona['preferred_category_types'] = preferred_category_types
+        
+        return self.user_manager.create_user(enhanced_persona)
     
     def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
         """사용자 인증 및 세션 정보 반환.
@@ -489,3 +519,27 @@ class AACInterpreterService:
             Dict containing 대기 중인 확인 요청들
         """
         return self.feedback_manager.get_pending_confirmations(partner_filter)
+    
+    def _calculate_preferred_categories(self, interesting_topics: List[str]) -> List[int]:
+        """관심 주제를 기반으로 선호 클러스터 계산.
+        
+        Args:
+            interesting_topics: 사용자의 관심 주제 리스트
+            
+        Returns:
+            List[int]: 선호 클러스터 ID 리스트 (최대 6개)
+        """
+        if self.cluster_calculator is None:
+            # 클러스터 계산기가 없으면 기본값 반환
+            cluster_count = self.config_manager.config.get('cluster_count', 6)
+            required_cluster_count = self.config_manager.config.get('required_cluster_count', 6)
+            return list(range(min(cluster_count, required_cluster_count)))
+        
+        similarity_threshold = self.config_manager.config.get('similarity_threshold', 0.3)
+        required_cluster_count = self.config_manager.config.get('required_cluster_count', 6)
+        
+        return self.cluster_calculator.calculate_preferred_categories(
+            interesting_topics=interesting_topics,
+            similarity_threshold=similarity_threshold,
+            max_categories=required_cluster_count
+        )
