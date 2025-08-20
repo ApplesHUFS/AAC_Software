@@ -1,13 +1,10 @@
 import json
 import os
-import base64
 from typing import Dict, List, Optional, Any
 from datetime import datetime
-from pathlib import Path
-from openai import OpenAI
 from langchain.memory import ConversationSummaryMemory as LangChainConversationSummaryMemory
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, AIMessage
+from .llm import LLMFactory
 
 
 class ConversationSummaryMemory:
@@ -22,6 +19,7 @@ class ConversationSummaryMemory:
         config: 설정 딕셔너리
         memory_data: 사용자별 메모리 데이터
         llm: LangChain ChatOpenAI 모델
+        llm_factory: OpenAI API 통합 관리 팩토리
     """
     
     def __init__(self, memory_file_path: Optional[str] = None, config: Optional[Dict] = None):
@@ -37,9 +35,6 @@ class ConversationSummaryMemory:
             "user_memories": {}  # user_id별 메모리
         }
         
-        # 이미지 폴더 경로 설정
-        self.images_folder = Path(self.config.get('images_folder', 'dataset/images'))
-        
         # LangChain ChatOpenAI 모델 초기화
         self.model = self.config.get('openai_model', 'gpt-4o-2024-08-06')
         self.temperature = self.config.get('openai_temperature', 0.8)
@@ -51,15 +46,24 @@ class ConversationSummaryMemory:
                 temperature=self.temperature,
                 max_tokens=self.max_tokens
             )
-            # OpenAI 클라이언트 (이미지 분석용)
-            self.openai_client = OpenAI()
+            
+            # LLMFactory 초기화 (이미지 분석용)
+            llm_config = {
+                'openai_model': self.model,
+                'openai_temperature': 0.3,  # 분석용으로 낮은 온도
+                'interpretation_max_tokens': 100,
+                'api_timeout': self.config.get('api_timeout', 15),
+                'images_folder': self.config.get('images_folder', 'dataset/images')
+            }
+            self.llm_factory = LLMFactory(llm_config)
+            
         except Exception as e:
             raise RuntimeError(f"OpenAI 클라이언트 초기화 실패: {str(e)}. 환경변수 OPENAI_API_KEY를 확인하세요.")
         
         self._load_memory()
     
     def _load_memory(self):
-        """메모리 파일에서 데이터 로드"""
+        """메모리 파일에서 데이터 로드."""
         if os.path.exists(self.memory_file_path):
             try:
                 with open(self.memory_file_path, 'r', encoding='utf-8') as f:
@@ -69,91 +73,13 @@ class ConversationSummaryMemory:
                 self.memory_data = {"user_memories": {}}
     
     def _save_memory(self):
-        """메모리 데이터를 파일에 저장"""
+        """메모리 데이터를 파일에 저장."""
         try:
             os.makedirs(os.path.dirname(self.memory_file_path), exist_ok=True)
             with open(self.memory_file_path, 'w', encoding='utf-8') as f:
                 json.dump(self.memory_data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"메모리 파일 저장 실패: {e}")
-    
-    def _encode_image(self, image_path: Path) -> str:
-        """이미지를 base64로 인코딩"""
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
-    
-    def _analyze_card_interpretation_connection(self, 
-                                              cards: List[str], 
-                                              context: Dict[str, Any],
-                                              final_interpretation: str) -> str:
-        """카드 이미지와 해석의 연결성을 분석하여 요약 생성.
-        
-        Args:
-            cards: 선택된 카드 파일명 리스트
-            context: 상황 정보
-            final_interpretation: 최종 선택된 해석
-            
-        Returns:
-            str: 분석된 연결성 요약
-        """
-        try:
-            # 이미지 콘텐츠 준비
-            content = [{
-                "type": "text",
-                "text": f"""다음 AAC 카드 이미지들을 보고, 주어진 상황에서 어떤 시각적 특징이 최종 해석으로 연결되었는지 분석해주세요.
-
-상황 정보:
-- 시간: {context.get('time', '알 수 없음')}
-- 장소: {context.get('place', '알 수 없음')}
-- 대화 상대: {context.get('interaction_partner', '알 수 없음')}
-- 현재 활동: {context.get('current_activity', '알 수 없음')}
-
-최종 해석: {final_interpretation}
-
-이미지들:"""
-            }]
-            
-            # 각 카드 이미지 추가
-            for i, card_filename in enumerate(cards, 1):
-                image_path = self.images_folder / card_filename
-                
-                if image_path.exists():
-                    base64_image = self._encode_image(image_path)
-                    content.extend([
-                        {"type": "text", "text": f"\n카드 {i}:"},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{base64_image}",
-                                "detail": "low"
-                            }
-                        }
-                    ])
-                else:
-                    content.append({
-                        "type": "text", 
-                        "text": f"\n카드 {i}: {card_filename} (이미지 파일 없음)"
-                    })
-            
-            content.append({
-                "type": "text",
-                "text": "\n위 이미지들의 어떤 시각적 요소(객체, 색깔, 행동, 표정 등)가 최종 해석으로 연결되었는지 50자 이내로 분석해주세요."
-            })
-            
-            response = self.openai_client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": content}],
-                temperature=0.3,
-                max_tokens=100
-            )
-            
-            return response.choices[0].message.content.strip()
-            
-        except Exception as e:
-            print(f"이미지-해석 연결성 분석 실패: {e}")
-            # 간단한 fallback
-            card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
-            return f"카드 '{', '.join(card_names[:2])}'의 시각적 특징을 통해 '{final_interpretation[:20]}...' 의미 전달"
     
     def add_conversation_memory(self, 
                               user_id: int, 
@@ -213,7 +139,14 @@ class ConversationSummaryMemory:
         self.memory_data["user_memories"][user_id_str]["conversation_history"].append(conversation_entry)
         
         # 카드-해석 연결성 분석
-        connection_analysis = self._analyze_card_interpretation_connection(cards, context, final_interpretation)
+        try:
+            connection_analysis = self.llm_factory.analyze_card_interpretation_connection(
+                cards, context, final_interpretation
+            )
+        except Exception as e:
+            # 간단한 fallback
+            card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
+            connection_analysis = f"카드 '{', '.join(card_names[:2])}'의 시각적 특징을 통해 '{final_interpretation[:20]}...' 의미 전달"
         
         # LangChain ConversationSummaryMemory를 사용한 요약 생성
         summary_result = self._update_summary_with_langchain(user_id_str, connection_analysis)
@@ -229,7 +162,15 @@ class ConversationSummaryMemory:
         }
     
     def _update_summary_with_langchain(self, user_id_str: str, connection_analysis: str) -> str:
-        """LangChain ConversationSummaryMemory를 사용하여 요약 업데이트"""
+        """LangChain ConversationSummaryMemory를 사용하여 요약 업데이트.
+        
+        Args:
+            user_id_str: 사용자 ID 문자열
+            connection_analysis: 카드-해석 연결성 분석 결과
+            
+        Returns:
+            str: 업데이트된 요약
+        """
         user_memory = self.memory_data["user_memories"][user_id_str]
         conversation_history = user_memory["conversation_history"]
         
