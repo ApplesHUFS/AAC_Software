@@ -25,23 +25,27 @@ class ConfigManager:
             self.config_file_path = config_file_path
         else:
             self.config_file_path = 'config/service_config.py'
+        
         self.config = {}
-
+        self._load_config()
+    
+    def _load_config(self):
+        """설정 파일 로드."""
         if os.path.exists(self.config_file_path):
-            result = self.load_config(self.config_file_path)
+            result = self._load_from_file(self.config_file_path)
             if result['status'] == 'success':
                 self.config = result['config']
             else:
-                raise Exception(f"Failed to load config: {result['message']}")
+                raise Exception(f"설정 로드 실패: {result['message']}")
         else:
-            print(f"Warning: Config file {self.config_file_path} not found. Using defaults.")
-            self.config = self._get_default_service_config()
+            print(f"Warning: 설정 파일 {self.config_file_path}을 찾을 수 없습니다. 기본값을 사용합니다.")
+            self.config = self._get_default_config()
     
-    def load_config(self, config_path: Optional[str] = None) -> Dict[str, Any]:
-        """설정 파일 로드.
+    def _load_from_file(self, config_path: str) -> Dict[str, Any]:
+        """설정 파일에서 로드.
         
         Args:
-            config_path: 설정 파일 경로. None이면 인스턴스 기본값 사용.
+            config_path: 설정 파일 경로
             
         Returns:
             Dict containing:
@@ -49,9 +53,6 @@ class ConfigManager:
                 - config (Dict): 로드된 설정
                 - message (str): 결과 메시지
         """
-        if config_path is None:
-            config_path = self.config_file_path
-            
         try:
             # Python 모듈 형태의 설정 파일 로드
             import importlib.util
@@ -63,15 +64,19 @@ class ConfigManager:
             if hasattr(config_module, 'SERVICE_CONFIG'):
                 config = config_module.SERVICE_CONFIG
             else:
-                raise Exception("SERVICE_CONFIG not found in config file")
+                raise Exception("SERVICE_CONFIG를 찾을 수 없습니다.")
             
             return {
                 'status': 'success',
                 'config': config,
-                'message': 'Configuration loaded successfully'
+                'message': '설정 로드 완료'
             }
         except Exception as e:
-            raise Exception(f"Failed to load config from {config_path}: {str(e)}")
+            return {
+                'status': 'error',
+                'config': {},
+                'message': f"설정 로드 실패: {str(e)}"
+            }
 
     def get_setting(self, key: str, default: Any = None) -> Any:
         """특정 설정값 조회.
@@ -93,9 +98,11 @@ class ConfigManager:
         """
         return {
             'openai_model': self.get_setting('openai_model', 'gpt-4o-2024-08-06'),
-            'temperature': self.get_setting('openai_temperature', 0.8),
-            'max_tokens': self.get_setting('interpretation_max_tokens', 400),
-            'timeout': self.get_setting('api_timeout', 15)
+            'openai_temperature': self.get_setting('openai_temperature', 0.8),
+            'interpretation_max_tokens': self.get_setting('interpretation_max_tokens', 400),
+            'summary_max_tokens': self.get_setting('summary_max_tokens', 200),
+            'api_timeout': self.get_setting('api_timeout', 15),
+            'images_folder': self.get_setting('images_folder', 'dataset/images')
         }
 
     def get_cluster_config(self) -> Dict[str, Any]:
@@ -122,49 +129,7 @@ class ConfigManager:
             'memory_file_path': self.get_setting('memory_file_path', 'user_data/conversation_memory.json')
         }
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """설정 유효성 검증.
-        
-        Args:
-            config: 검증할 설정 딕셔너리
-            
-        Returns:
-            Dict containing:
-                - valid (bool): 유효성 여부
-                - errors (List[str]): 오류 목록
-        """
-        errors = []
-        
-        # 필수 설정 키들 검증
-        required_keys = [
-            'openai_model', 'users_file_path', 'feedback_file_path',
-            'memory_file_path', 'cluster_tags_path', 'embeddings_path'
-        ]
-        
-        for key in required_keys:
-            if key not in config:
-                errors.append(f"Required setting '{key}' is missing")
-        
-        # OpenAI 모델명 검증
-        if 'openai_model' in config:
-            model = config['openai_model']
-            if not isinstance(model, str) or not model.startswith('gpt'):
-                errors.append("Invalid OpenAI model name")
-        
-        # 파일 경로 검증
-        path_keys = ['users_file_path', 'feedback_file_path', 'memory_file_path']
-        for key in path_keys:
-            if key in config:
-                path = config[key]
-                if not isinstance(path, str):
-                    errors.append(f"Invalid path for '{key}': must be string")
-        
-        return {
-            'valid': len(errors) == 0,
-            'errors': errors
-        }
-
-    def _get_default_service_config(self) -> Dict[str, Any]:
+    def _get_default_config(self) -> Dict[str, Any]:
         """기본 서비스 설정 반환.
         
         Returns:
@@ -178,22 +143,39 @@ class ConfigManager:
             'summary_max_tokens': 200,
             'api_timeout': 15,
             
+            # 이미지 폴더 경로
+            'images_folder': 'dataset/images',
+            
             # 데이터 파일 경로
             'users_file_path': 'user_data/users.json',
             'feedback_file_path': 'user_data/feedback.json', 
             'memory_file_path': 'user_data/conversation_memory.json',
             
-            # 클러스터 파일 경로
+            # 클러스터 파일 경로 (전처리된 데이터)
             'cluster_tags_path': 'dataset/processed/cluster_tags.json',
             'embeddings_path': 'dataset/processed/embeddings.json', 
             'clustering_results_path': 'dataset/processed/clustering_results.json',
             
-            # 네트워크 및 성능 설정
-            'network_timeout': 10,
-            'max_retry_attempts': 3,
-            'request_delay': 1,
+            # 카드 추천 설정
+            'display_cards_total': 20,
+            'recommendation_ratio': 0.7,
+            'cluster_count': 6,
+            
+            # 카드 선택 설정
+            'min_card_selection': 1,
+            'max_card_selection': 4,
+            
+            # 해석 설정
+            'interpretation_count': 3,
             
             # 시스템 설정
             'max_conversation_history': 50,
-            'similarity_threshold': 0.7,
+            'memory_pattern_limit': 5,
+            
+            # 사용자 페르소나 검증
+            'valid_genders': ['male', 'female'],
+            'valid_disability_types': ['의사소통 장애', '자폐스펙트럼 장애', '지적 장애'],
+            'min_age': 1,
+            'max_age': 100,
+            'required_cluster_count': 6,
         }

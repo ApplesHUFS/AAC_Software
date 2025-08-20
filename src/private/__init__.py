@@ -9,10 +9,14 @@ from .config_manager import ConfigManager
 from .card_recommender import CardRecommender
 from .card_interpreter import CardInterpreter
 from .conversation_memory import ConversationSummaryMemory
+from .cluster_similarity_calculator import ClusterSimilarityCalculator
+from .llm import LLMFactory
 
 __all__ = [
     'ConfigManager',
-    'CardRecommender',
+    'CardRecommender', 
     'CardInterpreter',
-    'ConversationSummaryMemory'
+    'ConversationSummaryMemory',
+    'ClusterSimilarityCalculator',
+    'LLMFactory'
 ]

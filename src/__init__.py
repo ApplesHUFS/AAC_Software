@@ -5,6 +5,7 @@ AAC 카드 해석 시스템 - 메인 모듈
 - aac_interpreter_service: 메인 서비스 컨트롤러 (src 루트에 위치)
 - public: 외부 API 및 사용자 인터페이스 모듈
 - private: 내부 비즈니스 로직 및 데이터 처리 모듈
+- private.llm: OpenAI API 통합 관리 모듈
 """
 
 # 메인 서비스 (src 루트)
@@ -17,9 +18,9 @@ from .public import UserManager, ContextManager, FeedbackManager
 from .private import (
     ConfigManager,
     CardRecommender,
-    CardSelector, 
     CardInterpreter,
-    ConversationSummaryMemory
+    ConversationSummaryMemory,
+    LLMFactory
 )
 
 __all__ = [
@@ -34,7 +35,7 @@ __all__ = [
     # Private 모듈
     'ConfigManager',
     'CardRecommender',
-    'CardSelector',
     'CardInterpreter', 
-    'ConversationSummaryMemory'
+    'ConversationSummaryMemory',
+    'LLMFactory'
 ]

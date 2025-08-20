@@ -41,4 +41,9 @@ SERVICE_CONFIG = {
     'min_age': 1,
     'max_age': 100,
     'required_cluster_count': 6,       # preferred_category_types에 필요한 클러스터 수
+    
+    # 클러스터 유사도 계산 설정
+    'similarity_model': 'jhgan/ko-sroberta-multitask',  # 한국어 문장 임베딩 모델
+    'similarity_threshold': 0.3,       # 클러스터 유사도 임계값
+    'device': 'auto',                  # 연산 디바이스 (auto, cpu, cuda)
 }

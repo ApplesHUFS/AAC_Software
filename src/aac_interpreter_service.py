@@ -19,8 +19,9 @@ class AACInterpreterService:
     개인화된 의사소통 지원 시스템입니다.
     
     Attributes:
+        config_manager: 설정 관리 컴포넌트
         user_manager: 사용자 관리 컴포넌트
-        card_recommender: 카드 추천 및 선택 컴포넌트 (통합)
+        card_recommender: 카드 추천 컴포넌트
         card_interpreter: 카드 해석 컴포넌트
         feedback_manager: 피드백 관리 컴포넌트
         context_manager: 상황 정보 관리 컴포넌트
@@ -36,29 +37,39 @@ class AACInterpreterService:
         self.config = config or {}
         self.config_manager = ConfigManager()
         
-        # 각 컴포넌트 초기화
+        # 설정 로드
         data_paths = self.config_manager.get_data_paths()
         cluster_config = self.config_manager.get_cluster_config()
+        service_config = self.config_manager.config
         
-        self.user_manager = UserManager(data_paths['users_file_path'])
-        self.feedback_manager = FeedbackManager(data_paths['feedback_file_path'])
-        self.context_manager = ContextManager(config)
+        # 각 컴포넌트 초기화
+        self.user_manager = UserManager(
+            users_file_path=data_paths['users_file_path'],
+            config=service_config
+        )
         
-        # 대화 메모리에 이미지 폴더 경로 설정 추가
-        memory_config = config or {}
-        memory_config['images_folder'] = self.config.get('images_folder', 'dataset/images')
+        self.feedback_manager = FeedbackManager(
+            feedback_file_path=data_paths['feedback_file_path']
+        )
+        
+        self.context_manager = ContextManager(config=service_config)
+        
+        # 대화 메모리 설정
+        memory_config = service_config.copy()
+        memory_config.update(self.config)
         self.conversation_memory = ConversationSummaryMemory(
-            memory_file_path=data_paths.get('memory_file_path', 'user_data/conversation_memory.json'),
+            memory_file_path=data_paths.get('memory_file_path'),
             config=memory_config
         )
         
-        # 카드 추천 및 해석 시스템
+        # 카드 추천 시스템
         self.card_recommender = CardRecommender(
-            cluster_tags_path=str(cluster_config['cluster_tags_path']),
-            embeddings_path=str(cluster_config['embeddings_path']),
-            clustering_results_path=str(cluster_config['clustering_results_path'])
+            clustering_results_path=str(cluster_config['clustering_results_path']),
+            config=service_config
         )
-        self.card_interpreter = CardInterpreter(config)
+        
+        # 카드 해석 시스템
+        self.card_interpreter = CardInterpreter(config=service_config)
     
     def register_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 등록 및 페르소나 생성.
@@ -117,7 +128,8 @@ class AACInterpreterService:
         """
         return self.user_manager.get_user(user_id)
     
-    def update_user_context(self, user_id: int, place: str, interaction_partner: str, current_activity: Optional[str] = None) -> Dict[str, Any]:
+    def update_user_context(self, user_id: int, place: str, interaction_partner: str, 
+                           current_activity: Optional[str] = None) -> Dict[str, Any]:
         """사용자 컨텍스트 업데이트.
         
         Args:
@@ -132,49 +144,41 @@ class AACInterpreterService:
                 - context_id (str): 생성된 컨텍스트 ID
                 - message (str): 결과 메시지
         """
-        try:
-            # 사용자 존재 확인
-            user_info = self.user_manager.get_user(user_id)
-            if user_info['status'] != 'success':
-                return {
-                    'status': 'error',
-                    'context_id': '',
-                    'message': '사용자 정보를 찾을 수 없습니다.'
-                }
-            
-            # 컨텍스트 생성 (time은 자동 생성)
-            context_result = self.context_manager.create_context(
-                place=place,
-                interaction_partner=interaction_partner,
-                current_activity=current_activity,
-                user_id=str(user_id)
-            )
-            
-            if context_result['status'] == 'success':
-                return {
-                    'status': 'success',
-                    'context_id': context_result['context_id'],
-                    'message': '사용자 컨텍스트가 성공적으로 업데이트되었습니다.'
-                }
-            else:
-                return {
-                    'status': 'error',
-                    'context_id': '',
-                    'message': context_result['message']
-                }
-                
-        except Exception as e:
+        # 사용자 존재 확인
+        user_info = self.user_manager.get_user(user_id)
+        if user_info['status'] != 'success':
             return {
                 'status': 'error',
                 'context_id': '',
-                'message': f'컨텍스트 업데이트 중 오류 발생: {str(e)}'
+                'message': '사용자 정보를 찾을 수 없습니다.'
+            }
+        
+        # 컨텍스트 생성 (time은 자동 생성)
+        context_result = self.context_manager.create_context(
+            place=place,
+            interaction_partner=interaction_partner,
+            current_activity=current_activity,
+            user_id=str(user_id)
+        )
+        
+        if context_result['status'] == 'success':
+            return {
+                'status': 'success',
+                'context_id': context_result['context_id'],
+                'message': '사용자 컨텍스트가 성공적으로 업데이트되었습니다.'
+            }
+        else:
+            return {
+                'status': 'error',
+                'context_id': '',
+                'message': context_result['message']
             }
     
     def get_card_selection_interface(self, user_id: int, context: Dict[str, Any]) -> Dict[str, Any]:
         """카드 선택 인터페이스 데이터 생성.
         
-        실제 화면에 표시할 20개 카드 (추천 70% + 랜덤 30%)를 생성합니다.
-        사용자는 이 중에서 1-4개 카드를 선택할 수 있습니다.
+        사용자의 preferred_category_types를 기반으로 추천된 카드들과 랜덤 카드들을 
+        조합하여 화면에 표시할 20개 카드를 생성합니다.
         
         Args:
             user_id: 사용자 ID
@@ -202,7 +206,7 @@ class AACInterpreterService:
             'preferred_category_types': user_data.get('preferred_category_types', [])
         }
         
-        # 카드 선택 인터페이스 데이터 생성 (CardRecommender로 통합)
+        # 카드 선택 인터페이스 데이터 생성
         return self.card_recommender.get_card_selection_interface(persona, context)
     
     def validate_card_selection(self, selected_cards: List[str], available_options: List[str]) -> Dict[str, Any]:
@@ -221,7 +225,7 @@ class AACInterpreterService:
                        user_id: int,
                        selected_cards: List[str],
                        context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """선택된 카드들을 해석 (제시된 흐름의 3.d단계).
+        """선택된 카드들을 해석.
         
         Args:
             user_id: 사용자 ID
@@ -272,7 +276,10 @@ class AACInterpreterService:
         }
         
         # 과거 해석 패턴 조회 (대화 메모리에서)
-        memory_result = self.conversation_memory.get_recent_patterns(user_id, limit=3)
+        memory_result = self.conversation_memory.get_recent_patterns(
+            user_id, 
+            limit=self.config_manager.config.get('memory_pattern_limit', 5)
+        )
         past_interpretation = ""
         if memory_result['recent_patterns']:
             past_interpretation = f"과거 사용 패턴: {'. '.join(memory_result['recent_patterns'][-2:])}"
@@ -285,7 +292,7 @@ class AACInterpreterService:
             past_interpretation=past_interpretation
         )
         
-        if interpretation_result['status'] in ['success', 'warning']:
+        if interpretation_result['status'] == 'success':
             # 피드백 추적을 위해 해석 시도 기록
             feedback_result = self.feedback_manager.record_interpretation_attempt(
                 user_id=user_id,
@@ -316,7 +323,7 @@ class AACInterpreterService:
                        feedback_id: int,
                        selected_interpretation_index: Optional[int] = None,
                        user_correction: Optional[str] = None) -> Dict[str, Any]:
-        """사용자 피드백 제출 (제시된 흐름의 3.e, 3.f단계).
+        """사용자 피드백 제출.
         
         Args:
             feedback_id: 피드백 ID
@@ -328,14 +335,13 @@ class AACInterpreterService:
                 - status (str): 'success' 또는 'error'
                 - message (str): 결과 메시지
         """
-        # 입력 유효성 검증: 둘 중 하나는 반드시 있어야 함
+        # 입력 유효성 검증
         if selected_interpretation_index is None and not user_correction:
             return {
                 'status': 'error',
                 'message': 'top-3 해석 중 선택하거나 올바른 해석을 직접 입력해야 합니다.'
             }
         
-        # selected_interpretation_index 범위 검증 (0-2)
         if selected_interpretation_index is not None:
             if not (0 <= selected_interpretation_index <= 2):
                 return {
@@ -343,13 +349,11 @@ class AACInterpreterService:
                     'message': '해석 인덱스는 0-2 범위여야 합니다.'
                 }
         
-        # user_correction 유효성 검증
-        if user_correction is not None:
-            if not user_correction.strip():
-                return {
-                    'status': 'error',
-                    'message': '올바른 해석을 입력해주세요.'
-                }
+        if user_correction is not None and not user_correction.strip():
+            return {
+                'status': 'error',
+                'message': '올바른 해석을 입력해주세요.'
+            }
         
         # 피드백 기록
         feedback_result = self.feedback_manager.record_user_feedback(
@@ -361,9 +365,8 @@ class AACInterpreterService:
         if feedback_result['status'] != 'success':
             return feedback_result
         
-        # 해석 시도 정보 조회 (ConversationSummaryMemory에 저장하기 위해)
+        # 해석 시도 정보 조회하여 대화 메모리에 저장
         try:
-            # feedback_id를 통해 해석 시도 정보 찾기
             interpretation_attempt = None
             for attempt in self.feedback_manager._data["interpretations"]:
                 if attempt["feedback_id"] == feedback_id:
@@ -383,7 +386,7 @@ class AACInterpreterService:
                 elif selected_interpretation_index is not None and 0 <= selected_interpretation_index < len(interpretations):
                     final_interpretation = interpretations[selected_interpretation_index]
                 
-                # ConversationSummaryMemory에 대화 기억 추가 (제시된 흐름의 3.f단계)
+                # 대화 메모리에 추가
                 if final_interpretation:
                     memory_result = self.conversation_memory.add_conversation_memory(
                         user_id=user_id,
@@ -416,7 +419,7 @@ class AACInterpreterService:
                                    context: Dict[str, Any],
                                    interpretations: List[str],
                                    partner_info: Dict[str, Any]) -> Dict[str, Any]:
-        """Partner에게 해석 확인 요청 (흐름의 3.e단계) -> 3개 선택지 중 하나 선택.
+        """Partner에게 해석 확인 요청.
         
         Args:
             user_id: 사용자 ID
@@ -457,7 +460,7 @@ class AACInterpreterService:
         )
         
         if feedback_result['status'] == 'success':
-            # Partner 피드백을 기존 피드백 시스템에도 기록
+            # Partner 피드백을 대화 메모리에도 기록
             feedback_data = feedback_result['feedback_result']
             final_interpretation = (
                 feedback_data.get('selected_interpretation') or 
@@ -465,7 +468,6 @@ class AACInterpreterService:
             )
             
             if final_interpretation:
-                # 대화 메모리 업데이트
                 self.conversation_memory.add_conversation_memory(
                     user_id=feedback_data['user_id'],
                     cards=feedback_data['cards'],
