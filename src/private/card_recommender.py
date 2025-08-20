@@ -131,6 +131,33 @@ class CardRecommender:
             else:
                 base_cluster = random.choice(list(self.clustered_files.keys()))
         used_clusters.append(base_cluster)
+        ''''
+        6개의 클러스터에서 골고루 카드 선택
+
+        # 1) 기본 클러스터들(6개)에서 카드 선택
+        if preferred_clusters:
+        cluster_cycle = preferred_clusters.copy()
+        idx = 0
+        while len(selected_cards) < n_cards and cluster_cycle:
+            cluster_id = cluster_cycle[idx % len(cluster_cycle)] # 차례대로 인덱싱해서 골고루 뽑음
+            cards_pool = [f for f in self.clustered_files.get(cluster_id, [])
+                        if f in self.filename_to_idx and f not in selected_cards]
+
+            #혹~시 해당 클러스터에서 뽑을 카드가 없다면 삭제하고 다른 클러스터에서 계속
+            if not cards_pool:
+                cluster_cycle.remove(cluster_id)
+                if not cluster_cycle:
+                    break
+                continue
+            c = weighted_choice(cards_pool)
+            if c:
+                selected_cards.append(c)
+                card_usage_count[c] += 1
+                if cluster_id not in used_clusters:
+                    used_clusters.append(cluster_id)
+            idx += 1
+
+        '''
 
         # 기본 클러스터에서 카드 선택
         base_cards_pool = [f for f in self.clustered_files.get(base_cluster, []) if f in self.filename_to_idx]
