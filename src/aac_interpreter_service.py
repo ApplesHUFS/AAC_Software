@@ -43,9 +43,13 @@ class AACInterpreterService:
         self.user_manager = UserManager(data_paths['users_file_path'])
         self.feedback_manager = FeedbackManager(data_paths['feedback_file_path'])
         self.context_manager = ContextManager(config)
+        
+        # 대화 메모리에 이미지 폴더 경로 설정 추가
+        memory_config = config or {}
+        memory_config['images_folder'] = self.config.get('images_folder', 'dataset/images')
         self.conversation_memory = ConversationSummaryMemory(
             memory_file_path=data_paths.get('memory_file_path', 'user_data/conversation_memory.json'),
-            config=config
+            config=memory_config
         )
         
         # 카드 추천 및 해석 시스템
@@ -79,8 +83,7 @@ class AACInterpreterService:
                 - status (str): 'success' 또는 'error'
                 - authenticated (bool): 인증 성공 여부
                 - user_info (Dict): 사용자 페르소나 정보 (인증 성공시)
-                'message': str
-            }
+                - message (str): 결과 메시지
         """
         auth_result = self.user_manager.authenticate_user(user_id, password)
         
@@ -101,20 +104,71 @@ class AACInterpreterService:
             }
     
     def get_user_info(self, user_id: int) -> Dict[str, Any]:
-        """
-        사용자 정보 조회
+        """사용자 정보 조회.
         
         Args:
             user_id: 사용자 ID
             
         Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'user': Dict or None,
-                'message': str
-            }
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - user (Dict): 사용자 정보 (성공시)
+                - message (str): 결과 메시지
         """
         return self.user_manager.get_user(user_id)
+    
+    def update_user_context(self, user_id: int, place: str, interaction_partner: str, current_activity: Optional[str] = None) -> Dict[str, Any]:
+        """사용자 컨텍스트 업데이트.
+        
+        Args:
+            user_id: 사용자 ID
+            place: 장소 (직접 입력, 필수)
+            interaction_partner: 대화 상대 (직접 입력, 필수) 
+            current_activity: 현재 활동 (직접 입력, 옵션)
+            
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - context_id (str): 생성된 컨텍스트 ID
+                - message (str): 결과 메시지
+        """
+        try:
+            # 사용자 존재 확인
+            user_info = self.user_manager.get_user(user_id)
+            if user_info['status'] != 'success':
+                return {
+                    'status': 'error',
+                    'context_id': '',
+                    'message': '사용자 정보를 찾을 수 없습니다.'
+                }
+            
+            # 컨텍스트 생성 (time은 자동 생성)
+            context_result = self.context_manager.create_context(
+                place=place,
+                interaction_partner=interaction_partner,
+                current_activity=current_activity,
+                user_id=str(user_id)
+            )
+            
+            if context_result['status'] == 'success':
+                return {
+                    'status': 'success',
+                    'context_id': context_result['context_id'],
+                    'message': '사용자 컨텍스트가 성공적으로 업데이트되었습니다.'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'context_id': '',
+                    'message': context_result['message']
+                }
+                
+        except Exception as e:
+            return {
+                'status': 'error',
+                'context_id': '',
+                'message': f'컨텍스트 업데이트 중 오류 발생: {str(e)}'
+            }
     
     def get_card_selection_interface(self, user_id: int, context: Dict[str, Any]) -> Dict[str, Any]:
         """카드 선택 인터페이스 데이터 생성.
@@ -167,8 +221,7 @@ class AACInterpreterService:
                        user_id: int,
                        selected_cards: List[str],
                        context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        선택된 카드들을 해석 (제시된 흐름의 3.d단계)
+        """선택된 카드들을 해석 (제시된 흐름의 3.d단계).
         
         Args:
             user_id: 사용자 ID
@@ -181,13 +234,12 @@ class AACInterpreterService:
             }
             
         Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'interpretations': List[str],  # 3개
-                'feedback_id': int,
-                'method': str,  # 'online' or 'offline'
-                'message': str
-            }
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - interpretations (List[str]): 3개 해석 (성공시)
+                - feedback_id (int): 피드백 ID
+                - method (str): 해석 방법
+                - message (str): 결과 메시지
         """
         # 사용자 정보 조회
         user_info = self.user_manager.get_user(user_id)
@@ -220,10 +272,10 @@ class AACInterpreterService:
         }
         
         # 과거 해석 패턴 조회 (대화 메모리에서)
-        memory_patterns = self.conversation_memory.get_card_usage_patterns(user_id, selected_cards)
+        memory_result = self.conversation_memory.get_recent_patterns(user_id, limit=3)
         past_interpretation = ""
-        if memory_patterns['patterns']:
-            past_interpretation = f"과거 유사한 상황에서의 해석: {', '.join(memory_patterns['patterns'][-2:])}"
+        if memory_result['recent_patterns']:
+            past_interpretation = f"과거 사용 패턴: {'. '.join(memory_result['recent_patterns'][-2:])}"
         
         # 카드 해석 수행
         interpretation_result = self.card_interpreter.interpret_cards(
@@ -264,8 +316,7 @@ class AACInterpreterService:
                        feedback_id: int,
                        selected_interpretation_index: Optional[int] = None,
                        user_correction: Optional[str] = None) -> Dict[str, Any]:
-        """
-        partner 피드백 제출 (제시된 흐름의 3.e, 3.f단계)
+        """사용자 피드백 제출 (제시된 흐름의 3.e, 3.f단계).
         
         Args:
             feedback_id: 피드백 ID
@@ -273,10 +324,9 @@ class AACInterpreterService:
             user_correction: 올바른 해석 직접 입력 - 어떤 것도 맞지 않을 때
             
         Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'message': str
-            }
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - message (str): 결과 메시지
         """
         # 입력 유효성 검증: 둘 중 하나는 반드시 있어야 함
         if selected_interpretation_index is None and not user_correction:
@@ -366,8 +416,7 @@ class AACInterpreterService:
                                    context: Dict[str, Any],
                                    interpretations: List[str],
                                    partner_info: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Partner에게 해석 확인 요청 (흐름의 3.e단계) -> 3개 선택지 중 하나 선택
+        """Partner에게 해석 확인 요청 (흐름의 3.e단계) -> 3개 선택지 중 하나 선택.
         
         Args:
             user_id: 사용자 ID
@@ -377,7 +426,7 @@ class AACInterpreterService:
             partner_info: Partner 정보
             
         Returns:
-            Dict[str, Any]: 확인 요청 결과
+            Dict containing 확인 요청 결과
         """
         return self.feedback_manager.request_interpretation_confirmation(
             user_id=user_id,
@@ -391,8 +440,7 @@ class AACInterpreterService:
                               confirmation_id: str,
                               selected_interpretation_index: Optional[int] = None,
                               direct_feedback: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Partner 피드백 제출 처리
+        """Partner 피드백 제출 처리.
         
         Args:
             confirmation_id: 확인 요청 ID
@@ -400,7 +448,7 @@ class AACInterpreterService:
             direct_feedback: 직접 입력 피드백
             
         Returns:
-            Dict[str, Any]: 피드백 처리 결과
+            Dict containing 피드백 처리 결과
         """
         feedback_result = self.feedback_manager.submit_partner_confirmation(
             confirmation_id=confirmation_id,
@@ -430,69 +478,12 @@ class AACInterpreterService:
         return feedback_result
     
     def get_pending_partner_confirmations(self, partner_filter: Optional[str] = None) -> Dict[str, Any]:
-        """
-        대기 중인 Partner 확인 요청들 조회
+        """대기 중인 Partner 확인 요청들 조회.
         
         Args:
             partner_filter: 특정 Partner로 필터링
             
         Returns:
-            Dict[str, Any]: 대기 중인 확인 요청들
+            Dict containing 대기 중인 확인 요청들
         """
         return self.feedback_manager.get_pending_confirmations(partner_filter)
-    
-    def update_user_context(self, user_id: int, place: str, interaction_partner: str, current_activity: Optional[str] = None) -> Dict[str, Any]:
-        """
-        사용자 컨텍스트 업데이트
-        
-        Args:
-            user_id: 사용자 ID
-            place: 장소 (직접 입력, 필수)
-            interaction_partner: 대화 상대 (직접 입력, 필수) 
-            current_activity: 현재 활동 (직접 입력, 옵션)
-            
-        Returns:
-            Dict[str, Any]: {
-                'status': str,
-                'context_id': str,
-                'message': str
-            }
-        """
-        try:
-            # 사용자 존재 확인
-            user_info = self.user_manager.get_user(user_id)
-            if user_info['status'] != 'success':
-                return {
-                    'status': 'error',
-                    'context_id': '',
-                    'message': '사용자 정보를 찾을 수 없습니다.'
-                }
-            
-            # 컨텍스트 생성 (time은 자동 생성)
-            context_result = self.context_manager.create_context(
-                place=place,
-                interaction_partner=interaction_partner,
-                current_activity=current_activity,
-                user_id=str(user_id)
-            )
-            
-            if context_result['status'] == 'success':
-                return {
-                    'status': 'success',
-                    'context_id': context_result['context_id'],
-                    'message': '사용자 컨텍스트가 성공적으로 업데이트되었습니다.'
-                }
-            else:
-                return {
-                    'status': 'error',
-                    'message': '컨텍스트 생성 중 오류가 발생했습니다.'
-                }
-                
-        except Exception as e:
-            return {
-                'status': 'error',
-                'message': f'컨텍스트 업데이트 중 오류 발생: {str(e)}'
-            }
-    
-    
-    
