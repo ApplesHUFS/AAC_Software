@@ -367,7 +367,7 @@ class AACInterpreterService:
                                    interpretations: List[str],
                                    partner_info: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Partner에게 해석 확인 요청 (흐름의 3.e단계)
+        Partner에게 해석 확인 요청 (흐름의 3.e단계) -> 3개 선택지 중 하나 선택
         
         Args:
             user_id: 사용자 ID
