@@ -2,7 +2,10 @@ import base64
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
+from dotenv import load_dotenv
 from openai import OpenAI
+
+load_dotenv()
 
 
 class LLMFactory:

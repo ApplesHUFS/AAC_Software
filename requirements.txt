@@ -10,3 +10,6 @@ python-dotenv>=1.0.0
 huggingface-hub>=0.16.0
 tqdm>=4.64.0
 openai
+langchain
+langchain-openai
+sentence-transformers

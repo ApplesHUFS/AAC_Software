@@ -2,9 +2,12 @@ import json
 import os
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+from dotenv import load_dotenv
 from langchain.memory import ConversationSummaryMemory as LangChainConversationSummaryMemory
 from langchain_openai import ChatOpenAI
 from .llm import LLMFactory
+
+load_dotenv()
 
 
 class ConversationSummaryMemory:
