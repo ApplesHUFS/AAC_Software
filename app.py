@@ -36,19 +36,19 @@ def health_check():
 
 @app.route('/users', methods=['POST'])
 def create_user():
-    """새 사용자 생성 - 기존 호환성 유지"""
+    """새 사용자 생성"""
     try:
         data = request.get_json()
 
-        # 기존 app.py와 동일한 기본 페르소나 데이터 생성 (호환성 유지)
+        # 페르소나 데이터 생성
         persona_data = {
-            'name': data.get('name', ''),
-            'age': data.get('age') or 10,  # 기본값 제공
-            'gender': data.get('gender') or 'male',  # 기본값 제공
-            'disability_type': data.get('disability_type') or '자폐스펙트럼 장애',  # 기본값 제공
+            'name': data.get('name'),
+            'age': data.get('age'),
+            'gender': data.get('gender'),
+            'disability_type': data.get('disability_type'),
             'communication_characteristics': data.get('communication_characteristics', ''),
-            'interesting_topics': data.get('interesting_topics') or ['일반'],  # 기본값 제공
-            'password': data.get('password', 'default123')  # 기본값 제공
+            'interesting_topics': data.get('interesting_topics'),
+            'password': data.get('password')
         }
 
         result = aac_service.register_user(persona_data)
@@ -244,7 +244,7 @@ def get_user_contexts(user_id):
 
 @app.route('/cards/recommendations', methods=['POST'])
 def get_card_recommendations():
-    """개인화된 AAC 카드 추천 - 기존 호환성 유지"""
+    """개인화된 AAC 카드 추천"""
     try:
         data = request.get_json()
         user_id = data.get('userId')
@@ -253,25 +253,17 @@ def get_card_recommendations():
         if not user_id:
             return jsonify({'error': 'userId가 필요합니다'}), 400
 
-        # 컨텍스트 정보 조회 - 선택사항 (원래 app.py와 동일)
-        if context_id:
-            context_result = aac_service.context_manager.get_context(context_id)
-            if context_result['status'] == 'success':
-                context_data = {
-                    'time': context_result['context']['time'],
-                    'place': context_result['context']['place'],
-                    'interaction_partner': context_result['context']['interaction_partner'],
-                    'current_activity': context_result['context']['current_activity']
-                }
-            else:
-                return jsonify({'error': f'컨텍스트를 찾을 수 없습니다: {context_id}'}), 404
-        else:
-            # 기본 컨텍스트 사용 (원래 app.py와 동일)
+        # 컨텍스트 정보 조회
+        context_result = aac_service.context_manager.get_context(context_id)
+        if context_result['status'] == 'success':
             context_data = {
-                'place': '집',
-                'interaction_partner': '가족',
-                'current_activity': '일상대화'
+                'time': context_result['context']['time'],
+                'place': context_result['context']['place'],
+                'interaction_partner': context_result['context']['interaction_partner'],
+                'current_activity': context_result['context']['current_activity']
             }
+        else:
+            return jsonify({'error': f'컨텍스트를 찾을 수 없습니다: {context_id}'}), 404
 
         # AAC 서비스가 없거나 초기화되지 않은 경우 처리
         if not hasattr(aac_service, 'card_recommender') or aac_service.card_recommender is None:
@@ -283,14 +275,14 @@ def get_card_recommendations():
             interface_data = result['interface_data']
             cards = interface_data['selection_options']
 
-            # 기존 시스템 로직 존중 - 단순한 카드 정보만 제공
+            # 카드 정보 제공
             formatted_cards = []
             for i, card_filename in enumerate(cards):
                 formatted_cards.append({
                     'id': i + 1,
                     'name': card_filename.replace('.png', '').replace('_', ' '),
-                    'category': '일반',  # 원래 app.py에서 사용하던 단순한 분류
-                    'image_path': None   # 원래 app.py에서 None으로 설정
+                    'filename': card_filename,  # "2248_물.png"
+                    'image_path': f'dataset/images/{card_filename}'
                 })
 
             return jsonify({
@@ -305,7 +297,7 @@ def get_card_recommendations():
 
 @app.route('/cards/interpret', methods=['POST'])
 def interpret_cards():
-    """선택된 AAC 카드들 해석 - 기존 호환성 유지"""
+    """선택된 AAC 카드들 해석"""
     try:
         data = request.get_json()
         selected_cards = data.get('selectedCards', [])
@@ -317,10 +309,23 @@ def interpret_cards():
         if not selected_cards:
             return jsonify({'error': 'selectedCards가 필요합니다'}), 400
 
-        # 선택된 카드 이름 추출 (원래 app.py와 동일한 로직)
-        card_names = [card.get('name', '') for card in selected_cards]
+        # 선택된 카드 파일명 추출
+        if isinstance(selected_cards[0], dict):
+            # 카드 객체에서 filename 우선 사용, 없으면 name으로 생성
+            card_filenames = []
+            for card in selected_cards:
+                if 'filename' in card:
+                    card_filenames.append(card['filename'])
+                elif 'name' in card:
+                    name = card['name'].replace(' ', '_') + '.png'
+                    card_filenames.append(name)
+                else:
+                    card_filenames.append('')
+        else:
+            # 문자열 배열인 경우 그대로 사용
+            card_filenames = selected_cards
 
-        # 컨텍스트 처리 - 선택사항 (원래 app.py와 동일)
+        # 컨텍스트 처리
         if context_id:
             context_result = aac_service.context_manager.get_context(context_id)
             if context_result['status'] == 'success':
@@ -330,18 +335,6 @@ def interpret_cards():
                     'interaction_partner': context_result['context']['interaction_partner'],
                     'current_activity': context_result['context']['current_activity']
                 }
-            else:
-                # 컨텍스트 조회 실패시 기본값 사용
-                context = {
-                    'place': '집',
-                    'interaction_partner': '가족'
-                }
-        else:
-            # 더미 컨텍스트와 페르소나로 해석 요청 (원래 app.py와 동일)
-            context = {
-                'place': '집',
-                'interaction_partner': '가족'
-            }
 
         # CardInterpreter가 없는 경우 처리
         if not hasattr(aac_service, 'card_interpreter') or aac_service.card_interpreter is None:
@@ -349,14 +342,14 @@ def interpret_cards():
 
         result = aac_service.interpret_cards(
             int(user_id),
-            card_names,
+            card_filenames,  # 실제 파일명 사용
             context
         )
 
         if result['status'] == 'success':
-            # 기존 시스템 로직 존중 - 해석은 문자열 배열로 반환
+            # 해석 문자열 배열 반환
             return jsonify({
-                'interpretations': result['interpretations'],  # List[str] 그대로
+                'interpretations': result['interpretations'],
                 'feedback_id': result['feedback_id'],
                 'method': result['method'],
                 'message': result['message']
@@ -371,21 +364,71 @@ def interpret_cards():
 
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
-    """피드백 제출 - 기존 호환성 유지"""
+    """Partner 피드백 제출"""
     try:
         data = request.get_json()
-        user_id = data.get('userId')
+        if not data:
+            return jsonify({'error': 'JSON 데이터가 필요합니다'}), 400
 
-        # 기존 app.py와 동일한 단순한 피드백 처리
-        print(f"Feedback received for user {user_id}: {data}")
+        feedback_type = data.get('type', 'partner_feedback')
 
-        return jsonify({
-            'success': True,
-            'message': 'Feedback submitted successfully'
-        })
+        if feedback_type == 'partner_confirmation':
+            # Partner의 해석 확인 요청
+            user_id = data.get('userId')
+            cards = data.get('cards', [])
+            context = data.get('context', {})
+            interpretations = data.get('interpretations', [])
+            partner_info = data.get('partnerInfo', {})
 
+            if not all([user_id, cards, interpretations]):
+                return jsonify({'error': 'userId, cards, interpretations가 필요합니다'}), 400
+
+            result = aac_service.request_partner_confirmation(
+                user_id=int(user_id),
+                cards=cards,
+                context=context,
+                interpretations=interpretations,
+                partner_info=partner_info
+            )
+
+            if result['status'] == 'success':
+                return jsonify({
+                    'success': True,
+                    'confirmation_id': result['confirmation_id'],
+                    'message': result['message']
+                })
+            else:
+                return jsonify({'error': result['message']}), 400
+
+        elif feedback_type == 'partner_submit':
+            # Partner의 피드백 제출
+            confirmation_id = data.get('confirmationId')
+            selected_interpretation_index = data.get('selectedInterpretationIndex')
+            direct_feedback = data.get('directFeedback')
+
+            if not confirmation_id:
+                return jsonify({'error': 'confirmationId가 필요합니다'}), 400
+
+            result = aac_service.submit_partner_feedback(
+                confirmation_id=confirmation_id,
+                selected_interpretation_index=selected_interpretation_index,
+                direct_feedback=direct_feedback
+            )
+
+            if result['status'] == 'success':
+                return jsonify({
+                    'success': True,
+                    'feedback_result': result['feedback_result'],
+                    'message': result['message']
+                })
+            else:
+                return jsonify({'error': result['message']}), 400
+
+    except ValueError:
+        return jsonify({'error': '유효하지 않은 사용자 ID입니다'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        print(f"피드백 제출 오류: {str(e)}")
+        return jsonify({'error': f'피드백 제출 실패: {str(e)}'}), 500
 
 @app.route('/feedback/pending', methods=['GET'])
 def get_pending_feedback():
@@ -409,21 +452,62 @@ def get_pending_feedback():
 
 @app.route('/memory/update', methods=['POST'])
 def update_memory():
-    """메모리 업데이트 - 기존 호환성 유지"""
+    """대화 메모리 업데이트 - 실제 시스템 연결"""
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON 데이터가 필요합니다'}), 400
+
         user_id = data.get('userId')
+        cards = data.get('cards', [])
+        context = data.get('context', {})
+        interpretations = data.get('interpretations', [])
+        final_interpretation = data.get('finalInterpretation')  # Partner가 선택/입력한 최종 해석
 
-        # 기존 app.py와 동일한 단순한 메모리 업데이트 처리
-        print(f"Memory update for user {user_id}: {data}")
+        if not user_id:
+            return jsonify({'error': 'userId가 필요합니다'}), 400
 
-        return jsonify({
-            'success': True,
-            'message': 'Memory updated successfully'
-        })
+        # ConversationSummaryMemory가 없는 경우 기본 처리
+        if not hasattr(aac_service, 'conversation_memory') or aac_service.conversation_memory is None:
+            print(f"Memory update for user {user_id}: {data}")
+            return jsonify({
+                'success': True,
+                'message': 'Memory updated successfully (basic mode)'
+            })
 
+        # 실제 메모리 시스템 사용
+        if final_interpretation and cards:
+            result = aac_service.conversation_memory.add_conversation_memory(
+                user_id=int(user_id),
+                cards=cards,
+                context=context,
+                interpretations=interpretations,
+                selected_interpretation=final_interpretation if final_interpretation in interpretations else None,
+                user_correction=final_interpretation if final_interpretation not in interpretations else None
+            )
+
+            if result['status'] == 'success':
+                return jsonify({
+                    'success': True,
+                    'summary': result['summary'],
+                    'memory_updated': result['memory_updated'],
+                    'message': result['message']
+                })
+            else:
+                return jsonify({'error': result['message']}), 400
+        else:
+            # 기본 처리 (기존 호환성)
+            print(f"Memory update for user {user_id}: {data}")
+            return jsonify({
+                'success': True,
+                'message': 'Memory updated successfully'
+            })
+
+    except ValueError:
+        return jsonify({'error': '유효하지 않은 사용자 ID입니다'}), 400
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        print(f"메모리 업데이트 오류: {str(e)}")
+        return jsonify({'error': f'메모리 업데이트 실패: {str(e)}'}), 500
 
 @app.route('/memory/<user_id>/summary', methods=['GET'])
 def get_memory_summary(user_id):
