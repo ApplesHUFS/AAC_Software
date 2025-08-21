@@ -21,8 +21,8 @@ export const contextAPI = {
 };
 
 export const cardAPI = {
-  getRecommendations: (userId, contextData) =>
-    api.post('/cards/recommendations', { userId, ...contextData }),
+  getRecommendations: (requestData) =>
+    api.post('/cards/recommendations', requestData),
   interpretCards: (selectedCards, userId, contextId) =>
     api.post('/cards/interpret', { selectedCards, userId, contextId }),
 };

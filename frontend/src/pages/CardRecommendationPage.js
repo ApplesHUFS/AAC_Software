@@ -29,10 +29,23 @@ const CardRecommendationPage = () => {
       const userId = localStorage.getItem('userId');
       const contextId = localStorage.getItem('contextId');
 
-      const response = await cardAPI.getRecommendations(userId, { contextId });
-      setCards(response.data.cards || []);
+      if (!userId || !contextId) {
+        setError('사용자 ID 또는 컨텍스트 ID를 찾을 수 없습니다.');
+        return;
+      }
+
+      const response = await cardAPI.getRecommendations({
+        userId: parseInt(userId),
+        contextId: contextId
+      });
+
+      const cardsData = response.data.cards || [];
+      setCards(cardsData);
+
+      console.log(`총 ${cardsData.length}개의 카드가 추천되었습니다.`);
     } catch (err) {
-      setError('카드 추천을 불러오는 중 오류가 발생했습니다.');
+      const errorMessage = err.response?.data?.error || '카드 추천을 불러오는 중 오류가 발생했습니다.';
+      setError(errorMessage);
       console.error('Error loading recommendations:', err);
     } finally {
       setIsLoading(false);

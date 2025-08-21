@@ -5,7 +5,6 @@ import '../styles/ContextInputPage.css';
 
 const ContextInputPage = () => {
   const [formData, setFormData] = useState({
-    time: new Date().toISOString().slice(0, 16),
     place: '',
     interaction_partner: '',
     current_activity: ''
@@ -44,15 +43,22 @@ const ContextInputPage = () => {
       const userId = localStorage.getItem('userId');
       const contextData = {
         ...formData,
-        userId
+        userId: parseInt(userId)  // 백엔드에서 int 타입을 기대함
       };
 
       const response = await contextAPI.createContext(contextData);
       localStorage.setItem('contextId', response.data.id);
 
+      // 컨텍스트 정보를 로컬 저장소에 저장 (카드 추천에서 사용)
+      localStorage.setItem('contextData', JSON.stringify({
+        contextId: response.data.id,
+        ...formData
+      }));
+
       navigate('/cards/recommendation');
     } catch (err) {
-      setError('컨텍스트 정보 저장 중 오류가 발생했습니다.');
+      const errorMessage = err.response?.data?.error || '컨텍스트 정보 저장 중 오류가 발생했습니다.';
+      setError(errorMessage);
       console.error('Error saving context:', err);
     } finally {
       setIsLoading(false);
@@ -66,16 +72,8 @@ const ContextInputPage = () => {
         <p className="subtitle">현재 대화 상황에 대한 정보를 입력해주세요.</p>
 
         <form onSubmit={handleSubmit} className="context-form">
-          <div className="form-group">
-            <label htmlFor="time">시간</label>
-            <input
-              type="datetime-local"
-              id="time"
-              name="time"
-              value={formData.time}
-              onChange={handleInputChange}
-              disabled={isLoading}
-            />
+          <div className="info-text">
+            <p><strong>현재 시간:</strong> {new Date().toLocaleString('ko-KR')}</p>
           </div>
 
           <div className="form-group">
@@ -123,7 +121,7 @@ const ContextInputPage = () => {
             <button
               type="button"
               className="back-button"
-              onClick={() => navigate('/persona/input')}
+              onClick={() => navigate('/user/create')}
               disabled={isLoading}
             >
               이전

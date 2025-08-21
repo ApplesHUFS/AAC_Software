@@ -29,6 +29,20 @@
   line-height: 1.5;
 }
 
+.info-text {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #2196F3;
+}
+
+.info-text p {
+  margin: 0;
+  color: #555;
+  font-weight: 500;
+}
+
 .context-form {
   display: flex;
   flex-direction: column;

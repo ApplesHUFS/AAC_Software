@@ -52,37 +52,68 @@ const FeedbackPage = () => {
       const userId = localStorage.getItem('userId');
       const contextId = localStorage.getItem('contextId');
       const selectedCards = JSON.parse(localStorage.getItem('selectedCards') || '[]');
+      const feedbackId = localStorage.getItem('feedbackId');
+      const contextData = JSON.parse(localStorage.getItem('contextData') || '{}');
 
-      const feedbackData = {
-        userId,
-        contextId,
-        selectedCards,
-        interpretation: needsCustom ? customInterpretation : selectedInterpretation.text,
-        isCustom: needsCustom,
-        timestamp: new Date().toISOString()
+      // Step 1: 먼저 Partner 피드백 confirmation 요청
+      const confirmationData = {
+        type: 'partner_confirmation',
+        userId: parseInt(userId),
+        cards: selectedCards.map(card => card.filename || card.name),
+        context: {
+          place: contextData.place || '',
+          interaction_partner: contextData.interaction_partner || '',
+          current_activity: contextData.current_activity || '',
+          time: new Date().toLocaleTimeString('ko-KR')
+        },
+        interpretations: [], // 기존 해석들 (필요시 추가)
+        partnerInfo: {
+          name: '파트너',
+          relationship: contextData.interaction_partner || '대화상대'
+        }
       };
 
-      await feedbackAPI.submitFeedback(feedbackData);
+      const confirmationResponse = await feedbackAPI.submitFeedback(confirmationData);
+      const confirmationId = confirmationResponse.data.confirmation_id;
+
+      // Step 2: 실제 피드백 제출
+      const finalInterpretation = needsCustom ? customInterpretation : selectedInterpretation.text;
+
+      const submitData = {
+        type: 'partner_submit',
+        confirmationId: confirmationId,
+        selectedInterpretationIndex: needsCustom ? -1 : (selectedInterpretation.rank - 1),
+        directFeedback: needsCustom ? customInterpretation : null
+      };
+
+      await feedbackAPI.submitFeedback(submitData);
+
+      // Step 3: 메모리 업데이트
       await feedbackAPI.updateMemory({
-        userId,
-        cards: selectedCards,
-        interpretation: feedbackData.interpretation,
-        context: contextId
+        userId: parseInt(userId),
+        cards: selectedCards.map(card => card.filename || card.name),
+        context: contextData,
+        interpretations: [], // 기존 해석들
+        finalInterpretation: finalInterpretation
       });
 
       setSuccess(true);
 
+      // 로컬 저장소 정리
       localStorage.removeItem('selectedInterpretation');
       localStorage.removeItem('needsCustomInterpretation');
       localStorage.removeItem('selectedCards');
       localStorage.removeItem('contextId');
+      localStorage.removeItem('contextData');
+      localStorage.removeItem('feedbackId');
 
       setTimeout(() => {
         navigate('/context/input');
       }, 2000);
 
     } catch (err) {
-      setError('피드백 저장 중 오류가 발생했습니다.');
+      const errorMessage = err.response?.data?.error || '피드백 저장 중 오류가 발생했습니다.';
+      setError(errorMessage);
       console.error('Error submitting feedback:', err);
     } finally {
       setIsLoading(false);

@@ -28,10 +28,27 @@ const CardInterpretationPage = () => {
   const interpretCards = async (cards, userId, contextId) => {
     try {
       setIsLoading(true);
-      const response = await cardAPI.interpretCards(cards, userId, contextId);
-      setInterpretations(response.data.interpretations || []);
+      const response = await cardAPI.interpretCards(cards, parseInt(userId), contextId);
+
+      const interpretationsData = response.data.interpretations || [];
+
+      // 백엔드에서 문자열 배열로 받은 해석을 객체 형태로 변환
+      const formattedInterpretations = interpretationsData.map((text, index) => ({
+        text: text,
+        confidence: 0.9 - (index * 0.1), // 순서대로 신뢰도 설정
+        rank: index + 1
+      }));
+
+      setInterpretations(formattedInterpretations);
+
+      // 피드백 ID를 저장 (백엔드에서 추가 피드백 처리용)
+      if (response.data.feedback_id) {
+        localStorage.setItem('feedbackId', response.data.feedback_id);
+      }
+
     } catch (err) {
-      setError('카드 해석 중 오류가 발생했습니다.');
+      const errorMessage = err.response?.data?.error || '카드 해석 중 오류가 발생했습니다.';
+      setError(errorMessage);
       console.error('Error interpreting cards:', err);
     } finally {
       setIsLoading(false);
@@ -73,7 +90,7 @@ const CardInterpretationPage = () => {
             {selectedCards.map((card, index) => (
               <div key={index} className="selected-card">
                 <img
-                  src={card.image_path || `/images/cards/${card.id}.png`}
+                  src={`http://localhost:8000/${card.image_path}` || `/images/cards/${card.filename}` || `/images/cards/${card.id}.png`}
                   alt={card.name || card.label}
                   onError={(e) => {
                     e.target.style.display = 'none';

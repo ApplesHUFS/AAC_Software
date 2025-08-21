@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import './App.css';
 
 import UserCreatePage from './pages/UserCreatePage';
-import PersonaInputPage from './pages/PersonaInputPage';
 import ContextInputPage from './pages/ContextInputPage';
 import CardRecommendationPage from './pages/CardRecommendationPage';
 import CardInterpretationPage from './pages/CardInterpretationPage';
@@ -20,7 +19,6 @@ function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/user/create" replace />} />
             <Route path="/user/create" element={<UserCreatePage />} />
-            <Route path="/persona/input" element={<PersonaInputPage />} />
             <Route path="/context/input" element={<ContextInputPage />} />
             <Route path="/cards/recommendation" element={<CardRecommendationPage />} />
             <Route path="/cards/interpretation" element={<CardInterpretationPage />} />

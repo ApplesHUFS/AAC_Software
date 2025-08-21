@@ -21,7 +21,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled }) => {
       <div className="card-image-container">
         {!imageError ? (
           <img
-            src={card.image_path || `/images/cards/${card.id}.png`}
+            src={`http://localhost:8000/${card.image_path}` || `/images/cards/${card.filename}` || `/images/cards/${card.id}.png`}
             alt={card.name || card.label}
             onError={handleImageError}
             className="card-image"
