@@ -7,6 +7,9 @@ AAC 카드 해석 시스템 - 메인 모듈
 - private.llm: OpenAI API 통합 관리 모듈
 """
 
+# config
+import service_config
+
 # Public 모듈들 (외부 접근 가능)
 from .public import UserManager, ContextManager, FeedbackManager
 
@@ -20,6 +23,9 @@ from .private import (
 )
 
 __all__ = [
+    # config
+    'service_config'
+
     # Public 모듈
     'UserManager',
     'ContextManager', 
