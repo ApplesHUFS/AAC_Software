@@ -27,12 +27,12 @@ __all__ = [
 
     # Public 모듈
     'UserManager',
-    'ContextManager', 
+    'ContextManager',
     'FeedbackManager',
-    
+
     # Private 모듈
     'CardRecommender',
-    'CardInterpreter', 
+    'CardInterpreter',
     'ConversationSummaryMemory',
     'LLMFactory'
 ]

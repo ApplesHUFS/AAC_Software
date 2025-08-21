@@ -7,10 +7,10 @@ from openai import OpenAI
 
 class LLMFactory:
     """OpenAI API 통합 관리 팩토리.
-    
+
     이미지 처리, LLM 호출, 응답 파싱 등 OpenAI 관련 기능을 중앙화하여
     card_interpreter와 conversation_memory에서 공통으로 사용합니다.
-    
+
     Attributes:
         client: OpenAI API 클라이언트
         model: 사용할 모델명
@@ -19,10 +19,10 @@ class LLMFactory:
         timeout: API 호출 타임아웃
         images_folder: 이미지 폴더 경로
     """
-    
+
     def __init__(self, config: Dict[str, Any]):
         """LLMFactory 초기화.
-        
+
         Args:
             config: 설정 딕셔너리
         """
@@ -32,33 +32,33 @@ class LLMFactory:
         self.max_tokens = config.get('interpretation_max_tokens', 400)
         self.timeout = config.get('api_timeout', 15)
         self.images_folder = Path(config.get('images_folder', 'dataset/images'))
-    
+
     def encode_image(self, image_path: Path) -> str:
         """이미지를 base64로 인코딩.
-        
+
         Args:
             image_path: 이미지 파일 경로
-            
+
         Returns:
             str: base64 인코딩된 이미지 문자열
         """
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
-    
+
     def prepare_card_images_content(self, cards: List[str]) -> List[Dict[str, Any]]:
         """카드 이미지들을 OpenAI Vision API 형태로 준비.
-        
+
         Args:
             cards: 카드 파일명 리스트
-            
+
         Returns:
             List[Dict]: OpenAI Vision API 콘텐츠 형식
         """
         content = []
-        
+
         for i, card_filename in enumerate(cards, 1):
             image_path = self.images_folder / card_filename
-            
+
             if image_path.exists():
                 base64_image = self.encode_image(image_path)
                 content.extend([
@@ -74,22 +74,22 @@ class LLMFactory:
             else:
                 keyword = card_filename.replace('.png', '').replace('_', ' ')
                 content.append({
-                    "type": "text", 
+                    "type": "text",
                     "text": f"\n카드 {i}: {keyword} (이미지 파일 없음)"
                 })
-        
+
         return content
-    
-    def call_vision_api(self, system_prompt: str, user_content: List[Dict[str, Any]], 
+
+    def call_vision_api(self, system_prompt: str, user_content: List[Dict[str, Any]],
                        temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> str:
         """OpenAI Vision API 호출.
-        
+
         Args:
             system_prompt: 시스템 프롬프트
             user_content: 사용자 콘텐츠 (텍스트 + 이미지)
             temperature: 온도 설정 (선택사항)
             max_tokens: 최대 토큰 수 (선택사항)
-            
+
         Returns:
             str: API 응답 내용
         """
@@ -103,20 +103,20 @@ class LLMFactory:
             max_tokens=max_tokens or self.max_tokens,
             timeout=self.timeout
         )
-        
+
         return response.choices[0].message.content.strip()
-    
+
     def parse_interpretations(self, content: str) -> List[str]:
         """OpenAI 응답에서 해석들을 추출.
-        
+
         Args:
             content: OpenAI 응답 내용
-            
+
         Returns:
             List[str]: 추출된 해석 리스트 (최대 3개)
         """
         lines = [line.strip() for line in content.split('\n') if line.strip()]
-        
+
         interpretations = []
         for line in lines:
             cleaned = line.strip()
@@ -125,26 +125,26 @@ class LLMFactory:
                 import re
                 cleaned = re.sub(r'^[\d\.\-\*]+\s*', '', cleaned)
                 cleaned = re.sub(r'^(첫\s*번째|두\s*번째|세\s*번째|해석\s*\d+)\s*:?\s*', '', cleaned)
-                
+
                 if cleaned and len(cleaned) > 5:
                     interpretations.append(cleaned)
-        
+
         return interpretations[:3]
-    
-    def generate_card_interpretations(self, persona: Dict[str, Any], context: Dict[str, Any], 
+
+    def generate_card_interpretations(self, persona: Dict[str, Any], context: Dict[str, Any],
                                     cards: List[str], past_interpretation: str = "") -> List[str]:
         """카드 해석 생성 (card_interpreter에서 사용).
-        
+
         Args:
             persona: 사용자 페르소나 정보
             context: 상황 정보
             cards: 선택된 카드 리스트
             past_interpretation: 과거 해석 이력
-            
+
         Returns:
             List[str]: 3개의 해석 결과
         """
-        system_prompt = """당신은 AAC(보완대체의사소통) 전문가입니다. 
+        system_prompt = """당신은 AAC(보완대체의사소통) 전문가입니다.
 사용자의 페르소나와 상황을 고려하여 선택된 AAC 카드 이미지들을 해석해주세요.
 
 해석 원칙:
@@ -191,22 +191,22 @@ class LLMFactory:
 
         content = self.call_vision_api(system_prompt, user_content)
         interpretations = self.parse_interpretations(content)
-        
+
         # 정확히 3개가 나오지 않으면 후처리
         if len(interpretations) != 3:
             interpretations = self._ensure_three_interpretations(interpretations, cards)
-        
+
         return interpretations
-    
+
     def analyze_card_interpretation_connection(self, cards: List[str], context: Dict[str, Any],
                                              final_interpretation: str) -> str:
         """카드 이미지와 해석의 연결성 분석 (conversation_memory에서 사용).
-        
+
         Args:
             cards: 선택된 카드 파일명 리스트
             context: 상황 정보
             final_interpretation: 최종 선택된 해석
-            
+
         Returns:
             str: 분석된 연결성 요약
         """
@@ -224,11 +224,11 @@ class LLMFactory:
 
 이미지들:"""
         }]
-        
+
         # 각 카드 이미지 추가
         for i, card_filename in enumerate(cards, 1):
             image_path = self.images_folder / card_filename
-            
+
             if image_path.exists():
                 base64_image = self.encode_image(image_path)
                 content.extend([
@@ -243,29 +243,29 @@ class LLMFactory:
                 ])
             else:
                 content.append({
-                    "type": "text", 
+                    "type": "text",
                     "text": f"\n카드 {i}: {card_filename} (이미지 파일 없음)"
                 })
-        
+
         content.append({
             "type": "text",
             "text": "\n위 이미지들의 어떤 시각적 요소(객체, 색깔, 행동, 표정 등)가 최종 해석으로 연결되었는지 50자 이내로 분석해주세요."
         })
-        
+
         try:
             return self.call_vision_api("", content, temperature=0.3, max_tokens=100)
         except Exception as e:
             # 간단한 fallback
             card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
             return f"카드 '{', '.join(card_names[:2])}'의 시각적 특징을 통해 '{final_interpretation[:20]}...' 의미 전달"
-    
+
     def _ensure_three_interpretations(self, interpretations: List[str], cards: List[str]) -> List[str]:
         """정확히 3개의 해석을 보장.
-        
+
         Args:
             interpretations: 현재 해석 리스트
             cards: 카드 파일명 리스트
-            
+
         Returns:
             List[str]: 정확히 3개의 해석
         """
@@ -276,5 +276,5 @@ class LLMFactory:
                 interpretations.append(default_interp)
             else:
                 interpretations.append(f"{', '.join(card_names)}를 알고 싶어요.")
-        
+
         return interpretations[:3]

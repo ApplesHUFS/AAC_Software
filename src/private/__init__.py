@@ -12,7 +12,7 @@ from .cluster_similarity_calculator import ClusterSimilarityCalculator
 from .llm import LLMFactory
 
 __all__ = [
-    'CardRecommender', 
+    'CardRecommender',
     'CardInterpreter',
     'ConversationSummaryMemory',
     'ClusterSimilarityCalculator',
