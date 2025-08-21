@@ -1,10 +1,10 @@
 from typing import Dict, List, Optional, Any
 
 # Public 모듈 - 외부 API 및 사용자 인터페이스
-from .public import UserManager, ContextManager, FeedbackManager
+from .src.public import UserManager, ContextManager, FeedbackManager
 
 # Private 모듈 - 내부 비즈니스 로직 및 데이터 처리  
-from .private import (
+from .src.private import (
     ConfigManager,
     CardRecommender, 
     CardInterpreter,
