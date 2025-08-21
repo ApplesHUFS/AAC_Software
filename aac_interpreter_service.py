@@ -5,12 +5,14 @@ from .src.public import UserManager, ContextManager, FeedbackManager
 
 # Private 모듈 - 내부 비즈니스 로직 및 데이터 처리  
 from .src.private import (
-    ConfigManager,
     CardRecommender, 
     CardInterpreter,
     ConversationSummaryMemory,
     ClusterSimilarityCalculator
 )
+
+# 설정 직접 import
+from .service_config import SERVICE_CONFIG
 
 
 class AACInterpreterService:
@@ -20,7 +22,7 @@ class AACInterpreterService:
     개인화된 의사소통 지원 시스템입니다.
     
     Attributes:
-        config_manager: 설정 관리 컴포넌트
+        config: 설정 딕셔너리
         user_manager: 사용자 관리 컴포넌트
         card_recommender: 카드 추천 컴포넌트
         card_interpreter: 카드 해석 컴포넌트
@@ -35,47 +37,39 @@ class AACInterpreterService:
         Args:
             config: 선택적 설정 딕셔너리. None이면 기본 설정 사용.
         """
-        self.config = config or {}
-        self.config_manager = ConfigManager()
-        
-        # 설정 로드
-        data_paths = self.config_manager.get_data_paths()
-        cluster_config = self.config_manager.get_cluster_config()
-        service_config = self.config_manager.config
+        self.config = {**SERVICE_CONFIG, **(config or {})}
         
         # 각 컴포넌트 초기화
         self.user_manager = UserManager(
-            users_file_path=data_paths['users_file_path'],
-            config=service_config
+            users_file_path=self.config['users_file_path'],
+            config=self.config
         )
         
         self.feedback_manager = FeedbackManager(
-            feedback_file_path=data_paths['feedback_file_path']
+            feedback_file_path=self.config['feedback_file_path']
         )
         
-        self.context_manager = ContextManager(config=service_config)
+        self.context_manager = ContextManager(config=self.config)
         
         # 대화 메모리 설정
-        memory_config = service_config.copy()
-        memory_config.update(self.config)
         self.conversation_memory = ConversationSummaryMemory(
-            memory_file_path=data_paths.get('memory_file_path'),
-            config=memory_config
+            memory_file_path=self.config.get('memory_file_path'),
+            config=self.config
         )
         
         # 카드 추천 시스템
         self.card_recommender = CardRecommender(
-            clustering_results_path=str(cluster_config['clustering_results_path']),
-            config=service_config
+            clustering_results_path=str(self.config['clustering_results_path']),
+            config=self.config
         )
         
         # 카드 해석 시스템
-        self.card_interpreter = CardInterpreter(config=service_config)
+        self.card_interpreter = CardInterpreter(config=self.config)
         
         # 클러스터 유사도 계산기 (preferred_category_types 생성용)
-        cluster_tags_path = cluster_config['cluster_tags_path']
+        cluster_tags_path = self.config['cluster_tags_path']
         try:
-            self.cluster_calculator = ClusterSimilarityCalculator(cluster_tags_path, service_config)
+            self.cluster_calculator = ClusterSimilarityCalculator(cluster_tags_path, self.config)
         except FileNotFoundError as e:
             print(f"경고: {e}. preferred_category_types 계산 기능이 비활성화됩니다.")
             self.cluster_calculator = None
@@ -308,7 +302,7 @@ class AACInterpreterService:
         # 과거 해석 패턴 조회 (대화 메모리에서)
         memory_result = self.conversation_memory.get_recent_patterns(
             user_id, 
-            limit=self.config_manager.config.get('memory_pattern_limit', 5)
+            limit=self.config.get('memory_pattern_limit', 5)
         )
         past_interpretation = ""
         if memory_result['recent_patterns']:
@@ -531,12 +525,12 @@ class AACInterpreterService:
         """
         if self.cluster_calculator is None:
             # 클러스터 계산기가 없으면 기본값 반환
-            cluster_count = self.config_manager.config.get('cluster_count', 6)
-            required_cluster_count = self.config_manager.config.get('required_cluster_count', 6)
+            cluster_count = self.config.get('cluster_count', 6)
+            required_cluster_count = self.config.get('required_cluster_count', 6)
             return list(range(min(cluster_count, required_cluster_count)))
         
-        similarity_threshold = self.config_manager.config.get('similarity_threshold', 0.3)
-        required_cluster_count = self.config_manager.config.get('required_cluster_count', 6)
+        similarity_threshold = self.config.get('similarity_threshold', 0.3)
+        required_cluster_count = self.config.get('required_cluster_count', 6)
         
         return self.cluster_calculator.calculate_preferred_categories(
             interesting_topics=interesting_topics,

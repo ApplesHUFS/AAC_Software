@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from .llm import LLMFactory
-from .config_manager import ConfigManager
 
 
 class CardInterpreter:
@@ -23,11 +22,14 @@ class CardInterpreter:
             config: 설정 딕셔너리. None이면 기본 설정 사용.
         """
         self.config = config or {}
-        config_manager = ConfigManager()
         
-        # LLMFactory 초기화
+        # LLMFactory 초기화 - config에서 필요한 설정들을 추출
         llm_config = {
-            **config_manager.get_model_config(),
+            'openai_model': self.config.get('openai_model', 'gpt-4o-2024-08-06'),
+            'openai_temperature': self.config.get('openai_temperature', 0.8),
+            'interpretation_max_tokens': self.config.get('interpretation_max_tokens', 400),
+            'summary_max_tokens': self.config.get('summary_max_tokens', 200),
+            'api_timeout': self.config.get('api_timeout', 15),
             'images_folder': self.config.get('images_folder', 'dataset/images')
         }
         self.llm_factory = LLMFactory(llm_config)

@@ -7,12 +7,14 @@ AAC 카드 해석 시스템 - 메인 모듈
 - private.llm: OpenAI API 통합 관리 모듈
 """
 
+# config
+from . import service_config
+
 # Public 모듈들 (외부 접근 가능)
-from .public import UserManager, ContextManager, FeedbackManager
+from .src.public import UserManager, ContextManager, FeedbackManager
 
 # Private 모듈들 (내부 처리)
-from .private import (
-    ConfigManager,
+from .src.private import (
     CardRecommender,
     CardInterpreter,
     ConversationSummaryMemory,
@@ -20,13 +22,15 @@ from .private import (
 )
 
 __all__ = [
+    # config
+    'service_config',
+
     # Public 모듈
     'UserManager',
     'ContextManager', 
     'FeedbackManager',
     
     # Private 모듈
-    'ConfigManager',
     'CardRecommender',
     'CardInterpreter', 
     'ConversationSummaryMemory',
