@@ -1,5 +1,6 @@
 # custom .gitignore for Python projects
-/dataset
+/datasets/images
+/datasets/metadata
 /aac_embeddings
 
 # Byte-compiled / optimized / DLL files
