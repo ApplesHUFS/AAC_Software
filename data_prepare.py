@@ -7,13 +7,13 @@ from tqdm import tqdm
 
 from data.dataset_config import DATASET_CONFIG
 
-from data.src.image_filter import ImageFilter
-from data.src.embeddings import CLIPEncoder
-from data.src.clustering import Clusterer
-from data.src.schema import DatasetSchema
-from data.src.cluster_tagger import ClusterTagger
-from data.src.persona_card_selector import PersonaCardSelector
-from data.src.dataset_generator import DatasetGenerator
+from data.data_source.image_filter import ImageFilter
+from data.data_source.embeddings import CLIPEncoder
+from data.data_source.clustering import Clusterer
+from data.data_source.schema import DatasetSchema
+from data.data_source.cluster_tagger import ClusterTagger
+from data.data_source.persona_card_selector import PersonaCardSelector
+from data.data_source.dataset_generator import DatasetGenerator
 
 
 class DataPreparationPipeline:
