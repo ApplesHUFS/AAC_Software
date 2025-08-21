@@ -1,23 +1,103 @@
-# custom .gitignore for Python projects
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv
+.env
+
+# PyTorch/ML models
+*.pth
+*.pkl
+*.pt
+*.bin
+*.safetensors
+models/
+checkpoints/
+
+# Data files
+user_data/
+dataset/processed/
+dataset/raw/
 /dataset/images
 /dataset/metadata
 /aac_embeddings
 /dataset/filtered_images
-/dataset/processed
-user_data
 
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[codz]
-*$py.class
-
-# Installer logs
+# Logs
+*.log
+logs/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
-.cache
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Environments
-.env
-env/
+# OS
+.DS_Store
+Thumbs.db
+
+# Node.js (Frontend)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Dependencies
+node_modules/
+
+# Build outputs
+build/
+dist/
+
+# Environment variables
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Cache
+.cache/
+.pytest_cache/
+*.cache
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# OpenAI API keys
+openai_key.txt
+api_keys.txt

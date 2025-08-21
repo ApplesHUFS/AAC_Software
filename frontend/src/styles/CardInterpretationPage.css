@@ -1,0 +1,275 @@
+.interpretation-page {
+  min-height: 80vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+}
+
+.container h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #2196F3;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading p {
+  color: #666;
+  font-size: 18px;
+}
+
+.selected-cards {
+  margin-bottom: 40px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.selected-cards h3 {
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.cards-display {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.selected-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 100px;
+}
+
+.selected-card img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.card-placeholder {
+  width: 80px;
+  height: 80px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.card-placeholder span {
+  font-size: 10px;
+  color: #999;
+}
+
+.card-name {
+  font-size: 12px;
+  color: #333;
+  text-align: center;
+  font-weight: 500;
+}
+
+.interpretations {
+  margin-bottom: 30px;
+}
+
+.interpretations h3 {
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.interpretation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.interpretation-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  background: white;
+  transition: box-shadow 0.3s;
+}
+
+.interpretation-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.interpretation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.interpretation-rank {
+  background-color: #2196F3;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.interpretation-confidence {
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.interpretation-content p {
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.interpretation-context {
+  color: #666;
+  font-size: 14px;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 4px solid #2196F3;
+  margin-top: 10px;
+}
+
+.select-interpretation-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 15px;
+}
+
+.select-interpretation-btn:hover {
+  background-color: #45a049;
+}
+
+.no-interpretations {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error-message {
+  color: #f44336;
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #ffebee;
+  border-radius: 6px;
+  border-left: 4px solid #f44336;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.custom-interpretation-btn,
+.back-button {
+  padding: 15px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.custom-interpretation-btn {
+  background-color: #FF5722;
+  color: white;
+}
+
+.custom-interpretation-btn:hover {
+  background-color: #E64A19;
+}
+
+.back-button {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 20px;
+  }
+
+  .cards-display {
+    justify-content: flex-start;
+  }
+
+  .interpretation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .custom-interpretation-btn,
+  .back-button {
+    width: 100%;
+  }
+}

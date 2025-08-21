@@ -306,3 +306,39 @@ python data_prepare.py --steps 8 --openai-start 500 --openai-end 1000
 - ⏳ 실제 구현 (예정)
 - ⏳ 테스트 코드 작성 (예정)
 - ⏳ 프론트엔드 연동 (예정)
+
+
+
+ 전체 시스템 구동 방법
+
+  1. 백엔드 서버 구동
+
+  # AAC_Software 루트 디렉토리로 이동
+  cd /home/ellt/Workspace/AAC_Software
+
+  # 가상환경 활성화
+  source env/bin/activate
+
+  # 설정 파일에서 device를 'cpu'로 변경 (CUDA 메모리 문제 해결)
+  # src/service_config.py 파일의 48번째 줄:
+  # 'device': 'auto' → 'device': 'cpu'
+
+  # Flask 서버 실행
+  python app.py
+
+  서버 주소: http://localhost:8000
+
+  2. 프론트엔드 서버 구동
+
+  # 새로운 터미널에서
+  cd /home/ellt/Workspace/AAC_Software/frontend
+
+  # React 개발 서버 실행
+  npm start
+
+  서버 주소: http://localhost:3000
+
+  3. 구동 순서
+
+  1. 백엔드 먼저 (포트 8000)
+  2. 프론트엔드 나중 (포트 3000)
