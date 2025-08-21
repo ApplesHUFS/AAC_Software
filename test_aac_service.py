@@ -1,6 +1,7 @@
 import os
 import json
 import sys
+import glob
 from typing import Dict, List, Any
 
 # 프로젝트 경로 추가
@@ -16,6 +17,18 @@ class AACServiceTester:
         self.service = AACInterpreterService()
         self.test_users = []
         self.test_contexts = []
+        self.available_cards = self._load_available_cards()
+
+    def _load_available_cards(self) -> List[str]:
+        """실제 dataset/images 폴더에서 PNG 파일들 로드"""
+        images_path = "dataset/images"
+        if os.path.exists(images_path):
+            png_files = glob.glob(os.path.join(images_path, "*.png"))
+            card_names = [os.path.basename(f) for f in png_files]
+            print(f"  발견된 카드 파일 수: {len(card_names)}")
+            if len(card_names) > 0:
+                print(f"  예시 카드들: {card_names[:5]}")
+            return card_names
 
     def run_all_tests(self):
         """모든 테스트 실행"""
@@ -157,14 +170,14 @@ class AACServiceTester:
             assert interface_result['status'] == 'success', f"카드 인터페이스 {i+1} 생성 실패"
 
             interface_data = interface_result['interface_data']
-            assert 'available_cards' in interface_data, "사용 가능한 카드 목록이 없음"
-            assert len(interface_data['available_cards']) == 20, "표시 카드 수가 20개가 아님"
+            assert 'selection_options' in interface_data, "사용 가능한 카드 목록이 없음"
+            assert len(interface_data['selection_options']) == 20, "표시 카드 수가 20개가 아님"
 
             # 카드 선택 유효성 검증
-            selected_cards = interface_data['available_cards'][:3]  # 처음 3개 선택
+            selected_cards = interface_data['selection_options'][:3]  # 처음 3개 선택
             validation_result = self.service.validate_card_selection(
                 selected_cards,
-                interface_data['available_cards']
+                interface_data['selection_options']
             )
 
             assert validation_result['status'] == 'success', f"카드 선택 검증 {i+1} 실패"
@@ -177,10 +190,18 @@ class AACServiceTester:
         """카드 해석 테스트"""
         print("5. 카드 해석 시스템 테스트")
 
-        test_card_selections = [
-            ['밥', '물', '좋아요'],
-            ['책', '읽다', '행복하다', '집']
-        ]
+        # 실제 사용 가능한 카드들에서
+        if len(self.available_cards) >= 4:
+            test_card_selections = [
+                self.available_cards[:3],    # 처음 3개 카드
+                self.available_cards[3:7]    # 다음 4개 카드 (최대 4개)
+            ]
+        else:
+            # 카드가 충분하지 않으면 사용 가능한 것들로만
+            test_card_selections = [
+                self.available_cards[:min(3, len(self.available_cards))],
+                self.available_cards[:min(4, len(self.available_cards))]
+            ]
 
         for i, (user_data, context_data, cards) in enumerate(
             zip(self.test_users, self.test_contexts, test_card_selections)
@@ -198,7 +219,7 @@ class AACServiceTester:
                 context
             )
 
-            assert interpretation_result['status'] == 'success', f"카드 해석 {i+1} 실패"
+            assert interpretation_result['status'] == 'success', f"카드 해석 {i+1} 실패: {interpretation_result.get('message', '')}"
             assert len(interpretation_result['interpretations']) == 3, "해석 개수가 3개가 아님"
             assert interpretation_result['feedback_id'] > 0, "피드백 ID가 생성되지 않음"
 
@@ -228,10 +249,13 @@ class AACServiceTester:
         """피드백 시스템 테스트 - Partner 피드백 중심"""
         print("6. 피드백 시스템 테스트 (Partner 확인 기반)")
 
+        cards_1 = self.available_cards[:3] if len(self.available_cards) >= 3 else self.available_cards
+        cards_2 = self.available_cards[3:7] if len(self.available_cards) >= 7 else self.available_cards[:4]
+
         # 첫 번째 사용자: Partner 확인 요청 및 피드백
         partner_request_1 = self.service.request_partner_confirmation(
             user_id=self.test_users[0]['user_id'],
-            cards=['밥', '물', '좋아요'],
+            cards=cards_1,
             context={
                 'time': '12시 30분',
                 'place': '집',
@@ -248,7 +272,7 @@ class AACServiceTester:
         # 두 번째 사용자: Partner 확인 요청 및 피드백
         partner_request_2 = self.service.request_partner_confirmation(
             user_id=self.test_users[1]['user_id'],
-            cards=['책', '읽다', '행복하다', '집'],
+            cards=cards_2,
             context={
                 'time': '14시 15분',
                 'place': '집',
@@ -299,15 +323,20 @@ class AACServiceTester:
 
         # 추가 Partner 확인 및 피드백으로 메모리 패턴 생성
         for i, user_data in enumerate(self.test_users):
+            session_cards = [
+                self.available_cards[:2] if len(self.available_cards) >= 2 else self.available_cards,
+                self.available_cards[2:4] if len(self.available_cards) >= 4 else self.available_cards[:2]
+            ]
+
             # 여러 번의 Partner 확인 세션으로 메모리 패턴 축적
             test_sessions = [
                 {
-                    'cards': ['안녕', '친구'],
+                    'cards': session_cards[0],
                     'context': {'time': '9시 20분', 'place': '놀이터', 'interaction_partner': '친구', 'current_activity': '놀이'},
                     'partner_info': {'name': '친구', 'relationship': '친구'}
                 },
                 {
-                    'cards': ['고마워', '도움'],
+                    'cards': session_cards[1],
                     'context': {'time': '16시 30분', 'place': '집', 'interaction_partner': '가족', 'current_activity': '숙제'},
                     'partner_info': {'name': '가족', 'relationship': '가족'}
                 }
@@ -383,17 +412,18 @@ def main():
     data_files = [
         'user_data/users.json',
         'user_data/feedback.json',
-        'user_data/conversation_memory.json',
-        'dataset/processed/cluster_tags.json',
-        'dataset/processed/embeddings.json',
-        'dataset/processed/clustering_results.json'
+        'user_data/conversation_memory.json'
     ]
 
     for file_path in data_files:
         if not os.path.exists(file_path):
             with open(file_path, 'w', encoding='utf-8') as f:
-                if 'clustering_results' in file_path:
-                    json.dump({'clusters': {}, 'metadata': {}}, f, ensure_ascii=False, indent=2)
+                if 'conversation_memory' in file_path:
+                    json.dump({"user_memories": {}}, f, ensure_ascii=False, indent=2)
+                elif 'feedback' in file_path:
+                    json.dump({"interpretations": [], "feedbacks": []}, f, ensure_ascii=False, indent=2)
+                elif 'users' in file_path:
+                    json.dump({}, f, ensure_ascii=False, indent=2)
                 else:
                     json.dump({}, f, ensure_ascii=False, indent=2)
             print(f"  데이터 파일 생성: {file_path}")
