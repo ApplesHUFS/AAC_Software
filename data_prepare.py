@@ -5,15 +5,15 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 from tqdm import tqdm
 
-from config.dataset_config import DATASET_CONFIG
+from data.dataset_config import DATASET_CONFIG
 
-from data.image_filter import ImageFilter
-from data.embeddings import CLIPEncoder
-from data.clustering import Clusterer
-from data.schema import DatasetSchema
-from data.cluster_tagger import ClusterTagger
-from data.persona_card_selector import PersonaCardSelector
-from data.dataset_generator import DatasetGenerator
+from data.src.image_filter import ImageFilter
+from data.src.embeddings import CLIPEncoder
+from data.src.clustering import Clusterer
+from data.src.schema import DatasetSchema
+from data.src.cluster_tagger import ClusterTagger
+from data.src.persona_card_selector import PersonaCardSelector
+from data.src.dataset_generator import DatasetGenerator
 
 
 class DataPreparationPipeline:

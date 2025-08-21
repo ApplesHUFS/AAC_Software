@@ -45,5 +45,5 @@ DATASET_CONFIG = {
     'clustering_n_init': 10,
 
     # 텍스트 유사도 모델
-    'similarity_model': 'Snowflake/snowflake-arctic-embed-l',  # 고성능 임베딩 모델
+    'similarity_model': 'Snowflake/snowflake-arctic-embed-l',
 }
