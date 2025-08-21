@@ -2,6 +2,8 @@
 /dataset/images
 /dataset/metadata
 /aac_embeddings
+/dataset/filtered_images
+/dataset/processed
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
