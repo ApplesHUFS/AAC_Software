@@ -141,7 +141,7 @@ class AACServiceTester:
         
         for i, (user_data, context_data) in enumerate(zip(self.test_users, self.test_contexts)):
             context = {
-                'time': '현재',
+                'time': '12시 30분',
                 'place': context_data['place'],
                 'interaction_partner': context_data['interaction_partner'],
                 'current_activity': context_data['current_activity']
@@ -184,7 +184,7 @@ class AACServiceTester:
             zip(self.test_users, self.test_contexts, test_card_selections)
         ):
             context = {
-                'time': '현재',
+                'time': '14시 15분',
                 'place': context_data['place'],
                 'interaction_partner': context_data['interaction_partner'],
                 'current_activity': context_data['current_activity']
@@ -241,7 +241,7 @@ class AACServiceTester:
             user_id=self.test_users[0]['user_id'],
             cards=['도움', '필요', '지금'],
             context={
-                'time': '현재',
+                'time': '10시 45분',
                 'place': '교실',
                 'interaction_partner': '선생님',
                 'current_activity': '수업'
@@ -278,11 +278,11 @@ class AACServiceTester:
             test_sessions = [
                 {
                     'cards': ['안녕', '친구'],
-                    'context': {'time': '오전', 'place': '놀이터', 'interaction_partner': '친구', 'current_activity': '놀이'}
+                    'context': {'time': '9시 20분', 'place': '놀이터', 'interaction_partner': '친구', 'current_activity': '놀이'}
                 },
                 {
                     'cards': ['고마워', '도움'],
-                    'context': {'time': '오후', 'place': '집', 'interaction_partner': '가족', 'current_activity': '숙제'}
+                    'context': {'time': '16시 30분', 'place': '집', 'interaction_partner': '가족', 'current_activity': '숙제'}
                 }
             ]
             
@@ -317,7 +317,7 @@ class AACServiceTester:
         invalid_cards_result = self.service.interpret_cards(
             self.test_users[0]['user_id'],
             [],  # 빈 카드 리스트
-            {'time': '현재', 'place': '집', 'interaction_partner': '가족', 'current_activity': '대화'}
+            {'time': '13시 00분', 'place': '집', 'interaction_partner': '가족', 'current_activity': '대화'}
         )
         # 빈 카드 리스트는 시스템에서 어떻게 처리하는지에 따라 다름
         
