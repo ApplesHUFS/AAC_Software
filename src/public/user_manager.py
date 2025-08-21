@@ -297,7 +297,7 @@ class UserManager:
         # 선택지 검증
         valid_genders = self.config.get('valid_genders', ['male', 'female'])
         valid_disability_types = self.config.get('valid_disability_types',
-                                               ['의사소통 장애', '자폐스펙트럼 장애', '지적 장애'])
+                                               ['의사소통장애', '자폐스펙트럼장애', '지적장애'])
 
         if persona['gender'] not in valid_genders:
             return {

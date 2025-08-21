@@ -22,6 +22,23 @@ def handle_error(error):
         'message': 'Internal server error occurred'
     }), 500
 
+# 루트 경로 처리
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        'message': 'AAC Interpreter Service API',
+        'version': '1.0.0',
+        'status': 'running',
+        'available_endpoints': {
+            'health': '/health',
+            'users': '/users',
+            'contexts': '/contexts',
+            'cards': '/cards/*',
+            'feedback': '/feedback',
+            'memory': '/memory/*'
+        }
+    })
+
 # 헬스체크 엔드포인트
 @app.route('/health', methods=['GET'])
 def health_check():

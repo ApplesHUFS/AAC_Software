@@ -50,9 +50,7 @@ const FeedbackPage = () => {
 
     try {
       const userId = localStorage.getItem('userId');
-      const contextId = localStorage.getItem('contextId');
       const selectedCards = JSON.parse(localStorage.getItem('selectedCards') || '[]');
-      const feedbackId = localStorage.getItem('feedbackId');
       const contextData = JSON.parse(localStorage.getItem('contextData') || '{}');
 
       // Step 1: 먼저 Partner 피드백 confirmation 요청
@@ -105,7 +103,6 @@ const FeedbackPage = () => {
       localStorage.removeItem('selectedCards');
       localStorage.removeItem('contextId');
       localStorage.removeItem('contextData');
-      localStorage.removeItem('feedbackId');
 
       setTimeout(() => {
         navigate('/context/input');
