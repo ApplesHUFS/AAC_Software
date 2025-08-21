@@ -98,8 +98,8 @@ class ConversationSummaryMemory:
             cards: 사용된 AAC 카드 파일명 리스트
             context: 상황 정보 (time, place, interaction_partner, current_activity)
             interpretations: 생성된 3개 해석 리스트
-            selected_interpretation: Partner가 선택한 올바른 해석
-            user_correction: Partner가 직접 입력한 올바른 해석
+            selected_interpretation: Partner가 선택한 올바른 해석 (top-3 중 선택)
+            user_correction: Partner가 직접 입력한 올바른 해석 (직접 피드백)
         
         Returns:
             Dict containing:
@@ -117,14 +117,14 @@ class ConversationSummaryMemory:
                 "summary": ""
             }
         
-        # 최종 해석 결정
+        # 최종 해석 결정 (Partner가 제공)
         final_interpretation = selected_interpretation or user_correction
         if not final_interpretation:
             return {
                 'status': 'error',
                 'summary': '',
                 'memory_updated': False,
-                'message': '최종 해석이 제공되지 않았습니다.'
+                'message': 'Partner가 제공한 최종 해석이 없습니다.'
             }
         
         # 대화 기록 추가

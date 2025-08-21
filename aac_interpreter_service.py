@@ -343,100 +343,6 @@ class AACInterpreterService:
                 'message': interpretation_result['message']
             }
     
-    def submit_feedback(self,
-                       feedback_id: int,
-                       selected_interpretation_index: Optional[int] = None,
-                       user_correction: Optional[str] = None) -> Dict[str, Any]:
-        """사용자 피드백 제출.
-        
-        Args:
-            feedback_id: 피드백 ID
-            selected_interpretation_index: 선택된 해석 인덱스 (0-2) - top-3 중 선택
-            user_correction: 올바른 해석 직접 입력 - 어떤 것도 맞지 않을 때
-            
-        Returns:
-            Dict containing:
-                - status (str): 'success' 또는 'error'
-                - message (str): 결과 메시지
-        """
-        # 입력 유효성 검증
-        if selected_interpretation_index is None and not user_correction:
-            return {
-                'status': 'error',
-                'message': 'top-3 해석 중 선택하거나 올바른 해석을 직접 입력해야 합니다.'
-            }
-        
-        if selected_interpretation_index is not None:
-            if not (0 <= selected_interpretation_index <= 2):
-                return {
-                    'status': 'error',
-                    'message': '해석 인덱스는 0-2 범위여야 합니다.'
-                }
-        
-        if user_correction is not None and not user_correction.strip():
-            return {
-                'status': 'error',
-                'message': '올바른 해석을 입력해주세요.'
-            }
-        
-        # 피드백 기록
-        feedback_result = self.feedback_manager.record_user_feedback(
-            feedback_id=feedback_id,
-            selected_interpretation_index=selected_interpretation_index,
-            user_correction=user_correction.strip() if user_correction else None
-        )
-        
-        if feedback_result['status'] != 'success':
-            return feedback_result
-        
-        # 해석 시도 정보 조회하여 대화 메모리에 저장
-        try:
-            interpretation_attempt = None
-            for attempt in self.feedback_manager._data["interpretations"]:
-                if attempt["feedback_id"] == feedback_id:
-                    interpretation_attempt = attempt
-                    break
-            
-            if interpretation_attempt:
-                user_id = interpretation_attempt["user_id"]
-                cards = interpretation_attempt["cards"]
-                context = interpretation_attempt["context"]
-                interpretations = interpretation_attempt["interpretations"]
-                
-                # 최종 선택된 해석 결정
-                final_interpretation = None
-                if user_correction:
-                    final_interpretation = user_correction
-                elif selected_interpretation_index is not None and 0 <= selected_interpretation_index < len(interpretations):
-                    final_interpretation = interpretations[selected_interpretation_index]
-                
-                # 대화 메모리에 추가
-                if final_interpretation:
-                    memory_result = self.conversation_memory.add_conversation_memory(
-                        user_id=user_id,
-                        cards=cards,
-                        context=context,
-                        interpretations=interpretations,
-                        selected_interpretation=final_interpretation if not user_correction else None,
-                        user_correction=user_correction
-                    )
-                    
-                    return {
-                        'status': 'success',
-                        'message': f"피드백이 기록되었으며, 대화 메모리가 업데이트되었습니다. {memory_result.get('message', '')}"
-                    }
-            
-            return {
-                'status': 'success',
-                'message': '피드백이 기록되었습니다.'
-            }
-            
-        except Exception as e:
-            return {
-                'status': 'warning',
-                'message': f'피드백은 기록되었으나 메모리 업데이트 중 오류 발생: {str(e)}'
-            }
-    
     def request_partner_confirmation(self,
                                    user_id: int,
                                    cards: List[str],
@@ -484,7 +390,7 @@ class AACInterpreterService:
         )
         
         if feedback_result['status'] == 'success':
-            # Partner 피드백을 대화 메모리에도 기록
+            # Partner 피드백을 대화 메모리에 기록
             feedback_data = feedback_result['feedback_result']
             final_interpretation = (
                 feedback_data.get('selected_interpretation') or 

@@ -301,13 +301,7 @@ class FeedbackManager:
         }
 
         self._data["interpretations"].append(attempt_record)
-        self._data["feedbacks"].append({
-            "feedback_id": feedback_id,
-            "user_id": user_id,
-            "selected_interpretation_index": None,
-            "user_correction": None,
-            "timestamp": None
-        })
+        # AAC 사용자는 직접 피드백을 제공하지 않으므로 feedbacks 배열에 빈 엔트리 추가하지 않음
         self._save_to_file()
 
         return {
@@ -316,31 +310,27 @@ class FeedbackManager:
             "message": "해석 시도가 기록되었습니다."
         }
 
-    def record_user_feedback(
-        self,
-        feedback_id: int,
-        selected_interpretation_index: Optional[int] = None,
-        user_correction: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """사용자 피드백 기록
+    def get_interpretation_attempt(self, feedback_id: int) -> Dict[str, Any]:
+        """피드백 ID로 해석 시도 정보 조회
         
         Args:
             feedback_id: 피드백 ID
-            selected_interpretation_index: 선택된 해석 인덱스
-            user_correction: 사용자가 직접 수정한 해석
             
         Returns:
-            Dict[str, Any]: 기록 결과
+            Dict[str, Any]: 해석 시도 정보
         """
-        for fb in self._data["feedbacks"]:
-            if fb["feedback_id"] == feedback_id:
-                fb["selected_interpretation_index"] = selected_interpretation_index
-                fb["user_correction"] = user_correction
-                fb["timestamp"] = datetime.now().isoformat()
-                self._save_to_file()
-                return {"status": "success", "message": "피드백이 기록되었습니다."}
-
-        return {"status": "error", "message": f"피드백 ID {feedback_id}를 찾을 수 없습니다."}
+        for attempt in self._data["interpretations"]:
+            if attempt["feedback_id"] == feedback_id:
+                return {
+                    "status": "success",
+                    "interpretation_attempt": attempt
+                }
+        
+        return {
+            "status": "error", 
+            "interpretation_attempt": None,
+            "message": f"피드백 ID {feedback_id}에 해당하는 해석 시도를 찾을 수 없습니다."
+        }
 
     def get_confirmation_history(self, 
                                user_id: Optional[int] = None, 
