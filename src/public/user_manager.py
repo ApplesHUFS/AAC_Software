@@ -91,13 +91,16 @@ class UserManager:
             user_id = self.next_id
 
             user_data = {
+                'name': persona.get('name', f'사용자{user_id}'),  # 이름 추가 지원
                 'age': int(persona['age']),
                 'gender': persona['gender'],
                 'disability_type': persona['disability_type'],
                 'communication_characteristics': persona['communication_characteristics'],
                 'interesting_topics': persona['interesting_topics'],
                 'preferred_category_types': persona['preferred_category_types'],
-                'password': persona['password']
+                'password': persona['password'],
+                'created_at': __import__('datetime').datetime.now().isoformat(),
+                'updated_at': __import__('datetime').datetime.now().isoformat()
             }
 
             self.users[user_id] = user_data
@@ -122,6 +125,135 @@ class UserManager:
                 'status': 'error',
                 'user_id': -1,
                 'message': f'사용자 생성 중 오류 발생: {str(e)}'
+            }
+
+    def update_user_persona(self, user_id: int, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
+        """기존 사용자의 페르소나 정보 업데이트.
+
+        Args:
+            user_id: 업데이트할 사용자 ID
+            persona_updates: 업데이트할 페르소나 필드들
+                지원하는 필드:
+                - name (str): 사용자 이름
+                - age (int): 나이
+                - gender (str): 성별
+                - disability_type (str): 장애 유형
+                - communication_characteristics (str): 의사소통 특징
+                - interesting_topics (List[str]): 관심 주제
+                - preferred_category_types (List[int]): 선호 클러스터 (자동 재계산됨)
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - updated_fields (List[str]): 업데이트된 필드 목록
+                - message (str): 결과 메시지
+        """
+        if user_id not in self.users:
+            return {
+                'status': 'error',
+                'updated_fields': [],
+                'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
+            }
+
+        try:
+            user_data = self.users[user_id]
+            updated_fields = []
+
+            # 업데이트 가능한 필드들과 검증 규칙
+            updatable_fields = {
+                'name': lambda x: isinstance(x, str) and len(x.strip()) > 0,
+                'age': lambda x: isinstance(x, int) and self.config.get('min_age', 1) <= x <= self.config.get('max_age', 100),
+                'gender': lambda x: x in self.config.get('valid_genders', ['male', 'female']),
+                'disability_type': lambda x: x in self.config.get('valid_disability_types', ['의사소통 장애', '자폐스펙트럼 장애', '지적 장애']),
+                'communication_characteristics': lambda x: isinstance(x, str) and len(x.strip()) > 0,
+                'interesting_topics': lambda x: isinstance(x, list) and len(x) > 0
+            }
+
+            # 각 필드 업데이트 처리
+            for field, new_value in persona_updates.items():
+                if field == 'password':
+                    # 비밀번호는 별도 메서드로 처리하는 것이 보안상 좋음
+                    continue
+
+                if field in updatable_fields:
+                    validator = updatable_fields[field]
+                    if validator(new_value):
+                        user_data[field] = new_value
+                        updated_fields.append(field)
+                    else:
+                        return {
+                            'status': 'error',
+                            'updated_fields': [],
+                            'message': f'필드 {field}의 값이 유효하지 않습니다: {new_value}'
+                        }
+
+            # interesting_topics가 업데이트된 경우 preferred_category_types 재계산 필요
+            if 'interesting_topics' in updated_fields:
+                # 이는 외부에서 계산되어야 하므로 플래그만 설정
+                user_data['needs_category_recalculation'] = True
+                updated_fields.append('needs_category_recalculation')
+
+            # 업데이트 시간 갱신
+            user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
+
+            # 변경사항 저장
+            self._save_users()
+
+            return {
+                'status': 'success',
+                'updated_fields': updated_fields,
+                'message': f'사용자 {user_id}의 페르소나가 성공적으로 업데이트되었습니다. 업데이트된 필드: {", ".join(updated_fields)}'
+            }
+
+        except Exception as e:
+            return {
+                'status': 'error',
+                'updated_fields': [],
+                'message': f'페르소나 업데이트 중 오류 발생: {str(e)}'
+            }
+
+    def update_preferred_categories(self, user_id: int, preferred_category_types: List[int]) -> Dict[str, Any]:
+        """사용자의 선호 카테고리 업데이트 (외부에서 계산된 결과 적용).
+
+        Args:
+            user_id: 사용자 ID
+            preferred_category_types: 새로 계산된 선호 클러스터 ID 목록
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - message (str): 결과 메시지
+        """
+        if user_id not in self.users:
+            return {
+                'status': 'error',
+                'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
+            }
+
+        required_cluster_count = self.config.get('required_cluster_count', 6)
+        if len(preferred_category_types) != required_cluster_count:
+            return {
+                'status': 'error',
+                'message': f'선호 카테고리는 정확히 {required_cluster_count}개여야 합니다.'
+            }
+
+        try:
+            user_data = self.users[user_id]
+            user_data['preferred_category_types'] = preferred_category_types
+            user_data['needs_category_recalculation'] = False
+            user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
+
+            self._save_users()
+
+            return {
+                'status': 'success',
+                'message': f'사용자 {user_id}의 선호 카테고리가 업데이트되었습니다.'
+            }
+
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'선호 카테고리 업데이트 중 오류 발생: {str(e)}'
             }
 
     def _validate_persona(self, persona: Dict[str, Any]) -> Dict[str, Any]:

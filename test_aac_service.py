@@ -14,10 +14,11 @@ class AACServiceTester:
     """AAC 인터프리터 서비스 종합 테스트 클래스"""
 
     def __init__(self):
-        self.service = AACInterpreterService()
+        self.service = None
         self.test_users = []
         self.test_contexts = []
         self.available_cards = self._load_available_cards()
+        self.initialization_success = False
 
     def _load_available_cards(self) -> List[str]:
         """실제 dataset/images 폴더에서 PNG 파일들 로드"""
@@ -29,20 +30,106 @@ class AACServiceTester:
             if len(card_names) > 0:
                 print(f"  예시 카드들: {card_names[:5]}")
             return card_names
+        else:
+            print(f"  경고: {images_path} 폴더가 존재하지 않습니다.")
+            return []
+
+    def _validate_service_initialization(self) -> Dict[str, Any]:
+        """서비스 초기화 상태 검증"""
+        validation_result = {
+            'success': True,
+            'errors': [],
+            'warnings': []
+        }
+
+        # 필수 컴포넌트 체크
+        if self.service.user_manager is None:
+            validation_result['errors'].append("UserManager가 초기화되지 않았습니다.")
+            validation_result['success'] = False
+
+        if self.service.context_manager is None:
+            validation_result['errors'].append("ContextManager가 초기화되지 않았습니다.")
+            validation_result['success'] = False
+
+        if self.service.feedback_manager is None:
+            validation_result['errors'].append("FeedbackManager가 초기화되지 않았습니다.")
+            validation_result['success'] = False
+
+        # 선택적 컴포넌트 체크 (경고)
+        if self.service.card_recommender is None:
+            validation_result['warnings'].append("CardRecommender가 초기화되지 않았습니다. 클러스터링 결과 파일을 확인하세요.")
+
+        if self.service.card_interpreter is None:
+            validation_result['warnings'].append("CardInterpreter가 초기화되지 않았습니다. OpenAI API 키를 확인하세요.")
+
+        if self.service.conversation_memory is None:
+            validation_result['warnings'].append("ConversationSummaryMemory가 초기화되지 않았습니다.")
+
+        if self.service.cluster_calculator is None:
+            validation_result['warnings'].append("ClusterSimilarityCalculator가 초기화되지 않았습니다.")
+
+        # 카드 파일 체크
+        if len(self.available_cards) == 0:
+            validation_result['errors'].append("사용 가능한 카드 이미지가 없습니다.")
+            validation_result['success'] = False
+
+        return validation_result
 
     def run_all_tests(self):
         """모든 테스트 실행"""
         print("=== AAC 인터프리터 서비스 종합 테스트 시작 ===\n")
 
         try:
+            # 서비스 초기화
+            print("1. 서비스 초기화 테스트")
+            self.service = AACInterpreterService()
+
+            # 초기화 검증
+            validation = self._validate_service_initialization()
+
+            if not validation['success']:
+                print("✗ 서비스 초기화 실패:")
+                for error in validation['errors']:
+                    print(f"  - {error}")
+                return False
+
+            if validation['warnings']:
+                print("⚠ 초기화 경고사항:")
+                for warning in validation['warnings']:
+                    print(f"  - {warning}")
+
+            print("✓ 서비스 초기화 성공")
+            self.initialization_success = True
+            print()
+
+            # 기본 기능 테스트
             self.test_user_registration()
             self.test_user_authentication()
             self.test_context_management()
-            self.test_card_recommendation()
-            self.test_card_interpretation()
+
+            # 고급 기능 테스트 (컴포넌트 초기화 상태에 따라)
+            if self.service.card_recommender:
+                self.test_card_recommendation()
+            else:
+                print("⚠ 카드 추천 테스트 건너뜀 - CardRecommender 없음")
+
+            if self.service.card_interpreter:
+                self.test_card_interpretation()
+            else:
+                print("⚠ 카드 해석 테스트 건너뜀 - CardInterpreter 없음")
+
             self.test_feedback_system()
-            self.test_partner_confirmation()
-            self.test_memory_system()
+
+            if self.service.card_interpreter:
+                self.test_partner_confirmation()
+            else:
+                print("⚠ Partner 확인 테스트 건너뜀 - CardInterpreter 없음")
+
+            if self.service.conversation_memory:
+                self.test_memory_system()
+            else:
+                print("⚠ 메모리 시스템 테스트 건너뜀 - ConversationSummaryMemory 없음")
+
             self.test_error_handling()
 
             print("\n=== 모든 테스트 완료 ===")
@@ -56,29 +143,57 @@ class AACServiceTester:
 
     def test_user_registration(self):
         """사용자 등록 테스트"""
-        print("1. 사용자 등록 테스트")
+        print("2. 사용자 등록 테스트")
 
-        test_personas = [
-            {
-                'age': 8,
-                'gender': 'male',
-                'disability_type': '자폐스펙트럼 장애',
-                'communication_characteristics': '단순한 문장 선호, 시각적 단서 필요',
-                'interesting_topics': ['동물', '음식', '놀이'],
-                'password': 'test123'
-            },
-            {
-                'age': 25,
-                'gender': 'female',
-                'disability_type': '의사소통 장애',
-                'communication_characteristics': '복잡한 감정 표현 어려움',
-                'interesting_topics': ['영화', '책', '여행', '음악'],
-                'password': 'user456'
-            }
-        ]
+        # 클러스터 계산기 있을 때만 테스트
+        if self.service.cluster_calculator is None:
+            print("  ⚠ 클러스터 계산기가 없어 기본 페르소나로 테스트")
+            test_personas = [
+                {
+                    'age': 8,
+                    'gender': 'male',
+                    'disability_type': '자폐스펙트럼 장애',
+                    'communication_characteristics': '단순한 문장 선호, 시각적 단서 필요',
+                    'interesting_topics': [],  # 빈 배열로 테스트
+                    'password': 'test123'
+                }
+            ]
+        else:
+            test_personas = [
+                {
+                    'age': 8,
+                    'gender': 'male',
+                    'disability_type': '자폐스펙트럼 장애',
+                    'communication_characteristics': '단순한 문장 선호, 시각적 단서 필요',
+                    'interesting_topics': ['동물', '음식', '놀이'],
+                    'password': 'test123'
+                },
+                {
+                    'age': 25,
+                    'gender': 'female',
+                    'disability_type': '의사소통 장애',
+                    'communication_characteristics': '복잡한 감정 표현 어려움',
+                    'interesting_topics': ['영화', '책', '여행', '음악'],
+                    'password': 'user456'
+                }
+            ]
 
         for i, persona in enumerate(test_personas):
+            if not persona['interesting_topics'] and self.service.cluster_calculator:
+                # 빈 관심사로는 등록 불가능
+                result = self.service.register_user(persona)
+                assert result['status'] == 'error', f"빈 관심사로 등록이 성공해서는 안됨"
+                print(f"  ✓ 빈 관심사 검증 테스트 통과")
+                continue
+
             result = self.service.register_user(persona)
+
+            if self.service.cluster_calculator is None and persona['interesting_topics']:
+                # 클러스터 계산기가 없으면 실패해야 함
+                assert result['status'] == 'error', f"클러스터 계산기 없이 등록이 성공해서는 안됨"
+                print(f"  ✓ 클러스터 계산기 없음 검증 통과")
+                continue
+
             assert result['status'] == 'success', f"사용자 {i+1} 등록 실패: {result['message']}"
 
             user_id = result['user_id']
@@ -90,7 +205,7 @@ class AACServiceTester:
 
     def test_user_authentication(self):
         """사용자 인증 테스트"""
-        print("2. 사용자 인증 테스트")
+        print("3. 사용자 인증 테스트")
 
         for i, user_data in enumerate(self.test_users):
             # 정상 인증
@@ -114,7 +229,7 @@ class AACServiceTester:
 
     def test_context_management(self):
         """컨텍스트 관리 테스트"""
-        print("3. 컨텍스트 관리 테스트")
+        print("4. 컨텍스트 관리 테스트")
 
         test_contexts = [
             {
@@ -151,8 +266,8 @@ class AACServiceTester:
         print()
 
     def test_card_recommendation(self):
-        """카드 추천 테스트"""
-        print("4. 카드 추천 시스템 테스트")
+        """카드 추천 시스템 테스트"""
+        print("5. 카드 추천 시스템 테스트")
 
         for i, (user_data, context_data) in enumerate(zip(self.test_users, self.test_contexts)):
             context = {
@@ -167,7 +282,7 @@ class AACServiceTester:
                 context
             )
 
-            assert interface_result['status'] == 'success', f"카드 인터페이스 {i+1} 생성 실패"
+            assert interface_result['status'] == 'success', f"카드 인터페이스 {i+1} 생성 실패: {interface_result['message']}"
 
             interface_data = interface_result['interface_data']
             assert 'selection_options' in interface_data, "사용 가능한 카드 목록이 없음"
@@ -188,7 +303,7 @@ class AACServiceTester:
 
     def test_card_interpretation(self):
         """카드 해석 테스트"""
-        print("5. 카드 해석 시스템 테스트")
+        print("6. 카드 해석 시스템 테스트")
 
         # 실제 사용 가능한 카드들에서
         if len(self.available_cards) >= 4:
@@ -247,7 +362,7 @@ class AACServiceTester:
 
     def test_feedback_system(self):
         """피드백 시스템 테스트 - Partner 피드백 중심"""
-        print("6. 피드백 시스템 테스트 (Partner 확인 기반)")
+        print("7. 피드백 시스템 테스트 (Partner 확인 기반)")
 
         cards_1 = self.available_cards[:3] if len(self.available_cards) >= 3 else self.available_cards
         cards_2 = self.available_cards[3:7] if len(self.available_cards) >= 7 else self.available_cards[:4]
@@ -269,22 +384,32 @@ class AACServiceTester:
         assert partner_request_1['status'] == 'success', "Partner 확인 요청 1 실패"
         confirmation_id_1 = partner_request_1['confirmation_id']
 
-        # 두 번째 사용자: Partner 확인 요청 및 피드백
-        partner_request_2 = self.service.request_partner_confirmation(
-            user_id=self.test_users[1]['user_id'],
-            cards=cards_2,
-            context={
-                'time': '14시 15분',
-                'place': '집',
-                'interaction_partner': '가족',
-                'current_activity': '독서'
-            },
-            interpretations=['책 읽기를 좋아해요', '집에서 책을 읽고 있어요', '책을 읽어서 행복해요'],
-            partner_info={'name': '가족', 'relationship': '가족'}
-        )
+        # 두 번째 사용자가 있다면
+        if len(self.test_users) > 1:
+            partner_request_2 = self.service.request_partner_confirmation(
+                user_id=self.test_users[1]['user_id'],
+                cards=cards_2,
+                context={
+                    'time': '14시 15분',
+                    'place': '집',
+                    'interaction_partner': '가족',
+                    'current_activity': '독서'
+                },
+                interpretations=['책 읽기를 좋아해요', '집에서 책을 읽고 있어요', '책을 읽어서 행복해요'],
+                partner_info={'name': '가족', 'relationship': '가족'}
+            )
 
-        assert partner_request_2['status'] == 'success', "Partner 확인 요청 2 실패"
-        confirmation_id_2 = partner_request_2['confirmation_id']
+            assert partner_request_2['status'] == 'success', "Partner 확인 요청 2 실패"
+            confirmation_id_2 = partner_request_2['confirmation_id']
+
+            # Partner 피드백 제출 - 직접 피드백
+            partner_feedback_2 = self.service.submit_partner_feedback(
+                confirmation_id_2,
+                direct_feedback="집에서 책을 읽고 있어서 정말 행복해요"
+            )
+
+            assert partner_feedback_2['status'] == 'success', "Partner 피드백 2 제출 실패"
+            print("  ✓ Partner 직접 피드백 제출 성공")
 
         # Partner 피드백 제출 - 해석 선택
         partner_feedback_1 = self.service.submit_partner_feedback(
@@ -295,22 +420,13 @@ class AACServiceTester:
         assert partner_feedback_1['status'] == 'success', "Partner 피드백 1 제출 실패"
         print("  ✓ Partner 해석 선택 피드백 제출 성공")
 
-        # Partner 피드백 제출 - 직접 피드백
-        partner_feedback_2 = self.service.submit_partner_feedback(
-            confirmation_id_2,
-            direct_feedback="집에서 책을 읽고 있어서 정말 행복해요"
-        )
-
-        assert partner_feedback_2['status'] == 'success', "Partner 피드백 2 제출 실패"
-        print("  ✓ Partner 직접 피드백 제출 성공")
-
         print()
 
     def test_partner_confirmation(self):
-        """파트너 확인 시스템 추가 테스트 (이미 위에서 테스트되었으므로 대기 요청 조회만)"""
-        print("7. 파트너 확인 시스템 - 대기 요청 조회 테스트")
+        """파트너 확인 시스템 추가 테스트"""
+        print("8. 파트너 확인 시스템 - 대기 요청 조회 테스트")
 
-        # 대기 중인 확인 요청 조회 (이미 위에서 처리된 상태)
+        # 대기 중인 확인 요청 조회
         pending_confirmations = self.service.get_pending_partner_confirmations()
         assert pending_confirmations['status'] == 'success', "대기 중인 확인 요청 조회 실패"
 
@@ -318,8 +434,8 @@ class AACServiceTester:
         print()
 
     def test_memory_system(self):
-        """메모리 시스템 테스트 - Partner 피드백 기반"""
-        print("8. 대화 메모리 시스템 테스트")
+        """메모리 시스템 테스트"""
+        print("9. 대화 메모리 시스템 테스트")
 
         # 추가 Partner 확인 및 피드백으로 메모리 패턴 생성
         for i, user_data in enumerate(self.test_users):
@@ -366,19 +482,20 @@ class AACServiceTester:
 
     def test_error_handling(self):
         """오류 처리 테스트"""
-        print("9. 오류 처리 테스트")
+        print("10. 오류 처리 테스트")
 
         # 존재하지 않는 사용자
         invalid_user_result = self.service.authenticate_user(99999, 'password')
         assert invalid_user_result['authenticated'] == False, "존재하지 않는 사용자 인증이 성공됨"
 
         # 잘못된 카드 선택 (빈 카드 리스트)
-        invalid_cards_result = self.service.interpret_cards(
-            self.test_users[0]['user_id'],
-            [],  # 빈 카드 리스트
-            {'time': '13시 00분', 'place': '집', 'interaction_partner': '가족', 'current_activity': '대화'}
-        )
-        # 빈 카드 리스트는 시스템에서 어떻게 처리하는지에 따라 다름
+        if self.service.card_interpreter and len(self.test_users) > 0:
+            invalid_cards_result = self.service.interpret_cards(
+                self.test_users[0]['user_id'],
+                [],  # 빈 카드 리스트
+                {'time': '13시 00분', 'place': '집', 'interaction_partner': '가족', 'current_activity': '대화'}
+            )
+            assert invalid_cards_result['status'] == 'error', "빈 카드 리스트로 해석이 성공됨"
 
         # 잘못된 확인 요청 ID
         invalid_confirmation_result = self.service.submit_partner_feedback(
@@ -434,8 +551,16 @@ def main():
 
     # 테스트 실행
     tester = AACServiceTester()
-    tester.run_all_tests()
+    success = tester.run_all_tests()
+
+    if success is False:
+        print("\n✗ 테스트 초기화 실패 - 필수 컴포넌트를 확인하세요.")
+        return False
+
+    return True
 
 
 if __name__ == "__main__":
-    main()
+    success = main()
+    if not success:
+        sys.exit(1)

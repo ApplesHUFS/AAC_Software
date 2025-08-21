@@ -319,10 +319,6 @@ python data_prepare.py --steps 8 --openai-start 500 --openai-end 1000
   # 가상환경 활성화
   source env/bin/activate
 
-  # 설정 파일에서 device를 'cpu'로 변경 (CUDA 메모리 문제 해결)
-  # src/service_config.py 파일의 48번째 줄:
-  # 'device': 'auto' → 'device': 'cpu'
-
   # Flask 서버 실행
   python app.py
 

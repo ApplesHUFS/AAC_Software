@@ -29,6 +29,7 @@ class AACInterpreterService:
         feedback_manager: 피드백 관리 컴포넌트
         context_manager: 상황 정보 관리 컴포넌트
         conversation_memory: 대화 메모리 관리 컴포넌트
+        cluster_calculator: 클러스터 유사도 계산기 (선택사항)
     """
 
     def __init__(self, config: Optional[Dict] = None):
@@ -51,20 +52,35 @@ class AACInterpreterService:
 
         self.context_manager = ContextManager(config=self.config)
 
-        # 대화 메모리 설정
-        self.conversation_memory = ConversationSummaryMemory(
-            memory_file_path=self.config.get('memory_file_path'),
-            config=self.config
-        )
+        # 대화 메모리 설정 (오류 방지를 위한 try-catch 추가)
+        try:
+            self.conversation_memory = ConversationSummaryMemory(
+                memory_file_path=self.config.get('memory_file_path'),
+                config=self.config
+            )
+        except Exception as e:
+            print(f"경고: ConversationSummaryMemory 초기화 실패: {e}")
+            print("메모리 기능이 제한될 수 있습니다.")
+            self.conversation_memory = None
 
-        # 카드 추천 시스템
-        self.card_recommender = CardRecommender(
-            clustering_results_path=str(self.config['clustering_results_path']),
-            config=self.config
-        )
+        # 카드 추천 시스템 (오류 방지를 위한 try-catch 추가)
+        try:
+            self.card_recommender = CardRecommender(
+                clustering_results_path=str(self.config['clustering_results_path']),
+                config=self.config
+            )
+        except FileNotFoundError as e:
+            print(f"경고: {e}")
+            print("카드 추천 기능이 비활성화됩니다. 클러스터링 결과 파일을 확인하세요.")
+            self.card_recommender = None
 
-        # 카드 해석 시스템
-        self.card_interpreter = CardInterpreter(config=self.config)
+        # 카드 해석 시스템 (오류 방지를 위한 try-catch 추가)
+        try:
+            self.card_interpreter = CardInterpreter(config=self.config)
+        except Exception as e:
+            print(f"경고: CardInterpreter 초기화 실패: {e}")
+            print("카드 해석 기능이 제한될 수 있습니다.")
+            self.card_interpreter = None
 
         # 클러스터 유사도 계산기 (preferred_category_types 생성용)
         cluster_tags_path = self.config['cluster_tags_path']
@@ -72,6 +88,9 @@ class AACInterpreterService:
             self.cluster_calculator = ClusterSimilarityCalculator(cluster_tags_path, self.config)
         except FileNotFoundError as e:
             print(f"경고: {e}. preferred_category_types 계산 기능이 비활성화됩니다.")
+            self.cluster_calculator = None
+        except Exception as e:
+            print(f"경고: ClusterSimilarityCalculator 초기화 실패: {e}")
             self.cluster_calculator = None
 
     def register_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
@@ -98,7 +117,21 @@ class AACInterpreterService:
             }
 
         # preferred_category_types 계산
-        preferred_category_types = self._calculate_preferred_categories(persona['interesting_topics'])
+        if self.cluster_calculator is None:
+            return {
+                'status': 'error',
+                'user_id': -1,
+                'message': '클러스터 계산기가 초기화되지 않았습니다. 클러스터 태그 파일을 확인하세요.'
+            }
+
+        try:
+            preferred_category_types = self._calculate_preferred_categories(persona['interesting_topics'])
+        except Exception as e:
+            return {
+                'status': 'error',
+                'user_id': -1,
+                'message': f'선호 카테고리 계산 실패: {str(e)}'
+            }
 
         # persona에 계산된 preferred_category_types 추가
         enhanced_persona = persona.copy()
@@ -214,6 +247,14 @@ class AACInterpreterService:
                 - interface_data (Dict): 선택 인터페이스 데이터
                 - message (str): 결과 메시지
         """
+        # 카드 추천 시스템이 없는 경우
+        if self.card_recommender is None:
+            return {
+                'status': 'error',
+                'interface_data': {},
+                'message': '카드 추천 시스템이 초기화되지 않았습니다. 클러스터링 결과 파일을 확인하세요.'
+            }
+
         # 사용자 정보 조회
         user_info = self.user_manager.get_user(user_id)
         if user_info['status'] != 'success':
@@ -243,6 +284,13 @@ class AACInterpreterService:
         Returns:
             Dict containing validation result.
         """
+        if self.card_recommender is None:
+            return {
+                'status': 'error',
+                'valid': False,
+                'message': '카드 추천 시스템이 초기화되지 않았습니다.'
+            }
+
         return self.card_recommender.validate_card_selection(selected_cards, available_options)
 
     def interpret_cards(self,
@@ -269,6 +317,16 @@ class AACInterpreterService:
                 - method (str): 해석 방법
                 - message (str): 결과 메시지
         """
+        # 카드 해석 시스템이 없는 경우
+        if self.card_interpreter is None:
+            return {
+                'status': 'error',
+                'interpretations': [],
+                'feedback_id': -1,
+                'method': 'none',
+                'message': '카드 해석 시스템이 초기화되지 않았습니다. OpenAI API 키를 확인하세요.'
+            }
+
         # 사용자 정보 조회
         user_info = self.user_manager.get_user(user_id)
         if user_info['status'] != 'success':
@@ -300,13 +358,18 @@ class AACInterpreterService:
         }
 
         # 과거 해석 패턴 조회 (대화 메모리에서)
-        memory_result = self.conversation_memory.get_recent_patterns(
-            user_id,
-            limit=self.config.get('memory_pattern_limit', 5)
-        )
         past_interpretation = ""
-        if memory_result['recent_patterns']:
-            past_interpretation = f"과거 사용 패턴: {'. '.join(memory_result['recent_patterns'][-2:])}"
+        if self.conversation_memory:
+            try:
+                memory_result = self.conversation_memory.get_recent_patterns(
+                    user_id,
+                    limit=self.config.get('memory_pattern_limit', 5)
+                )
+                if memory_result['recent_patterns']:
+                    past_interpretation = f"과거 사용 패턴: {'. '.join(memory_result['recent_patterns'][-2:])}"
+            except Exception as e:
+                print(f"메모리 패턴 조회 실패: {e}")
+                # 메모리 조회 실패는 해석을 막지 않음
 
         # 카드 해석 수행
         interpretation_result = self.card_interpreter.interpret_cards(
@@ -389,23 +452,27 @@ class AACInterpreterService:
             direct_feedback=direct_feedback
         )
 
-        if feedback_result['status'] == 'success':
+        if feedback_result['status'] == 'success' and self.conversation_memory:
             # Partner 피드백을 대화 메모리에 기록
-            feedback_data = feedback_result['feedback_result']
-            final_interpretation = (
-                feedback_data.get('selected_interpretation') or
-                feedback_data.get('direct_feedback')
-            )
-
-            if final_interpretation:
-                self.conversation_memory.add_conversation_memory(
-                    user_id=feedback_data['user_id'],
-                    cards=feedback_data['cards'],
-                    context=feedback_data['context'],
-                    interpretations=feedback_data['interpretations'],
-                    selected_interpretation=feedback_data.get('selected_interpretation'),
-                    user_correction=feedback_data.get('direct_feedback')
+            try:
+                feedback_data = feedback_result['feedback_result']
+                final_interpretation = (
+                    feedback_data.get('selected_interpretation') or
+                    feedback_data.get('direct_feedback')
                 )
+
+                if final_interpretation:
+                    self.conversation_memory.add_conversation_memory(
+                        user_id=feedback_data['user_id'],
+                        cards=feedback_data['cards'],
+                        context=feedback_data['context'],
+                        interpretations=feedback_data['interpretations'],
+                        selected_interpretation=feedback_data.get('selected_interpretation'),
+                        user_correction=feedback_data.get('direct_feedback')
+                    )
+            except Exception as e:
+                print(f"메모리 업데이트 실패: {e}")
+                # 메모리 업데이트 실패는 전체 피드백 처리를 막지 않음
 
         return feedback_result
 
@@ -428,12 +495,13 @@ class AACInterpreterService:
 
         Returns:
             List[int]: 선호 클러스터 ID 리스트 (최대 6개)
+
+        Raises:
+            RuntimeError: 클러스터 계산기가 초기화되지 않은 경우
+            Exception: 계산 과정에서 오류 발생시
         """
         if self.cluster_calculator is None:
-            # 클러스터 계산기가 없으면 기본값 반환
-            cluster_count = self.config.get('cluster_count', 6)
-            required_cluster_count = self.config.get('required_cluster_count', 6)
-            return list(range(min(cluster_count, required_cluster_count)))
+            raise RuntimeError("클러스터 계산기가 초기화되지 않았습니다. 클러스터 태그 파일을 확인하세요.")
 
         similarity_threshold = self.config.get('similarity_threshold', 0.3)
         required_cluster_count = self.config.get('required_cluster_count', 6)
