@@ -1,3 +1,5 @@
+# pre-commit run
+
 # AAC 카드 해석 시스템
 
 이 시스템은 AAC(Augmentative and Alternative Communication) 카드를 사용하는 사용자들의 의사소통을 돕기 위한 지능형 해석 시스템입니다.
@@ -63,7 +65,7 @@ LangChain의 ConversationSummaryMemory를 사용하여 해석 결과를 요약 �
     },
     "context": {
       "time": "string",
-      "place": "string", 
+      "place": "string",
       "interaction_partner": "string",
       "current_activity": "string"
     },
@@ -156,7 +158,7 @@ service = AACInterpreterService()
 # 2. 사용자 등록
 persona_data = {
     "age": 12,
-    "gender": "male", 
+    "gender": "male",
     "disability_type": "지적장애",
     "communication_characteristics": "단순한 단어나 짧은 구문을 선호",
     "interesting_topics": ["음식", "놀이", "가족"],
@@ -180,7 +182,7 @@ recommended_cards = cards_result['recommended_cards']
 # 5. 카드 선택 및 해석
 selected_cards = ["2462_사과.png", "2392_좋아요.png"]
 interpretation_result = service.interpret_cards(
-    user_id=user_id, 
+    user_id=user_id,
     selected_cards=selected_cards,
     context=context_data
 )
@@ -237,7 +239,7 @@ pipeline = DataPreparationPipeline(DATASET_CONFIG)
 # 1. 부적절한 이미지 필터링
 pipeline.step1_filter_images()
 
-# 2. CLIP 임베딩 생성  
+# 2. CLIP 임베딩 생성
 pipeline.step2_generate_embeddings()
 
 # 3. K-means 클러스터링
