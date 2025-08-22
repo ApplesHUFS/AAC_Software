@@ -36,7 +36,7 @@ class ClusterSimilarityCalculator:
             self.device = device_setting
 
         # 문장 임베딩 모델 로드
-        similarity_model_name = self.config.get('similarity_model', 'jhgan/ko-sroberta-multitask')
+        similarity_model_name = self.config.get('similarity_model')
         self.similarity_model = SentenceTransformer(similarity_model_name, device=self.device)
 
         # 클러스터 태그 로드

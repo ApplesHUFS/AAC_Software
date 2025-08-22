@@ -20,13 +20,13 @@ class UserManager:
         """UserManager 초기화.
 
         Args:
-            users_file_path: 사용자 데이터 파일 경로. None이면 기본값 사용.
+            users_file_path: 사용자 데이터 파일 경로.
             config: 설정 딕셔너리. None이면 기본값 사용.
         """
-        self.users_file_path = users_file_path or "user_data/users.json"
-        self.config = config or {}
+        self.users_file_path = users_file_path
+        self.config = config
         self.users = {}
-        self.next_id = 1  # 사용자 ID는 1부터 시작
+        self.next_id = 1  # 사용자 ID 1부터
 
         # 기존 사용자 데이터 로드
         self._load_users()

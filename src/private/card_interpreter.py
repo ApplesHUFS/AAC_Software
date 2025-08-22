@@ -19,18 +19,18 @@ class CardInterpreter:
         """CardInterpreter 초기화.
 
         Args:
-            config: 설정 딕셔너리. None이면 기본 설정 사용.
+            config: 설정 딕셔너리.
         """
-        self.config = config or {}
+        self.config = config
 
         # LLMFactory 초기화 - config에서 필요한 설정들을 추출
         llm_config = {
-            'openai_model': self.config.get('openai_model', 'gpt-4o-2024-08-06'),
-            'openai_temperature': self.config.get('openai_temperature', 0.8),
-            'interpretation_max_tokens': self.config.get('interpretation_max_tokens', 400),
-            'summary_max_tokens': self.config.get('summary_max_tokens', 200),
-            'api_timeout': self.config.get('api_timeout', 15),
-            'images_folder': self.config.get('images_folder', 'dataset/images')
+            'openai_model': self.config.get('openai_model'),
+            'openai_temperature': self.config.get('openai_temperature'),
+            'interpretation_max_tokens': self.config.get('interpretation_max_tokens'),
+            'summary_max_tokens': self.config.get('summary_max_tokens'),
+            'api_timeout': self.config.get('api_timeout'),
+            'images_folder': self.config.get('images_folder')
         }
         self.llm_factory = LLMFactory(llm_config)
 

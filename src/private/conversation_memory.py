@@ -32,8 +32,8 @@ class ConversationSummaryMemory:
             memory_file_path: 메모리 파일 저장 경로. None이면 기본값 사용.
             config: 설정 딕셔너리. None이면 기본값 사용.
         """
-        self.memory_file_path = memory_file_path or "user_data/conversation_memory.json"
-        self.config = config or {}
+        self.memory_file_path = memory_file_path
+        self.config = config
         self.memory_data = {
             "user_memories": {}  # user_id별 메모리
         }

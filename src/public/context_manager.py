@@ -21,10 +21,10 @@ class ContextManager:
         """ContextManager 초기화.
 
         Args:
-            config: 설정 딕셔너리. None이면 기본값 사용.
+            config: 설정 딕셔너리.
         """
         self.contexts = {}
-        self.config = config or {}
+        self.config = config
         self.user_context_history = {}  # user_id별 컨텍스트 이력
 
     def create_context(self,

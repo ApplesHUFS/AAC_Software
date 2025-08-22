@@ -1,9 +1,9 @@
 from typing import Dict, List, Optional, Any
 
-# Public 모듈 - 외부 API 및 사용자 인터페이스
+# Public
 from src.public import UserManager, ContextManager, FeedbackManager
 
-# Private 모듈 - 내부 비즈니스 로직 및 데이터 처리
+# Private
 from src.private import (
     CardRecommender,
     CardInterpreter,
@@ -11,7 +11,6 @@ from src.private import (
     ClusterSimilarityCalculator
 )
 
-# 설정 직접 import
 from src.service_config import SERVICE_CONFIG
 
 
@@ -29,7 +28,7 @@ class AACInterpreterService:
         feedback_manager: 피드백 관리 컴포넌트
         context_manager: 상황 정보 관리 컴포넌트
         conversation_memory: 대화 메모리 관리 컴포넌트
-        cluster_calculator: 클러스터 유사도 계산기 (선택사항)
+        cluster_calculator: 클러스터 유사도 계산기 (optional)
     """
 
     def __init__(self, config: Optional[Dict] = None):
@@ -38,60 +37,45 @@ class AACInterpreterService:
         Args:
             config: 선택적 설정 딕셔너리. None이면 기본 설정 사용.
         """
-        self.config = {**SERVICE_CONFIG, **(config or {})}
+        self.config = {**SERVICE_CONFIG, **config}
 
-        # 각 컴포넌트 초기화
-        self.user_manager = UserManager(
-            users_file_path=self.config['users_file_path'],
-            config=self.config
-        )
-
-        self.feedback_manager = FeedbackManager(
-            feedback_file_path=self.config['feedback_file_path']
-        )
-
-        self.context_manager = ContextManager(config=self.config)
-
-        # 대화 메모리 설정 (오류 방지를 위한 try-catch 추가)
         try:
+            # user 관리자 클래스
+            self.user_manager = UserManager(
+                users_file_path=self.config['users_file_path'],
+                config=self.config
+            )
+
+            # feedback 관리자 클래스
+            self.feedback_manager = FeedbackManager(
+                feedback_file_path=self.config['feedback_file_path']
+            )
+
+            # context 관리자 클래스
+            self.context_manager = ContextManager(config=self.config)
+
+            # ConversationSummaryMemory 클래스
             self.conversation_memory = ConversationSummaryMemory(
                 memory_file_path=self.config.get('memory_file_path'),
                 config=self.config
             )
-        except Exception as e:
-            print(f"경고: ConversationSummaryMemory 초기화 실패: {e}")
-            print("메모리 기능이 제한될 수 있습니다.")
-            self.conversation_memory = None
 
-        # 카드 추천 시스템 (오류 방지를 위한 try-catch 추가)
-        try:
+            # 카드 추천 시스템
             self.card_recommender = CardRecommender(
                 clustering_results_path=str(self.config['clustering_results_path']),
                 config=self.config
             )
-        except FileNotFoundError as e:
-            print(f"경고: {e}")
-            print("카드 추천 기능이 비활성화됩니다. 클러스터링 결과 파일을 확인하세요.")
-            self.card_recommender = None
 
-        # 카드 해석 시스템 (오류 방지를 위한 try-catch 추가)
-        try:
+            # 카드 해석 시스템
             self.card_interpreter = CardInterpreter(config=self.config)
-        except Exception as e:
-            print(f"경고: CardInterpreter 초기화 실패: {e}")
-            print("카드 해석 기능이 제한될 수 있습니다.")
-            self.card_interpreter = None
 
-        # 클러스터 유사도 계산기 (preferred_category_types 생성용)
-        cluster_tags_path = self.config['cluster_tags_path']
-        try:
-            self.cluster_calculator = ClusterSimilarityCalculator(cluster_tags_path, self.config)
-        except FileNotFoundError as e:
-            print(f"경고: {e}. preferred_category_types 계산 기능이 비활성화됩니다.")
-            self.cluster_calculator = None
+            # 클러스터 유사도 계산기
+            self.cluster_calculator = ClusterSimilarityCalculator(
+                cluster_tags_path=self.config['cluster_tags_path'],
+                config=self.config
+            )
         except Exception as e:
-            print(f"경고: ClusterSimilarityCalculator 초기화 실패: {e}")
-            self.cluster_calculator = None
+            print(f"컴포넌트 초기화 실패: {e}")
 
     def register_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 등록 및 페르소나 생성.
