@@ -86,8 +86,8 @@ class ClusterSimilarityCalculator:
         Returns:
             List[int]: 선호 클러스터 ID 리스트 (유사도 높은 순)
         """
+        # 기본값
         if not interesting_topics or not self.cluster_tags:
-            # 기본값으로 처음 6개 클러스터 반환
             available_clusters = list(self.cluster_tags.keys())
             return available_clusters[:max_categories]
 
@@ -99,11 +99,6 @@ class ClusterSimilarityCalculator:
             for topic in cluster_topics:
                 all_cluster_topics.append(topic)
                 cluster_topic_mapping.append(cluster_id)
-
-        if not all_cluster_topics:
-            # 클러스터 태그가 없으면 기본값 반환
-            available_clusters = list(self.cluster_tags.keys())
-            return available_clusters[:max_categories]
 
         # 유사도 계산
         similarities = self.compute_topic_similarities_batch(interesting_topics, all_cluster_topics)

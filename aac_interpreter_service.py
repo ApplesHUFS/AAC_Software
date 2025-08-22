@@ -92,7 +92,8 @@ class AACInterpreterService:
         Returns:
             Dict containing user registration result.
         """
-        # interesting_topics 기반으로 preferred_category_types 계산
+
+        # interesting_topics 체크
         if 'interesting_topics' not in persona:
             return {
                 'status': 'error',
@@ -100,16 +101,11 @@ class AACInterpreterService:
                 'message': 'interesting_topics가 필요합니다.'
             }
 
-        # preferred_category_types 계산
-        if self.cluster_calculator is None:
-            return {
-                'status': 'error',
-                'user_id': -1,
-                'message': '클러스터 계산기가 초기화되지 않았습니다. 클러스터 태그 파일을 확인하세요.'
-            }
-
         try:
-            preferred_category_types = self._calculate_preferred_categories(persona['interesting_topics'])
+            # 딕셔너리 업데이트
+            persona.update({
+                'preferred_category_types': self._calculate_preferred_categories(persona['interesting_topics'])
+            })
         except Exception as e:
             return {
                 'status': 'error',
@@ -117,11 +113,7 @@ class AACInterpreterService:
                 'message': f'선호 카테고리 계산 실패: {str(e)}'
             }
 
-        # persona에 계산된 preferred_category_types 추가
-        enhanced_persona = persona.copy()
-        enhanced_persona['preferred_category_types'] = preferred_category_types
-
-        return self.user_manager.create_user(enhanced_persona)
+        return self.user_manager.create_user(persona)
 
     def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
         """사용자 인증 및 세션 정보 반환.
@@ -484,11 +476,9 @@ class AACInterpreterService:
             RuntimeError: 클러스터 계산기가 초기화되지 않은 경우
             Exception: 계산 과정에서 오류 발생시
         """
-        if self.cluster_calculator is None:
-            raise RuntimeError("클러스터 계산기가 초기화되지 않았습니다. 클러스터 태그 파일을 확인하세요.")
 
-        similarity_threshold = self.config.get('similarity_threshold', 0.3)
-        required_cluster_count = self.config.get('required_cluster_count', 6)
+        similarity_threshold = self.config.get('similarity_threshold')
+        required_cluster_count = self.config.get('required_cluster_count')
 
         return self.cluster_calculator.calculate_preferred_categories(
             interesting_topics=interesting_topics,
