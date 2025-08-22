@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import traceback
 import uuid
+import os
 from datetime import datetime
 
 from aac_interpreter_service import AACInterpreterService
@@ -49,6 +50,12 @@ def health_check():
         'version': '1.0.0'
     })
 
+# 정적 파일 서빙 (이미지)
+@app.route('/dataset/images/<filename>')
+def serve_image(filename):
+    """AAC 카드 이미지 파일 서빙"""
+    return send_from_directory('dataset/images', filename)
+
 # ===== 사용자 관리 엔드포인트 =====
 
 @app.route('/users', methods=['POST'])
@@ -57,11 +64,22 @@ def create_user():
     try:
         data = request.get_json()
 
+        # 성별 매핑 (한국어 → 영어)
+        gender_mapping = {
+            '남성': 'male',
+            '여성': 'female',
+            'male': 'male',
+            'female': 'female'
+        }
+
+        original_gender = data.get('gender', '')
+        mapped_gender = gender_mapping.get(original_gender, original_gender)
+
         # 페르소나 데이터 생성
         persona_data = {
             'name': data.get('name'),
             'age': data.get('age'),
-            'gender': data.get('gender'),
+            'gender': mapped_gender,
             'disability_type': data.get('disability_type'),
             'communication_characteristics': data.get('communication_characteristics', ''),
             'interesting_topics': data.get('interesting_topics'),
@@ -70,11 +88,14 @@ def create_user():
 
         result = aac_service.register_user(persona_data)
 
-        return jsonify({
-            'id': str(result.get('user_id')),
-            'name': data.get('name', ''),
-            'status': 'created'
-        }), 201
+        if result['status'] == 'success':
+            return jsonify({
+                'id': result.get('user_id'),  # 정수로 반환
+                'name': data.get('name', ''),
+                'status': 'created'
+            }), 201
+        else:
+            return jsonify({'error': result['message']}), 400
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -286,7 +307,7 @@ def get_card_recommendations():
         if not hasattr(aac_service, 'card_recommender') or aac_service.card_recommender is None:
             return jsonify({'error': 'Failed to get recommendations'}), 400
 
-        result = aac_service.get_card_selection_interface(int(user_id), context_data)
+        result = aac_service.get_card_selection_interface(int(user_id), context_data, context_id)
 
         if result['status'] == 'success':
             interface_data = result['interface_data']
@@ -295,19 +316,79 @@ def get_card_recommendations():
             # 카드 정보 제공
             formatted_cards = []
             for i, card_filename in enumerate(cards):
+                # 카드 파일명에서 ID 추출 (예: "2248_물.png" -> "2248")
+                card_id = card_filename.split('_')[0] if '_' in card_filename else card_filename.replace('.png', '')
                 formatted_cards.append({
-                    'id': i + 1,
+                    'id': card_id,
                     'name': card_filename.replace('.png', '').replace('_', ' '),
                     'filename': card_filename,  # "2248_물.png"
                     'image_path': f'dataset/images/{card_filename}'
                 })
 
-            return jsonify({
+            response_data = {
                 'cards': formatted_cards,
                 'total': len(formatted_cards)
-            })
+            }
+
+            # 페이지 정보가 있으면 포함
+            if 'page_info' in interface_data:
+                response_data['page_info'] = interface_data['page_info']
+
+            return jsonify(response_data)
         else:
             return jsonify({'error': 'Failed to get recommendations'}), 400
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/cards/recommendations/history/<context_id>', methods=['GET'])
+def get_card_recommendation_history_summary(context_id):
+    """카드 추천 히스토리 요약 조회"""
+    try:
+        result = aac_service.get_card_recommendation_history_summary(context_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'total_pages': result['total_pages'],
+                'latest_page': result['latest_page'],
+                'history_summary': result['history_summary'],
+                'message': result['message']
+            })
+        else:
+            return jsonify({'error': result['message']}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/cards/recommendations/history/<context_id>/page/<int:page_number>', methods=['GET'])
+def get_card_recommendation_history_page(context_id, page_number):
+    """카드 추천 히스토리 특정 페이지 조회"""
+    try:
+        result = aac_service.get_card_recommendation_history_page(context_id, page_number)
+
+        if result['status'] == 'success':
+            # 카드 정보 제공
+            cards = result['cards']
+            formatted_cards = []
+            for card_filename in cards:
+                # 카드 파일명에서 ID 추출 (예: "2248_물.png" -> "2248")
+                card_id = card_filename.split('_')[0] if '_' in card_filename else card_filename.replace('.png', '')
+                formatted_cards.append({
+                    'id': card_id,
+                    'name': card_filename.replace('.png', '').replace('_', ' '),
+                    'filename': card_filename,
+                    'image_path': f'dataset/images/{card_filename}'
+                })
+
+            return jsonify({
+                'cards': formatted_cards,
+                'page_number': result['page_number'],
+                'total_pages': result['total_pages'],
+                'timestamp': result['timestamp'],
+                'message': result['message']
+            })
+        else:
+            return jsonify({'error': result['message']}), 404
 
     except Exception as e:
         return jsonify({'error': str(e)}), 400

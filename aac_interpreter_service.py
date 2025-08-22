@@ -231,7 +231,7 @@ class AACInterpreterService:
                 'message': context_result['message']
             }
 
-    def get_card_selection_interface(self, user_id: int, context: Dict[str, Any]) -> Dict[str, Any]:
+    def get_card_selection_interface(self, user_id: int, context: Dict[str, Any], context_id: Optional[str] = None) -> Dict[str, Any]:
         """카드 선택 인터페이스 데이터 생성.
 
         사용자의 preferred_category_types를 기반으로 추천된 카드들과 랜덤 카드들을
@@ -272,7 +272,7 @@ class AACInterpreterService:
         }
 
         # 카드 선택 인터페이스 데이터 생성
-        return self.card_recommender.get_card_selection_interface(persona, context)
+        return self.card_recommender.get_card_selection_interface(persona, context, context_id)
 
     def validate_card_selection(self, selected_cards: List[str], available_options: List[str]) -> Dict[str, Any]:
         """사용자 카드 선택 검증.
@@ -511,3 +511,52 @@ class AACInterpreterService:
             similarity_threshold=similarity_threshold,
             max_categories=required_cluster_count
         )
+
+    def get_card_recommendation_history_page(self, context_id: str, page_number: int) -> Dict[str, Any]:
+        """카드 추천 히스토리 특정 페이지 조회.
+
+        Args:
+            context_id: 컨텍스트 ID
+            page_number: 조회할 페이지 번호
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - cards (List[str]): 카드 리스트
+                - page_info (Dict): 페이지 정보
+                - message (str): 결과 메시지
+        """
+        if self.card_recommender is None:
+            return {
+                'status': 'error',
+                'cards': [],
+                'page_info': {},
+                'message': '카드 추천 시스템이 초기화되지 않았습니다.'
+            }
+
+        return self.card_recommender.get_recommendation_history_page(context_id, page_number)
+
+    def get_card_recommendation_history_summary(self, context_id: str) -> Dict[str, Any]:
+        """카드 추천 히스토리 요약 정보 조회.
+
+        Args:
+            context_id: 컨텍스트 ID
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - total_pages (int): 총 페이지 수
+                - latest_page (int): 최신 페이지 번호
+                - history_summary (List[Dict]): 페이지별 요약 정보
+                - message (str): 결과 메시지
+        """
+        if self.card_recommender is None:
+            return {
+                'status': 'error',
+                'total_pages': 0,
+                'latest_page': 0,
+                'history_summary': [],
+                'message': '카드 추천 시스템이 초기화되지 않았습니다.'
+            }
+
+        return self.card_recommender.get_recommendation_history_summary(context_id)

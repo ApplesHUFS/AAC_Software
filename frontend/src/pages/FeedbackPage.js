@@ -54,6 +54,8 @@ const FeedbackPage = () => {
       const contextData = JSON.parse(localStorage.getItem('contextData') || '{}');
 
       // Step 1: 먼저 Partner 피드백 confirmation 요청
+      const storedInterpretations = JSON.parse(localStorage.getItem('cardInterpretations') || '[]');
+
       const confirmationData = {
         type: 'partner_confirmation',
         userId: parseInt(userId),
@@ -64,7 +66,7 @@ const FeedbackPage = () => {
           current_activity: contextData.current_activity || '',
           time: new Date().toLocaleTimeString('ko-KR')
         },
-        interpretations: [], // 기존 해석들 (필요시 추가)
+        interpretations: storedInterpretations,
         partnerInfo: {
           name: '파트너',
           relationship: contextData.interaction_partner || '대화상대'
@@ -80,8 +82,10 @@ const FeedbackPage = () => {
       const submitData = {
         type: 'partner_submit',
         confirmationId: confirmationId,
-        selectedInterpretationIndex: needsCustom ? -1 : (selectedInterpretation.rank - 1),
-        directFeedback: needsCustom ? customInterpretation : null
+        ...(needsCustom
+          ? { directFeedback: customInterpretation }
+          : { selectedInterpretationIndex: selectedInterpretation.rank - 1 }
+        )
       };
 
       await feedbackAPI.submitFeedback(submitData);
@@ -91,7 +95,7 @@ const FeedbackPage = () => {
         userId: parseInt(userId),
         cards: selectedCards.map(card => card.filename || card.name),
         context: contextData,
-        interpretations: [], // 기존 해석들
+        interpretations: storedInterpretations,
         finalInterpretation: finalInterpretation
       });
 

@@ -53,9 +53,9 @@ SERVICE_CONFIG = {
     # 이 값들은 사용자 등록시 엄격하게 검증됩니다
     'valid_genders': ['male', 'female'],
     'valid_disability_types': [
-        '의사소통 장애',
-        '자폐스펙트럼 장애',
-        '지적 장애'
+        '의사소통장애',
+        '자폐스펙트럼장애',
+        '지적장애'
     ],
     'min_age': 1,                      # 최소 연령
     'max_age': 100,                    # 최대 연령

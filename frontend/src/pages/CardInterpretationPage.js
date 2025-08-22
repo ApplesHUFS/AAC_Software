@@ -41,6 +41,14 @@ const CardInterpretationPage = () => {
 
       setInterpretations(formattedInterpretations);
 
+      // 해석 결과를 localStorage에 저장 (피드백에서 사용)
+      // 백엔드에서 정확히 3개의 해석을 기대하므로 3개로 맞춤
+      const interpretationTexts = formattedInterpretations.map(interp => interp.text);
+      while (interpretationTexts.length < 3) {
+        interpretationTexts.push('추가 해석 없음');
+      }
+      localStorage.setItem('cardInterpretations', JSON.stringify(interpretationTexts.slice(0, 3)));
+
       // 피드백 ID를 저장 (백엔드에서 추가 피드백 처리용)
       if (response.data.feedback_id) {
         localStorage.setItem('feedbackId', response.data.feedback_id);

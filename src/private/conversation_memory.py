@@ -142,14 +142,9 @@ class ConversationSummaryMemory:
         self.memory_data["user_memories"][user_id_str]["conversation_history"].append(conversation_entry)
 
         # 카드-해석 연결성 분석
-        try:
-            connection_analysis = self.llm_factory.analyze_card_interpretation_connection(
-                cards, context, final_interpretation
-            )
-        except Exception as e:
-            # 간단한 fallback
-            card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
-            connection_analysis = f"카드 '{', '.join(card_names[:2])}'의 시각적 특징을 통해 '{final_interpretation[:20]}...' 의미 전달"
+        connection_analysis = self.llm_factory.analyze_card_interpretation_connection(
+            cards, context, final_interpretation
+        )
 
         # LangChain ConversationSummaryMemory를 사용한 요약 생성
         summary_result = self._update_summary_with_langchain(user_id_str, connection_analysis)
@@ -218,10 +213,7 @@ class ConversationSummaryMemory:
 
         except Exception as e:
             print(f"LangChain 요약 생성 실패: {e}")
-            # 간단한 fallback 요약
-            fallback_summary = f"총 {len(conversation_history)}회 대화. 최근: {connection_analysis}"
-            user_memory["summary"] = fallback_summary
-            return fallback_summary
+            raise RuntimeError(f"요약 생성에 실패했습니다: {str(e)}")
 
     def get_user_memory_summary(self, user_id: int) -> Dict[str, Any]:
         """사용자의 대화 메모리 요약 조회.

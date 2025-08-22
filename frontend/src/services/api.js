@@ -25,6 +25,10 @@ export const cardAPI = {
     api.post('/cards/recommendations', requestData),
   interpretCards: (selectedCards, userId, contextId) =>
     api.post('/cards/interpret', { selectedCards, userId, contextId }),
+  getRecommendationHistoryPage: (contextId, pageNumber) =>
+    api.get(`/cards/recommendations/history/${contextId}/page/${pageNumber}`),
+  getRecommendationHistorySummary: (contextId) =>
+    api.get(`/cards/recommendations/history/${contextId}`),
 };
 
 export const feedbackAPI = {

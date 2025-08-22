@@ -26,6 +26,7 @@ class CardRecommender:
         self.config = config
         self.clustered_files = {}
         self.all_cards = []
+        self.recommendation_history = {}  # context_id별 추천 히스토리 저장
 
         # 클러스터링 결과 로드
         if Path(clustering_results_path).exists():
@@ -36,7 +37,7 @@ class CardRecommender:
         else:
             raise FileNotFoundError(f'클러스터링 결과 파일이 필요합니다: {clustering_results_path}')
 
-    def get_card_selection_interface(self, persona: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    def get_card_selection_interface(self, persona: Dict[str, Any], context: Dict[str, Any], context_id: Optional[str] = None) -> Dict[str, Any]:
         """화면 표시용 카드 선택 인터페이스 데이터 생성.
 
         preferred_category_types의 6개 클러스터에서 추천 카드를 선택하고,
@@ -76,22 +77,63 @@ class CardRecommender:
         all_selection_cards = recommended_cards + random_cards
         random.shuffle(all_selection_cards)
 
+        # 현재 추천 관리 (히스토리와는 별개)
+        page_info = {}
+        if context_id:
+            # 현재 추천 저장소 초기화
+            if not hasattr(self, 'current_recommendations'):
+                self.current_recommendations = {}
+
+            # 히스토리 초기화
+            if context_id not in self.recommendation_history:
+                self.recommendation_history[context_id] = []
+
+            # 이전 추천이 있는지 확인 (재추천 여부 판단)
+            has_previous_recommendation = context_id in self.current_recommendations
+
+            if has_previous_recommendation:
+                # 재추천인 경우: 이전 추천을 히스토리에 저장
+                previous_cards = self.current_recommendations[context_id]
+                self._add_to_recommendation_history(context_id, previous_cards)
+
+                # 페이지 정보: 히스토리 + 현재 = 총 페이지
+                total_history_pages = len(self.recommendation_history[context_id])
+                page_info = {
+                    'current_page': total_history_pages + 1,  # 현재는 히스토리 다음 페이지
+                    'total_pages': total_history_pages + 1
+                }
+            else:
+                # 첫 번째 추천인 경우: 히스토리 없음
+                page_info = {
+                    'current_page': 1,
+                    'total_pages': 1
+                }
+
+            # 현재 추천 업데이트
+            self.current_recommendations[context_id] = all_selection_cards
+
+        interface_data = {
+            'selection_options': all_selection_cards,
+            'context_info': {
+                'time': context.get('time', '알 수 없음'),
+                'place': context.get('place', '알 수 없음'),
+                'interaction_partner': context.get('interaction_partner', '알 수 없음'),
+                'current_activity': context.get('current_activity', '')
+            },
+            'selection_rules': {
+                'min_cards': self.config.get('min_card_selection', 1),
+                'max_cards': self.config.get('max_card_selection', 4),
+                'total_options': len(all_selection_cards)
+            }
+        }
+
+        # 페이지 정보 추가
+        if page_info:
+            interface_data['page_info'] = page_info
+
         return {
             'status': 'success',
-            'interface_data': {
-                'selection_options': all_selection_cards,
-                'context_info': {
-                    'time': context.get('time', '알 수 없음'),
-                    'place': context.get('place', '알 수 없음'),
-                    'interaction_partner': context.get('interaction_partner', '알 수 없음'),
-                    'current_activity': context.get('current_activity', '')
-                },
-                'selection_rules': {
-                    'min_cards': self.config.get('min_card_selection', 1),
-                    'max_cards': self.config.get('max_card_selection', 4),
-                    'total_options': len(all_selection_cards)
-                }
-            },
+            'interface_data': interface_data,
             'message': f'카드 선택 인터페이스 생성 완료 (추천: {len(recommended_cards)}, 랜덤: {len(random_cards)})'
         }
 
@@ -196,4 +238,156 @@ class CardRecommender:
             'status': 'success',
             'valid': True,
             'message': f'{len(selected_cards)}개 카드가 성공적으로 선택되었습니다.'
+        }
+
+    def _add_to_recommendation_history(self, context_id: str, cards: List[str]) -> Dict[str, Any]:
+        """카드 추천 히스토리에 추가.
+
+        Args:
+            context_id: 컨텍스트 ID
+            cards: 추천된 카드 리스트
+
+        Returns:
+            Dict containing:
+                - status (str): 'success'
+                - page_number (int): 추가된 페이지 번호
+                - total_pages (int): 총 페이지 수
+        """
+        from datetime import datetime
+
+        if context_id not in self.recommendation_history:
+            self.recommendation_history[context_id] = []
+
+        # 새로운 추천 결과 추가
+        recommendation_entry = {
+            'page_number': len(self.recommendation_history[context_id]) + 1,
+            'cards': cards,
+            'timestamp': datetime.now().isoformat()
+        }
+
+        self.recommendation_history[context_id].append(recommendation_entry)
+
+        total_pages = len(self.recommendation_history[context_id])
+
+        return {
+            'status': 'success',
+            'page_number': recommendation_entry['page_number'],
+            'total_pages': total_pages
+        }
+
+    def get_recommendation_history_page(self, context_id: str, page_number: int) -> Dict[str, Any]:
+        """카드 추천 히스토리 특정 페이지 조회.
+
+        Args:
+            context_id: 컨텍스트 ID
+            page_number: 조회할 페이지 번호 (1-based)
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - cards (List[str]): 카드 리스트
+                - page_number (int): 현재 페이지 번호
+                - total_pages (int): 총 페이지 수
+                - timestamp (str): 생성 시간
+                - message (str): 결과 메시지
+        """
+        # 현재 추천과 히스토리 모두 고려
+        if not hasattr(self, 'current_recommendations'):
+            self.current_recommendations = {}
+
+        if context_id not in self.recommendation_history:
+            self.recommendation_history[context_id] = []
+
+        history = self.recommendation_history[context_id]
+        has_current = context_id in self.current_recommendations
+
+        # 총 페이지 수 계산 (히스토리 + 현재 추천)
+        total_pages = len(history) + (1 if has_current else 0)
+
+        if total_pages == 0:
+            return {
+                'status': 'error',
+                'cards': [],
+                'page_number': 0,
+                'total_pages': 0,
+                'timestamp': '',
+                'message': f'컨텍스트 {context_id}의 추천이 없습니다.'
+            }
+
+        # 페이지 번호 검증
+        if page_number < 1 or page_number > total_pages:
+            return {
+                'status': 'error',
+                'cards': [],
+                'page_number': 0,
+                'total_pages': total_pages,
+                'timestamp': '',
+                'message': f'유효하지 않은 페이지 번호입니다. (1-{total_pages} 범위)'
+            }
+
+        # 페이지 데이터 조회
+        if page_number <= len(history):
+            # 히스토리 페이지
+            page_data = history[page_number - 1]
+            return {
+                'status': 'success',
+                'cards': page_data['cards'],
+                'page_number': page_number,
+                'total_pages': total_pages,
+                'timestamp': page_data['timestamp'],
+                'message': f'히스토리 페이지 {page_number}/{total_pages}를 조회했습니다.'
+            }
+        else:
+            # 현재 추천 페이지 (가장 마지막 페이지)
+            from datetime import datetime
+            return {
+                'status': 'success',
+                'cards': self.current_recommendations[context_id],
+                'page_number': page_number,
+                'total_pages': total_pages,
+                'timestamp': datetime.now().isoformat(),
+                'message': f'현재 추천 페이지 {page_number}/{total_pages}를 조회했습니다.'
+            }
+
+    def get_recommendation_history_summary(self, context_id: str) -> Dict[str, Any]:
+        """카드 추천 히스토리 요약 정보 조회.
+
+        Args:
+            context_id: 컨텍스트 ID
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - total_pages (int): 총 페이지 수
+                - latest_page (int): 최신 페이지 번호
+                - history_summary (List[Dict]): 페이지별 요약 정보
+                - message (str): 결과 메시지
+        """
+        if context_id not in self.recommendation_history or not self.recommendation_history[context_id]:
+            return {
+                'status': 'error',
+                'total_pages': 0,
+                'latest_page': 0,
+                'history_summary': [],
+                'message': f'컨텍스트 {context_id}의 추천 히스토리가 없습니다.'
+            }
+
+        history = self.recommendation_history[context_id]
+        total_pages = len(history)
+
+        # 페이지별 요약 정보 생성
+        history_summary = []
+        for i, entry in enumerate(history):
+            history_summary.append({
+                'page_number': i + 1,
+                'card_count': len(entry['cards']),
+                'timestamp': entry['timestamp']
+            })
+
+        return {
+            'status': 'success',
+            'total_pages': total_pages,
+            'latest_page': total_pages,
+            'history_summary': history_summary,
+            'message': f'컨텍스트 {context_id}의 추천 히스토리 요약 (총 {total_pages}페이지)'
         }

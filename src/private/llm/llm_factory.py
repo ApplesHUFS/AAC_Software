@@ -195,9 +195,9 @@ class LLMFactory:
         content = self.call_vision_api(system_prompt, user_content)
         interpretations = self.parse_interpretations(content)
 
-        # 정확히 3개가 나오지 않으면 후처리
+        # 정확히 3개가 나오지 않으면 에러 발생
         if len(interpretations) != 3:
-            interpretations = self._ensure_three_interpretations(interpretations, cards)
+            raise ValueError(f"해석이 정확히 3개 생성되지 않았습니다. 생성된 해석 수: {len(interpretations)}")
 
         return interpretations
 
@@ -255,29 +255,4 @@ class LLMFactory:
             "text": "\n위 이미지들의 어떤 시각적 요소(객체, 색깔, 행동, 표정 등)가 최종 해석으로 연결되었는지 50자 이내로 분석해주세요."
         })
 
-        try:
-            return self.call_vision_api("", content, temperature=0.3, max_tokens=100)
-        except Exception as e:
-            # 간단한 fallback
-            card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
-            return f"카드 '{', '.join(card_names[:2])}'의 시각적 특징을 통해 '{final_interpretation[:20]}...' 의미 전달"
-
-    def _ensure_three_interpretations(self, interpretations: List[str], cards: List[str]) -> List[str]:
-        """정확히 3개의 해석을 보장.
-
-        Args:
-            interpretations: 현재 해석 리스트
-            cards: 카드 파일명 리스트
-
-        Returns:
-            List[str]: 정확히 3개의 해석
-        """
-        while len(interpretations) < 3:
-            card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
-            default_interp = f"{', '.join(card_names)}에 관심이 있어요."
-            if default_interp not in interpretations:
-                interpretations.append(default_interp)
-            else:
-                interpretations.append(f"{', '.join(card_names)}를 알고 싶어요.")
-
-        return interpretations[:3]
+        return self.call_vision_api("", content, temperature=0.3, max_tokens=100)
