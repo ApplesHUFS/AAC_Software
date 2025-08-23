@@ -479,36 +479,3 @@ class UserManager:
                 'message': '비밀번호가 일치하지 않습니다.'
             }
 
-    def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
-        """사용자 인증.
-
-        Args:
-            user_id: 사용자 ID
-            password: 비밀번호
-
-        Returns:
-            Dict containing:
-                - status (str): 'success' 또는 'error'
-                - authenticated (bool): 인증 성공 여부
-                - message (str): 결과 메시지
-        """
-        if user_id not in self.users:
-            return {
-                'status': 'error',
-                'authenticated': False,
-                'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
-            }
-
-        user_password = self.users[user_id]['password']
-        if user_password == password:
-            return {
-                'status': 'success',
-                'authenticated': True,
-                'message': '인증이 성공했습니다.'
-            }
-        else:
-            return {
-                'status': 'error',
-                'authenticated': False,
-                'message': '비밀번호가 올바르지 않습니다.'
-            }
