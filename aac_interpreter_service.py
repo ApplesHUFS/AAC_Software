@@ -189,6 +189,7 @@ class AACInterpreterService:
         update_result = self.user_manager.update_user_persona(user_id, persona_updates)
 
         if update_result['status'] != 'success':
+            update_result.pop('needs_category_recalculation', None)
             return {
                 **update_result,
                 'category_recalculated': False
@@ -196,30 +197,31 @@ class AACInterpreterService:
 
         category_recalculated = False
 
-        # interesting_topics가 업데이트되고 클러스터 계산기가 사용 가능한 경우 재계산 수행
+        # interesting_topics가 업데이트 되었고 클러스터 계산기가 사용 가능한 경우
         if update_result.get('needs_category_recalculation') and self.cluster_calculator:
             try:
                 # 업데이트된 사용자 정보
                 user_info = self.user_manager.get_user(user_id)
-                if user_info['status'] == 'success':
-                    interesting_topics = user_info['user'].get('interesting_topics', [])
+                interesting_topics = user_info['user'].get('interesting_topics')
 
-                    # 선호 카테고리 재계산
-                    preferred_categories = self._calculate_preferred_categories(interesting_topics)
+                # 선호 카테고리 재계산
+                preferred_categories = self._calculate_preferred_categories(interesting_topics)
 
-                    # 재계산된 카테고리 업데이트
-                    category_update_result = self.user_manager.update_preferred_categories(
-                        user_id, preferred_categories
-                    )
+                # 재계산된 카테고리 업데이트
+                category_update_result = self.user_manager.update_preferred_categories(
+                    user_id, preferred_categories
+                )
 
-                    if category_update_result['status'] == 'success':
-                        category_recalculated = True
-                        update_result['message'] += ' 선호 카테고리가 자동으로 재계산되었습니다.'
-                    else:
-                        update_result['message'] += f' 선호 카테고리 재계산 실패: {category_update_result["message"]}'
+                if category_update_result['status'] == 'success':
+                    category_recalculated = True
+                    update_result['message'] += ' 선호 카테고리가 자동으로 재계산되었습니다.'
+                else:
+                    update_result['message'] += f' 선호 카테고리 재계산 실패: {category_update_result["message"]}'
 
             except Exception as e:
                 update_result['message'] += f' 선호 카테고리 재계산 중 오류 발생: {str(e)}'
+
+        update_result.pop('needs_category_recalculation', None)
 
         return {
             **update_result,
