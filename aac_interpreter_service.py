@@ -484,7 +484,7 @@ class AACInterpreterService:
             interesting_topics=interesting_topics,
             similarity_threshold=similarity_threshold,
             max_categories=required_cluster_count
-        )
+        ) # -> list로 된 선호 클러스터
 
     def get_card_recommendation_history_page(self, context_id: str, page_number: int) -> Dict[str, Any]:
         """카드 추천 히스토리 특정 페이지 조회.
