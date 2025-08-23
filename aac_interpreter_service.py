@@ -37,7 +37,7 @@ class AACInterpreterService:
         Args:
             config: 선택적 설정 딕셔너리. None이면 기본 설정 사용.
         """
-        self.config = {**SERVICE_CONFIG, **config}
+        self.config = SERVICE_CONFIG
 
         try:
             # user 관리자 클래스
@@ -90,7 +90,10 @@ class AACInterpreterService:
                 - password (str): 사용자 비밀번호
 
         Returns:
-            Dict containing user registration result.
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - user_id (int): 생성된 사용자 ID (-1 if error)
+                - message (str): 결과 메시지
         """
 
         # interesting_topics 체크
@@ -101,17 +104,10 @@ class AACInterpreterService:
                 'message': 'interesting_topics가 필요합니다.'
             }
 
-        try:
-            # 딕셔너리 업데이트
-            persona.update({
-                'preferred_category_types': self._calculate_preferred_categories(persona['interesting_topics'])
-            })
-        except Exception as e:
-            return {
-                'status': 'error',
-                'user_id': -1,
-                'message': f'선호 카테고리 계산 실패: {str(e)}'
-            }
+        # 딕셔너리 업데이트
+        persona.update({
+            'preferred_category_types': self._calculate_preferred_categories(persona['interesting_topics'])
+        })
 
         return self.user_manager.create_user(persona)
 
