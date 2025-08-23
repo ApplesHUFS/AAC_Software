@@ -35,8 +35,6 @@ class ContextManager:
         """새로운 대화 상황 컨텍스트 생성.
 
         Partner가 대화 상황 정보를 입력하여 컨텍스트를 생성합니다.
-        시간은 시스템에서 자동으로 설정됩니다.
-
         Args:
             place: 장소 정보 (직접 입력, 필수)
             interaction_partner: 대화 상대 관계 (직접 입력, 필수)
@@ -50,7 +48,7 @@ class ContextManager:
                 - context (Dict): 컨텍스트 정보
                 - message (str): 결과 메시지
         """
-        # 필수 필드 검증
+        # 검증
         if not place or not place.strip():
             return {
                 'status': 'error',
@@ -72,15 +70,14 @@ class ContextManager:
 
         context_id = str(uuid.uuid4())
 
-        # time 필드는 시스템에서 자동 생성
         current_time = datetime.now()
         time_str = current_time.strftime("%H시 %M분")  # 한국어 표준 시간 형식
 
         context = {
-            'time': time_str,  # 시스템에서 자동 생성
+            'time': time_str,
             'place': place.strip(),
             'interaction_partner': interaction_partner.strip(),
-            'current_activity': current_activity,  # 옵션 필드, 빈 값 허용
+            'current_activity': current_activity,
             'created_at': current_time.isoformat(),
             'user_id': user_id  # 추적을 위해 user_id 저장
         }
@@ -88,14 +85,13 @@ class ContextManager:
         self.contexts[context_id] = context
 
         # 사용자별 컨텍스트 히스토리 관리
-        if user_id:
-            if user_id not in self.user_context_history:
-                self.user_context_history[user_id] = []
-            self.user_context_history[user_id].append(context_id)
+        if user_id not in self.user_context_history:
+            self.user_context_history[user_id] = []
+        self.user_context_history[user_id].append(context_id)
 
-            # 최대 50개까지만 보관 (메모리 관리)
-            if len(self.user_context_history[user_id]) > 50:
-                self.user_context_history[user_id] = self.user_context_history[user_id][-50:]
+        # 최대 50개까지만 보관 (메모리 관리)
+        if len(self.user_context_history[user_id]) > 50:
+            self.user_context_history[user_id] = self.user_context_history[user_id][-50:]
 
         return {
             'status': 'success',

@@ -249,7 +249,7 @@ class AACInterpreterService:
                 'message': '사용자 정보를 찾을 수 없습니다.'
             }
 
-        # 컨텍스트 생성 (time은 자동 생성)
+        # 컨텍스트 생성
         context_result = self.context_manager.create_context(
             place=place,
             interaction_partner=interaction_partner,
