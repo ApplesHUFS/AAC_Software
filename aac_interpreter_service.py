@@ -161,6 +161,71 @@ class AACInterpreterService:
         """
         return self.user_manager.get_user(user_id)
 
+    def update_user_persona(self, user_id: int, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
+        """사용자 페르소나 업데이트 및 필요시 선호 카테고리 재계산.
+
+        interesting_topics가 업데이트된 경우 ClusterSimilarityCalculator를 통해
+        preferred_category_types를 자동으로 재계산합니다.
+
+        Args:
+            user_id: 사용자 ID
+            persona_updates: 업데이트할 페르소나 필드들
+                지원하는 필드:
+                - name (str): 사용자 이름
+                - age (int): 나이
+                - gender (str): 성별
+                - disability_type (str): 장애 유형
+                - communication_characteristics (str): 의사소통 특징
+                - interesting_topics (List[str]): 관심 주제
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - updated_fields (List[str]): 업데이트된 필드 목록
+                - category_recalculated (bool): 카테고리 재계산 수행 여부
+                - message (str): 결과 메시지
+        """
+
+        update_result = self.user_manager.update_user_persona(user_id, persona_updates)
+
+        if update_result['status'] != 'success':
+            return {
+                **update_result,
+                'category_recalculated': False
+            }
+
+        category_recalculated = False
+
+        # interesting_topics가 업데이트되고 클러스터 계산기가 사용 가능한 경우 재계산 수행
+        if update_result.get('needs_category_recalculation') and self.cluster_calculator:
+            try:
+                # 업데이트된 사용자 정보
+                user_info = self.user_manager.get_user(user_id)
+                if user_info['status'] == 'success':
+                    interesting_topics = user_info['user'].get('interesting_topics', [])
+
+                    # 선호 카테고리 재계산
+                    preferred_categories = self._calculate_preferred_categories(interesting_topics)
+
+                    # 재계산된 카테고리 업데이트
+                    category_update_result = self.user_manager.update_preferred_categories(
+                        user_id, preferred_categories
+                    )
+
+                    if category_update_result['status'] == 'success':
+                        category_recalculated = True
+                        update_result['message'] += ' 선호 카테고리가 자동으로 재계산되었습니다.'
+                    else:
+                        update_result['message'] += f' 선호 카테고리 재계산 실패: {category_update_result["message"]}'
+
+            except Exception as e:
+                update_result['message'] += f' 선호 카테고리 재계산 중 오류 발생: {str(e)}'
+
+        return {
+            **update_result,
+            'category_recalculated': category_recalculated
+        }
+
     def update_user_context(self, user_id: int, place: str, interaction_partner: str,
                            current_activity: Optional[str] = None) -> Dict[str, Any]:
         """사용자 컨텍스트 업데이트.

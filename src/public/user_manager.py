@@ -145,33 +145,38 @@ class UserManager:
             Dict containing:
                 - status (str): 'success' 또는 'error'
                 - updated_fields (List[str]): 업데이트된 필드 목록
+                - needs_category_recalculation (bool): 카테고리 재계산 필요 여부
                 - message (str): 결과 메시지
         """
-        if user_id not in self.users:
+        # 사용자 존재 검증
+        user_validation = self._validate_user_exists(user_id)
+        if not user_validation['valid']:
             return {
                 'status': 'error',
                 'updated_fields': [],
-                'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
+                'needs_category_recalculation': False,
+                'message': user_validation['message']
             }
 
         try:
             user_data = self.users[user_id]
             updated_fields = []
+            needs_category_recalculation = False
 
             # 업데이트 가능한 필드들과 검증 규칙
             updatable_fields = {
                 'name': lambda x: isinstance(x, str) and len(x.strip()) > 0,
-                'age': lambda x: isinstance(x, int) and self.config.get('min_age') <= x <= self.config.get('max_age'),
-                'gender': lambda x: x in self.config.get('valid_genders'),
-                'disability_type': lambda x: x in self.config.get('valid_disability_types'),
+                'age': lambda x: self._validate_age(x)['valid'],
+                'gender': lambda x: self._validate_gender(x)['valid'],
+                'disability_type': lambda x: self._validate_disability_type(x)['valid'],
                 'communication_characteristics': lambda x: isinstance(x, str) and len(x.strip()) > 0,
-                'interesting_topics': lambda x: isinstance(x, list) and len(x) > 0
+                'interesting_topics': lambda x: self._validate_interesting_topics(x)['valid']
             }
 
-            # 각 필드 업데이트 처리
+            # 각 필드 업데이트
             for field, new_value in persona_updates.items():
                 if field == 'password':
-                    # 비밀번호는 별도 메서드로 처리하는 것이 보안상 좋음
+                    # 비밀번호는 필드 업데이트 로직 추가 필요함 !!! -> 나중에 로그인 기능 만들고 하는게 어떨까 싶긴 함.
                     continue
 
                 if field in updatable_fields:
@@ -179,28 +184,40 @@ class UserManager:
                     if validator(new_value):
                         user_data[field] = new_value
                         updated_fields.append(field)
+
+                        # interesting_topics가 업데이트된 경우 재계산 플래그 설정
+                        if field == 'interesting_topics':
+                            needs_category_recalculation = True
                     else:
+                        # 검증 오류 메시지
+                        if field == 'age':
+                            error_msg = self._validate_age(new_value)['message']
+                        elif field == 'gender':
+                            error_msg = self._validate_gender(new_value)['message']
+                        elif field == 'disability_type':
+                            error_msg = self._validate_disability_type(new_value)['message']
+                        elif field == 'interesting_topics':
+                            error_msg = self._validate_interesting_topics(new_value)['message']
+                        else: # communication_characteristics
+                            error_msg = f'필드 {field}의 값이 유효하지 않습니다: {new_value}'
+
                         return {
                             'status': 'error',
                             'updated_fields': [],
-                            'message': f'필드 {field}의 값이 유효하지 않습니다: {new_value}'
+                            'needs_category_recalculation': False,
+                            'message': error_msg
                         }
-
-            # interesting_topics가 업데이트된 경우 preferred_category_types 재계산 필요
-            if 'interesting_topics' in updated_fields:
-                # 이는 외부에서 계산되어야 하므로 플래그만 설정
-                user_data['needs_category_recalculation'] = True
-                updated_fields.append('needs_category_recalculation')
 
             # 업데이트 시간 갱신
             user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
 
-            # 변경사항 저장
+            # 저장
             self._save_users()
 
             return {
                 'status': 'success',
                 'updated_fields': updated_fields,
+                'needs_category_recalculation': needs_category_recalculation,
                 'message': f'사용자 {user_id}의 페르소나가 성공적으로 업데이트되었습니다. 업데이트된 필드: {", ".join(updated_fields)}'
             }
 
@@ -208,6 +225,7 @@ class UserManager:
             return {
                 'status': 'error',
                 'updated_fields': [],
+                'needs_category_recalculation': False,
                 'message': f'페르소나 업데이트 중 오류 발생: {str(e)}'
             }
 
@@ -223,10 +241,12 @@ class UserManager:
                 - status (str): 'success' 또는 'error'
                 - message (str): 결과 메시지
         """
-        if user_id not in self.users:
+        # 사용자 존재 검증
+        user_validation = self._validate_user_exists(user_id)
+        if not user_validation['valid']:
             return {
                 'status': 'error',
-                'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
+                'message': user_validation['message']
             }
 
         required_cluster_count = self.config.get('required_cluster_count', 6)
@@ -255,6 +275,124 @@ class UserManager:
                 'message': f'선호 카테고리 업데이트 중 오류 발생: {str(e)}'
             }
 
+    def _validate_required_fields(self, persona: Dict[str, Any]) -> Dict[str, Any]:
+        """필수 필드 검증.
+
+        Args:
+            persona: 검증할 페르소나 정보
+
+        Returns:
+            Dict containing validation result
+        """
+        required_fields = self.config.get('required_fields', [])
+        missing_fields = [field for field in required_fields
+                         if field not in persona or not persona[field]]
+
+        if missing_fields:
+            return {
+                'valid': False,
+                'message': f'필수 필드가 누락되었습니다: {", ".join(missing_fields)}'
+            }
+
+        return {'valid': True, 'message': '필수 필드 검증 완료'}
+
+    def _validate_age(self, age_value: Any) -> Dict[str, Any]:
+        """나이 검증.
+
+        Args:
+            age_value: 검증할 나이 값
+
+        Returns:
+            Dict containing validation result
+        """
+        min_age = self.config.get('min_age', 1)
+        max_age = self.config.get('max_age', 100)
+
+        try:
+            age_int = int(age_value)
+            if age_int < min_age or age_int > max_age:
+                return {
+                    'valid': False,
+                    'message': f'나이는 {min_age}-{max_age} 사이의 정수여야 합니다.'
+                }
+        except (ValueError, TypeError):
+            return {
+                'valid': False,
+                'message': f'나이는 {min_age}-{max_age} 사이의 정수여야 합니다.'
+            }
+
+        return {'valid': True, 'message': '나이 검증 완료'}
+
+    def _validate_gender(self, gender: str) -> Dict[str, Any]:
+        """성별 검증.
+
+        Args:
+            gender: 검증할 성별
+
+        Returns:
+            Dict containing validation result
+        """
+        valid_genders = self.config.get('valid_genders', [])
+        if gender not in valid_genders:
+            return {
+                'valid': False,
+                'message': f'성별은 다음 중 하나여야 합니다: {", ".join(valid_genders)}'
+            }
+
+        return {'valid': True, 'message': '성별 검증 완료'}
+
+    def _validate_disability_type(self, disability_type: str) -> Dict[str, Any]:
+        """장애 유형 검증.
+
+        Args:
+            disability_type: 검증할 장애 유형
+
+        Returns:
+            Dict containing validation result
+        """
+        valid_disability_types = self.config.get('valid_disability_types', [])
+        if disability_type not in valid_disability_types:
+            return {
+                'valid': False,
+                'message': f'장애유형은 다음 중 하나여야 합니다: {", ".join(valid_disability_types)}'
+            }
+
+        return {'valid': True, 'message': '장애 유형 검증 완료'}
+
+    def _validate_interesting_topics(self, interesting_topics: Any) -> Dict[str, Any]:
+        """관심 주제 검증.
+
+        Args:
+            interesting_topics: 검증할 관심 주제
+
+        Returns:
+            Dict containing validation result
+        """
+        if not isinstance(interesting_topics, list) or len(interesting_topics) == 0:
+            return {
+                'valid': False,
+                'message': '관심 주제는 최소 1개 이상의 리스트여야 합니다.'
+            }
+
+        return {'valid': True, 'message': '관심 주제 검증 완료'}
+
+    def _validate_user_exists(self, user_id: int) -> Dict[str, Any]:
+        """사용자 존재 여부 검증.
+
+        Args:
+            user_id: 검증할 사용자 ID
+
+        Returns:
+            Dict containing validation result
+        """
+        if user_id not in self.users:
+            return {
+                'valid': False,
+                'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
+            }
+
+        return {'valid': True, 'message': '사용자 존재 검증 완료'}
+
     def _validate_persona(self, persona: Dict[str, Any]) -> Dict[str, Any]:
         """페르소나 정보 유효성 검증.
 
@@ -266,55 +404,30 @@ class UserManager:
                 - valid (bool): 유효성 여부
                 - message (str): 결과 메시지
         """
-        # 설정값 로드
-        required_fields = self.config.get('required_fields')
-        min_age = self.config.get('min_age')
-        max_age = self.config.get('max_age')
-        valid_genders = self.config.get('valid_genders')
-        valid_disability_types = self.config.get('valid_disability_types')
-
         # 필수 필드 검증
-        missing_fields = [field for field in required_fields
-                         if field not in persona or not persona[field]]
-
-        if missing_fields:
-            return {
-                'valid': False,
-                'message': f'필수 필드가 누락되었습니다: {", ".join(missing_fields)}'
-            }
+        required_fields_result = self._validate_required_fields(persona)
+        if not required_fields_result['valid']:
+            return required_fields_result
 
         # 나이 검증
-        try:
-            age_int = int(persona['age'])
-            if age_int < min_age or age_int > max_age:
-                raise ValueError("나이 범위 오류")
-        except (ValueError, TypeError):
-            return {
-                'valid': False,
-                'message': f'나이는 {min_age}-{max_age} 사이의 정수여야 합니다.'
-            }
+        age_result = self._validate_age(persona.get('age'))
+        if not age_result['valid']:
+            return age_result
 
         # 성별 검증
-        if persona['gender'] not in valid_genders:
-            return {
-                'valid': False,
-                'message': f'성별은 다음 중 하나여야 합니다: {", ".join(valid_genders)}'
-            }
+        gender_result = self._validate_gender(persona.get('gender'))
+        if not gender_result['valid']:
+            return gender_result
 
         # 장애유형 검증
-        if persona['disability_type'] not in valid_disability_types:
-            return {
-                'valid': False,
-                'message': f'장애유형은 다음 중 하나여야 합니다: {", ".join(valid_disability_types)}'
-            }
+        disability_result = self._validate_disability_type(persona.get('disability_type'))
+        if not disability_result['valid']:
+            return disability_result
 
         # 관심 주제 검증
-        interesting_topics = persona.get('interesting_topics')
-        if not isinstance(interesting_topics, list) or len(interesting_topics) == 0:
-            return {
-                'valid': False,
-                'message': '관심 주제는 최소 1개 이상의 리스트여야 합니다.'
-            }
+        topics_result = self._validate_interesting_topics(persona.get('interesting_topics'))
+        if not topics_result['valid']:
+            return topics_result
 
         return {
             'valid': True,
@@ -333,21 +446,59 @@ class UserManager:
                 - user (Dict): 사용자 정보 (성공시)
                 - message (str): 결과 메시지
         """
-        if user_id in self.users:
-            # 보안을 위해 비밀번호 제외하고 반환
-            user_data = self.users[user_id].copy()
-            user_data.pop('password', None)
+        # 사용자 존재 검증
+        user_validation = self._validate_user_exists(user_id)
+        if not user_validation['valid']:
+            return {
+                'status': 'error',
+                'user': None,
+                'message': user_validation['message']
+            }
 
+        # 보안을 위해 비밀번호 제외하고 반환
+        user_data = self.users[user_id].copy()
+        user_data.pop('password', None)
+
+        return {
+            'status': 'success',
+            'user': user_data,
+            'message': '사용자 정보를 성공적으로 조회했습니다.'
+        }
+
+    def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
+        """사용자 인증.
+
+        Args:
+            user_id: 사용자 ID
+            password: 비밀번호
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - authenticated (bool): 인증 성공 여부
+                - message (str): 결과 메시지
+        """
+        # 사용자 존재 검증
+        user_validation = self._validate_user_exists(user_id)
+        if not user_validation['valid']:
+            return {
+                'status': 'error',
+                'authenticated': False,
+                'message': user_validation['message']
+            }
+
+        user_password = self.users[user_id]['password']
+        if user_password == password:
             return {
                 'status': 'success',
-                'user': user_data,
-                'message': '사용자 정보를 성공적으로 조회했습니다.'
+                'authenticated': True,
+                'message': '인증이 성공했습니다.'
             }
         else:
             return {
                 'status': 'error',
-                'user': None,
-                'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
+                'authenticated': False,
+                'message': '비밀번호가 일치하지 않습니다.'
             }
 
     def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
