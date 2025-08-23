@@ -33,21 +33,20 @@ class UserManager:
 
     def _load_users(self):
         """사용자 데이터 파일 로드."""
-        if os.path.exists(self.users_file_path):
-            try:
-                with open(self.users_file_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    self.users = {int(k): v for k, v in data.items()}
+        try:
+            with open(self.users_file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                self.users = {int(k): v for k, v in data.items()}
 
-                    if self.users:
-                        self.next_id = max(self.users.keys()) + 1
-            except Exception as e:
-                print(f"사용자 데이터 파일 로드 실패: {e}")
-                self.users = {}
-                self.next_id = 1
+                if self.users:
+                    self.next_id = max(self.users.keys()) + 1
+        except Exception as e:
+            print(f"사용자 데이터 파일 로드 실패: {e}")
+            self.users = {}
+            self.next_id = 1
 
     def _save_users(self):
-        """사용자 데이터를 파일에 저장."""
+        """사용자 데이터 저장."""
         try:
             os.makedirs(os.path.dirname(self.users_file_path), exist_ok=True)
             with open(self.users_file_path, 'w', encoding='utf-8') as f:
@@ -66,7 +65,7 @@ class UserManager:
                 - age (int): 사용자 나이 (1-100)
                 - gender (str): 성별 ('male' 또는 'female')
                 - disability_type (str): 장애 유형
-                  ('의사소통 장애', '자폐스펙트럼 장애', '지적 장애')
+                  ('의사소통장애', '자폐스펙트럼장애', '지적장애')
                 - communication_characteristics (str): 의사소통 특징
                 - interesting_topics (List[str]): 관심 주제 목록
                 - preferred_category_types (List[int]): 선호 클러스터 ID 목록 (6개)
@@ -91,7 +90,7 @@ class UserManager:
             user_id = self.next_id
 
             user_data = {
-                'name': persona.get('name', f'사용자{user_id}'),  # 이름 추가 지원
+                'name': persona.get('name'),
                 'age': int(persona['age']),
                 'gender': persona['gender'],
                 'disability_type': persona['disability_type'],
@@ -106,7 +105,7 @@ class UserManager:
             self.users[user_id] = user_data
             self.next_id += 1
 
-            # 파일에 사용자 정보 저장
+            # 저장
             self._save_users()
 
             return {
@@ -162,9 +161,9 @@ class UserManager:
             # 업데이트 가능한 필드들과 검증 규칙
             updatable_fields = {
                 'name': lambda x: isinstance(x, str) and len(x.strip()) > 0,
-                'age': lambda x: isinstance(x, int) and self.config.get('min_age', 1) <= x <= self.config.get('max_age', 100),
-                'gender': lambda x: x in self.config.get('valid_genders', ['male', 'female']),
-                'disability_type': lambda x: x in self.config.get('valid_disability_types', ['의사소통 장애', '자폐스펙트럼 장애', '지적 장애']),
+                'age': lambda x: isinstance(x, int) and self.config.get('min_age') <= x <= self.config.get('max_age'),
+                'gender': lambda x: x in self.config.get('valid_genders'),
+                'disability_type': lambda x: x in self.config.get('valid_disability_types'),
                 'communication_characteristics': lambda x: isinstance(x, str) and len(x.strip()) > 0,
                 'interesting_topics': lambda x: isinstance(x, list) and len(x) > 0
             }
@@ -267,13 +266,16 @@ class UserManager:
                 - valid (bool): 유효성 여부
                 - message (str): 결과 메시지
         """
+        # 설정값 로드
+        required_fields = self.config.get('required_fields')
+        min_age = self.config.get('min_age')
+        max_age = self.config.get('max_age')
+        valid_genders = self.config.get('valid_genders')
+        valid_disability_types = self.config.get('valid_disability_types')
+
         # 필수 필드 검증
-        required_fields = [
-            'age', 'gender', 'disability_type',
-            'communication_characteristics', 'interesting_topics', 'preferred_category_types', 'password'
-        ]
         missing_fields = [field for field in required_fields
-                        if field not in persona or not persona[field]]
+                         if field not in persona or not persona[field]]
 
         if missing_fields:
             return {
@@ -282,8 +284,6 @@ class UserManager:
             }
 
         # 나이 검증
-        min_age = self.config.get('min_age', 1)
-        max_age = self.config.get('max_age', 100)
         try:
             age_int = int(persona['age'])
             if age_int < min_age or age_int > max_age:
@@ -294,17 +294,14 @@ class UserManager:
                 'message': f'나이는 {min_age}-{max_age} 사이의 정수여야 합니다.'
             }
 
-        # 선택지 검증
-        valid_genders = self.config.get('valid_genders', ['male', 'female'])
-        valid_disability_types = self.config.get('valid_disability_types',
-                                               ['의사소통장애', '자폐스펙트럼장애', '지적장애'])
-
+        # 성별 검증
         if persona['gender'] not in valid_genders:
             return {
                 'valid': False,
                 'message': f'성별은 다음 중 하나여야 합니다: {", ".join(valid_genders)}'
             }
 
+        # 장애유형 검증
         if persona['disability_type'] not in valid_disability_types:
             return {
                 'valid': False,
@@ -312,33 +309,11 @@ class UserManager:
             }
 
         # 관심 주제 검증
-        if not isinstance(persona['interesting_topics'], list) or len(persona['interesting_topics']) == 0:
+        interesting_topics = persona.get('interesting_topics')
+        if not isinstance(interesting_topics, list) or len(interesting_topics) == 0:
             return {
                 'valid': False,
                 'message': '관심 주제는 최소 1개 이상의 리스트여야 합니다.'
-            }
-
-        # preferred_category_types 검증
-        if not isinstance(persona['preferred_category_types'], list):
-            return {
-                'valid': False,
-                'message': '선호 카테고리 타입은 리스트여야 합니다.'
-            }
-
-        required_cluster_count = self.config.get('required_cluster_count', 6)
-        if len(persona['preferred_category_types']) != required_cluster_count:
-            return {
-                'valid': False,
-                'message': f'선호 카테고리 타입은 정확히 {required_cluster_count}개여야 합니다.'
-            }
-
-        # cluster id들이 모두 정수인지 확인
-        try:
-            cluster_ids = [int(cid) for cid in persona['preferred_category_types']]
-        except (ValueError, TypeError):
-            return {
-                'valid': False,
-                'message': '선호 카테고리 타입의 cluster id들은 정수여야 합니다.'
             }
 
         return {

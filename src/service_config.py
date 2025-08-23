@@ -51,6 +51,10 @@ SERVICE_CONFIG = {
 
     # ===== 사용자 페르소나 검증 설정 =====
     # 이 값들은 사용자 등록시 엄격하게 검증됩니다
+    'required_fields' : [
+        'age', 'gender', 'disability_type',
+        'communication_characteristics', 'interesting_topics', 'preferred_category_types', 'password'
+    ],
     'valid_genders': ['male', 'female'],
     'valid_disability_types': [
         '의사소통장애',
