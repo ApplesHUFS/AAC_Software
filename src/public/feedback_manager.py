@@ -11,6 +11,14 @@ class FeedbackManager:
     - Partner 피드백 워크플로우 관리
     - 사용자 해석 이력 및 피드백 저장
     - 통계 및 분석 기능 제공
+
+    Attributes:
+        feedback_file_path: 피드백 데이터 저장 파일 경로
+        _data: 피드백 파일 데이터
+        _feedback_id_counter: 피드백 ID 생성 카운터 (1부터 시작)
+        confirmation_counter: 확인 요청 ID 생성 카운터 (1000000부터 시작)
+        pending_confirmation: 대기 중인 파트너 확인 요청을 저장하는 딕셔너리
+
     """
 
     def __init__(self, feedback_file_path: Optional[str] = None):
@@ -240,8 +248,6 @@ class FeedbackManager:
         """
         cutoff_time = datetime.now() - timedelta(days=max_age_days)
         cutoff_iso = cutoff_time.isoformat()
-
-        initial_count = len(self.pending_confirmations)
 
         # 오래된 요청들 제거
         to_remove = []

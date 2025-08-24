@@ -290,7 +290,6 @@ class ContextManager:
         cutoff_time = datetime.now() - timedelta(days=max_age_days)
         cutoff_iso = cutoff_time.isoformat()
 
-        initial_count = len(self.contexts)
         to_delete = []
 
         # 오래된 컨텍스트 찾기
