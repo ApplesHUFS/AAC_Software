@@ -526,6 +526,17 @@ class AACInterpreterService:
         """
         return self.feedback_manager.get_pending_confirmations(partner_filter)
 
+    def _cleanup_old_requests(self, max_age_days: int=7)-> Dict[str, Any]:
+        """오래된 확인 요청들 정리.
+
+        Args:
+            max_age_days: 확인 요청을 보관할 최대 일수
+        
+        Returns:
+            Dict[str, Any]: 정리 결과
+        """
+        return self.feedback_manager.cleanup_old_requests(max_age_days)
+
     def _calculate_preferred_categories(self, interesting_topics: List[str]) -> List[int]:
         """관심 주제를 기반으로 선호 클러스터 계산.
 
