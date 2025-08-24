@@ -154,7 +154,7 @@ class ContextManager:
         """
         if user_id not in self.user_context_history:
             return {
-                'status': 'success',
+                'status': 'error',
                 'contexts': [],
                 'total_count': 0,
                 'message': f'사용자 {user_id}의 컨텍스트 이력이 없습니다.'
