@@ -463,7 +463,7 @@ class UserManager:
             Dict containing:
                 - status (str): 'success' 또는 'error'
                 - authenticated (bool): 인증 성공 여부
-                - remaining_limit: 남은 인증 횟수
+                - remaining_limit (int): 남은 인증 횟수
                 - message (str): 결과 메시지
 
         """
