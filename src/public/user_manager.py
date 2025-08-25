@@ -230,7 +230,7 @@ class UserManager:
             }
 
     def update_preferred_categories(self, user_id: int, preferred_category_types: List[int]) -> Dict[str, Any]:
-        """사용자의 선호 카테고리 업데이트 (외부에서 계산된 결과 적용).
+        """계산 결과 기반 사용자의 선호 카테고리 업데이트.
 
         Args:
             user_id: 사용자 ID
@@ -478,4 +478,3 @@ class UserManager:
                 'authenticated': False,
                 'message': '비밀번호가 일치하지 않습니다.'
             }
-

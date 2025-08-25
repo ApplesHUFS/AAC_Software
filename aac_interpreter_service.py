@@ -161,7 +161,7 @@ class AACInterpreterService:
         """사용자 페르소나 업데이트 및 필요시 선호 카테고리 재계산.
 
         interesting_topics가 업데이트된 경우 ClusterSimilarityCalculator를 통해
-        preferred_category_types를 자동으로 재계산합니다.
+        preferred_category_types를 자동으로 재계산
 
         Args:
             user_id: 사용자 ID
