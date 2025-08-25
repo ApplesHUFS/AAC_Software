@@ -223,6 +223,7 @@ class FeedbackManager:
             persona: 사용자 페르소나 정보
             context: 상황 정보
             interpretations: 생성된 해석들
+            method: 카드 해석 생성 방법 (online)
 
         Returns:
             Dict containing:
