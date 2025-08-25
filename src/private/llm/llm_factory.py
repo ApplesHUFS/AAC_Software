@@ -30,11 +30,11 @@ class LLMFactory:
             config: 설정 딕셔너리
         """
         self.client = OpenAI()
-        self.model = config.get('openai_model', 'gpt-4o-2024-08-06')
-        self.temperature = config.get('openai_temperature', 0.8)
-        self.max_tokens = config.get('interpretation_max_tokens', 400)
-        self.timeout = config.get('api_timeout', 15)
-        self.images_folder = Path(config.get('images_folder', 'dataset/images'))
+        self.model = config.get('openai_model')
+        self.temperature = config.get('openai_temperature')
+        self.max_tokens = config.get('interpretation_max_tokens')
+        self.timeout = config.get('api_timeout')
+        self.images_folder = Path(config.get('images_folder'))
 
     def encode_image(self, image_path: Path) -> str:
         """이미지를 base64로 인코딩.

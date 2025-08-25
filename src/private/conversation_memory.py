@@ -25,23 +25,23 @@ class ConversationSummaryMemory:
         llm_factory: OpenAI API 통합 관리 팩토리
     """
 
-    def __init__(self, memory_file_path: Optional[str] = None, config: Optional[Dict] = None):
+    def __init__(self, memory_file_path: str, config: Dict):
         """ConversationSummaryMemory 초기화.
 
         Args:
-            memory_file_path: 메모리 파일 저장 경로. None이면 기본값 사용.
-            config: 설정 딕셔너리. None이면 기본값 사용.
+            memory_file_path: 메모리 파일 저장 경로.
+            config: 설정 딕셔너리.
         """
         self.memory_file_path = memory_file_path
         self.config = config
         self.memory_data = {
-            "user_memories": {}  # user_id별 메모리
+            "user_memories": {}
         }
 
         # LangChain ChatOpenAI 모델 초기화
-        self.model = self.config.get('openai_model', 'gpt-4o-2024-08-06')
-        self.temperature = self.config.get('openai_temperature', 0.8)
-        self.max_tokens = self.config.get('summary_max_tokens', 200)
+        self.model = self.config.get('openai_model')
+        self.temperature = self.config.get('openai_temperature')
+        self.max_tokens = self.config.get('summary_max_tokens')
 
         try:
             self.llm = ChatOpenAI(
@@ -53,10 +53,10 @@ class ConversationSummaryMemory:
             # LLMFactory 초기화 (이미지 분석용)
             llm_config = {
                 'openai_model': self.model,
-                'openai_temperature': 0.3,  # 분석용으로 낮은 온도
+                'openai_temperature': 0.3,
                 'interpretation_max_tokens': 100,
-                'api_timeout': self.config.get('api_timeout', 15),
-                'images_folder': self.config.get('images_folder', 'dataset/images')
+                'api_timeout': self.config.get('api_timeout'),
+                'images_folder': self.config.get('images_folder')
             }
             self.llm_factory = LLMFactory(llm_config)
 
@@ -67,13 +67,12 @@ class ConversationSummaryMemory:
 
     def _load_memory(self):
         """메모리 파일에서 데이터 로드."""
-        if os.path.exists(self.memory_file_path):
-            try:
-                with open(self.memory_file_path, 'r', encoding='utf-8') as f:
-                    self.memory_data = json.load(f)
-            except Exception as e:
-                print(f"메모리 파일 로드 실패: {e}")
-                self.memory_data = {"user_memories": {}}
+        try:
+            with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                self.memory_data = json.load(f)
+        except Exception as e:
+            print(f"메모리 파일 로드 실패: {e}")
+            self.memory_data = {"user_memories": {}}
 
     def _save_memory(self):
         """메모리 데이터를 파일에 저장."""
