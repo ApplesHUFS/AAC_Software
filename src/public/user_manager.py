@@ -482,7 +482,7 @@ class UserManager:
             return {
                 'status': 'error',
                 'authenticated': False,
-                'message': '계정이 잠겼습니다.'
+                'message': '계정이 잠겼습니다.' #아직 미구현
             }
 
         user_password = self.users[user_id]['password']
