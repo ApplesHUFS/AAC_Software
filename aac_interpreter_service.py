@@ -77,7 +77,8 @@ class AACInterpreterService:
         except Exception as e:
             print(f"컴포넌트 초기화 실패: {e}")
 
-    def register_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
+
+    def register_user(self, user_id, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 등록 및 페르소나 생성.
 
         Args:
@@ -109,9 +110,9 @@ class AACInterpreterService:
             'preferred_category_types': self._calculate_preferred_categories(persona['interesting_topics'])
         })
 
-        return self.user_manager.create_user(persona)
+        return self.user_manager.create_user(user_id, persona)
 
-    def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
+    def authenticate_user(self, user_id: str, password: str) -> Dict[str, Any]:
         """사용자 인증 및 세션 정보 반환.
 
         Args:

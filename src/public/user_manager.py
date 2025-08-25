@@ -26,7 +26,6 @@ class UserManager:
         self.users_file_path = users_file_path
         self.config = config
         self.users = {}
-        self.next_id = 1  # 사용자 ID 1부터
 
         # 기존 사용자 데이터 로드
         self._load_users()
@@ -36,25 +35,22 @@ class UserManager:
         try:
             with open(self.users_file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                self.users = {int(k): v for k, v in data.items()}
+                self.users = {k: v for k, v in data.items()}
 
-                if self.users:
-                    self.next_id = max(self.users.keys()) + 1
         except Exception as e:
             print(f"사용자 데이터 파일 로드 실패: {e}")
             self.users = {}
-            self.next_id = 1
 
     def _save_users(self):
         """사용자 데이터 저장."""
         try:
             os.makedirs(os.path.dirname(self.users_file_path), exist_ok=True)
             with open(self.users_file_path, 'w', encoding='utf-8') as f:
-                json.dump({str(k): v for k, v in self.users.items()}, f, ensure_ascii=False, indent=2)
+                json.dump({k: v for k, v in self.users.items()}, f, ensure_ascii=False, indent=2)
         except Exception as e:
             raise Exception(f'사용자 데이터 저장 실패: {str(e)}')
 
-    def create_user(self, persona: Dict[str, Any]) -> Dict[str, Any]:
+    def create_user(self, user_id, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 생성 및 페르소나 등록.
 
         데이터셋 스키마에 맞는 페르소나 정보를 검증하고 사용자를 생성합니다.
@@ -74,7 +70,6 @@ class UserManager:
         Returns:
             Dict containing:
                 - status (str): 'success' 또는 'error'
-                - user_id (int): 생성된 사용자 ID (-1 if error)
                 - message (str): 결과 메시지
         """
         # 입력 검증
@@ -82,12 +77,11 @@ class UserManager:
         if not validation_result['valid']:
             return {
                 'status': 'error',
-                'user_id': -1,
                 'message': validation_result['message']
             }
 
         try:
-            user_id = self.next_id
+            user_id = user_id
 
             user_data = {
                 'name': persona.get('name'),
@@ -103,25 +97,21 @@ class UserManager:
             }
 
             self.users[user_id] = user_data
-            self.next_id += 1
 
             # 저장
             self._save_users()
 
             return {
                 'status': 'success',
-                'user_id': user_id,
                 'message': f'사용자 {user_id}가 성공적으로 생성되었습니다.'
             }
 
         except Exception as e:
             if user_id in self.users:
                 del self.users[user_id]
-                self.next_id -= 1
 
             return {
                 'status': 'error',
-                'user_id': -1,
                 'message': f'사용자 생성 중 오류 발생: {str(e)}'
             }
 
