@@ -119,7 +119,6 @@ class UserManager:
             }
 
         except Exception as e:
-            # 실패시 롤백
             if user_id in self.users:
                 del self.users[user_id]
 
@@ -255,7 +254,7 @@ class UserManager:
                 'status': 'success',
                 'message': f'사용자 {user_id}의 선호 카테고리가 업데이트되었습니다.'
             }
-        
+
         except Exception as e:
             return {
                 'status': 'error',

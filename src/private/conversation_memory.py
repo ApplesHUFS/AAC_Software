@@ -25,23 +25,23 @@ class ConversationSummaryMemory:
         llm_factory: OpenAI API 통합 관리 팩토리
     """
 
-    def __init__(self, memory_file_path: Optional[str] = None, config: Optional[Dict] = None):
+    def __init__(self, memory_file_path: str, config: Dict):
         """ConversationSummaryMemory 초기화.
 
         Args:
-            memory_file_path: 메모리 파일 저장 경로. None이면 기본값 사용.
-            config: 설정 딕셔너리. None이면 기본값 사용.
+            memory_file_path: 메모리 파일 저장 경로.
+            config: 설정 딕셔너리.
         """
         self.memory_file_path = memory_file_path
         self.config = config
         self.memory_data = {
-            "user_memories": {}  # user_id별 메모리
+            "user_memories": {}
         }
 
         # LangChain ChatOpenAI 모델 초기화
-        self.model = self.config.get('openai_model', 'gpt-4o-2024-08-06')
-        self.temperature = self.config.get('openai_temperature', 0.8)
-        self.max_tokens = self.config.get('summary_max_tokens', 200)
+        self.model = self.config.get('openai_model')
+        self.temperature = self.config.get('openai_temperature')
+        self.max_tokens = self.config.get('summary_max_tokens')
 
         try:
             self.llm = ChatOpenAI(
@@ -53,10 +53,10 @@ class ConversationSummaryMemory:
             # LLMFactory 초기화 (이미지 분석용)
             llm_config = {
                 'openai_model': self.model,
-                'openai_temperature': 0.3,  # 분석용으로 낮은 온도
+                'openai_temperature': 0.3,
                 'interpretation_max_tokens': 100,
-                'api_timeout': self.config.get('api_timeout', 15),
-                'images_folder': self.config.get('images_folder', 'dataset/images')
+                'api_timeout': self.config.get('api_timeout'),
+                'images_folder': self.config.get('images_folder')
             }
             self.llm_factory = LLMFactory(llm_config)
 
@@ -67,13 +67,12 @@ class ConversationSummaryMemory:
 
     def _load_memory(self):
         """메모리 파일에서 데이터 로드."""
-        if os.path.exists(self.memory_file_path):
-            try:
-                with open(self.memory_file_path, 'r', encoding='utf-8') as f:
-                    self.memory_data = json.load(f)
-            except Exception as e:
-                print(f"메모리 파일 로드 실패: {e}")
-                self.memory_data = {"user_memories": {}}
+        try:
+            with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                self.memory_data = json.load(f)
+        except Exception as e:
+            print(f"메모리 파일 로드 실패: {e}")
+            self.memory_data = {"user_memories": {}}
 
     def _save_memory(self):
         """메모리 데이터를 파일에 저장."""
@@ -172,10 +171,6 @@ class ConversationSummaryMemory:
         user_memory = self.memory_data["user_memories"][user_id_str]
         conversation_history = user_memory["conversation_history"]
 
-        if len(conversation_history) == 0:
-            user_memory["summary"] = "아직 대화 기록이 없습니다."
-            return "아직 대화 기록이 없습니다."
-
         try:
             # LangChain ConversationSummaryMemory 생성
             langchain_memory = LangChainConversationSummaryMemory(
@@ -185,7 +180,7 @@ class ConversationSummaryMemory:
 
             # 기존 요약이 있으면 반영
             existing_summary = user_memory.get("summary", "")
-            if existing_summary and existing_summary != "아직 대화 기록이 없습니다.":
+            if existing_summary:
                 langchain_memory.buffer = existing_summary
 
             # 최근 대화 기록을 LangChain 형태로 변환하여 추가
@@ -233,8 +228,8 @@ class ConversationSummaryMemory:
 
         if user_id_str not in self.memory_data["user_memories"]:
             return {
-                'status': 'success',
-                'summary': '아직 대화 기록이 없습니다.',
+                'status': "success",
+                'summary': "",
                 'conversation_count': 0
             }
 
@@ -242,51 +237,6 @@ class ConversationSummaryMemory:
 
         return {
             'status': 'success',
-            'summary': user_memory.get("summary", "요약이 생성되지 않았습니다."),
+            'summary': user_memory.get("summary", ""),
             'conversation_count': len(user_memory["conversation_history"])
-        }
-
-    def get_recent_patterns(self, user_id: int, limit: int = 5) -> Dict[str, Any]:
-        """최근 카드 사용 패턴 조회.
-
-        카드 해석 시 참고할 수 있도록 최근 사용된 카드들과 해석을 반환합니다.
-
-        Args:
-            user_id: 사용자 ID
-            limit: 조회할 최근 기록 수
-
-        Returns:
-            Dict containing:
-                - status (str): 'success'
-                - recent_patterns (List[str]): 최근 패턴 요약들
-                - suggestions (str): 해석 참고 정보
-        """
-        user_id_str = str(user_id)
-
-        if user_id_str not in self.memory_data["user_memories"]:
-            return {
-                'status': 'success',
-                'recent_patterns': [],
-                'suggestions': '과거 사용 패턴이 없습니다.'
-            }
-
-        conversation_history = self.memory_data["user_memories"][user_id_str]["conversation_history"]
-        recent_conversations = conversation_history[-limit:] if conversation_history else []
-
-        patterns = []
-        for conv in recent_conversations:
-            cards_str = ", ".join([card.replace('.png', '').replace('_', ' ') for card in conv["cards"]])
-            pattern = f"카드 '{cards_str}' → '{conv['final_interpretation'][:30]}...'"
-            patterns.append(pattern)
-
-        suggestions = ""
-        if patterns:
-            suggestions = f"최근 {len(patterns)}회 대화에서 주로 사용된 패턴들을 참고하여 해석하세요."
-        else:
-            suggestions = "과거 사용 패턴이 없어 페르소나 정보를 중심으로 해석하세요."
-
-        return {
-            'status': 'success',
-            'recent_patterns': patterns,
-            'suggestions': suggestions
         }

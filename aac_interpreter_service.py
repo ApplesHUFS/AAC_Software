@@ -366,16 +366,6 @@ class AACInterpreterService:
                 - method (str): 해석 방법
                 - message (str): 결과 메시지
         """
-        # 카드 해석 시스템이 없는 경우
-        if self.card_interpreter is None:
-            return {
-                'status': 'error',
-                'interpretations': [],
-                'feedback_id': -1,
-                'method': 'none',
-                'message': '카드 해석 시스템이 초기화되지 않았습니다. OpenAI API 키를 확인하세요.'
-            }
-
         # 사용자 정보 조회
         user_info = self.user_manager.get_user(user_id)
         if user_info['status'] != 'success':
@@ -387,38 +377,22 @@ class AACInterpreterService:
                 'message': '사용자 정보를 찾을 수 없습니다.'
             }
 
-        # 컨텍스트 기본값 설정
-        if context is None:
-            context = {
-                'time': '현재',
-                'place': '알 수 없음',
-                'interaction_partner': '알 수 없음',
-                'current_activity': '대화'
-            }
-
-        # 페르소나 정보 준비
+        # 페르소나 정보
         user_data = user_info['user']
         persona = {
-            'age': user_data.get('age', ''),
-            'gender': user_data.get('gender', ''),
-            'disability_type': user_data.get('disability_type', ''),
-            'communication_characteristics': user_data.get('communication_characteristics', ''),
-            'interesting_topics': user_data.get('interesting_topics', [])
+            'age': user_data.get('age'),
+            'gender': user_data.get('gender'),
+            'disability_type': user_data.get('disability_type'),
+            'communication_characteristics': user_data.get('communication_characteristics'),
+            'interesting_topics': user_data.get('interesting_topics')
         }
 
-        # 과거 해석 패턴 조회 (대화 메모리에서)
-        past_interpretation = ""
-        if self.conversation_memory:
-            try:
-                memory_result = self.conversation_memory.get_recent_patterns(
-                    user_id,
-                    limit=self.config.get('memory_pattern_limit', 5)
-                )
-                if memory_result['recent_patterns']:
-                    past_interpretation = f"과거 사용 패턴: {'. '.join(memory_result['recent_patterns'][-2:])}"
-            except Exception as e:
-                print(f"메모리 패턴 조회 실패: {e}")
-                # 메모리 조회 실패는 해석을 막지 않음
+        # 과거 해석 요약
+        conv_summary = self.conversation_memory.get_user_memory_summary(
+                user_id
+            )
+
+        past_interpretation = conv_summary['summary']
 
         # 카드 해석 수행
         interpretation_result = self.card_interpreter.interpret_cards(
