@@ -228,8 +228,8 @@ class ConversationSummaryMemory:
 
         if user_id_str not in self.memory_data["user_memories"]:
             return {
-                'status': 'success',
-                'summary': '아직 대화 기록이 없습니다.',
+                'status': "success",
+                'summary': "",
                 'conversation_count': 0
             }
 
@@ -237,6 +237,6 @@ class ConversationSummaryMemory:
 
         return {
             'status': 'success',
-            'summary': user_memory.get("summary", "요약이 생성되지 않았습니다."),
+            'summary': user_memory.get("summary", ""),
             'conversation_count': len(user_memory["conversation_history"])
         }

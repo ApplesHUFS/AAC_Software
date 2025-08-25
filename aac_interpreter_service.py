@@ -387,17 +387,12 @@ class AACInterpreterService:
             'interesting_topics': user_data.get('interesting_topics')
         }
 
-        # 과거 해석 패턴 조회 (대화 메모리에서)
-        past_interpretation = ""
-        try:
-            memory_result = self.conversation_memory.get_recent_patterns(
-                user_id,
-                limit=self.config.get('memory_pattern_limit')
+        # 과거 해석 요약
+        conv_summary = self.conversation_memory.get_user_memory_summary(
+                user_id
             )
-            if memory_result['recent_patterns']:
-                past_interpretation = f"과거 사용 패턴: {'. '.join(memory_result['recent_patterns'][-2:])}"
-        except Exception as e:
-            print(f"메모리 패턴 조회 실패: {e}")
+
+        past_interpretation = conv_summary['summary']
 
         # 카드 해석 수행
         interpretation_result = self.card_interpreter.interpret_cards(
