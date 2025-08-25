@@ -482,6 +482,7 @@ class UserManager:
             }
 
         user_password = self.users[user_id]['password']
+        password = self.hash_password(password)
         if user_password == password:
             self.users[user_id]['remaining_authenticate_limit'] = self.authenticate_limit
             return {
