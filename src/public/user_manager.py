@@ -61,6 +61,7 @@ class UserManager:
         Args:
             user_id: 사용자 ID
             persona: 사용자 페르소나 정보. 다음 필드들이 필수:
+                - name (str): 사용자 이름
                 - age (int): 사용자 나이 (1-100)
                 - gender (str): 성별 ('male' 또는 'female')
                 - disability_type (str): 장애 유형
@@ -128,7 +129,7 @@ class UserManager:
                 'message': f'사용자 생성 중 오류 발생: {str(e)}'
             }
 
-    def update_user_persona(self, user_id: int, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
+    def update_user_persona(self, user_id: str, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
         """기존 사용자의 페르소나 정보 업데이트.
 
         Args:
@@ -227,7 +228,7 @@ class UserManager:
                 'message': f'페르소나 업데이트 중 오류 발생: {str(e)}'
             }
 
-    def update_preferred_categories(self, user_id: int, preferred_category_types: List[int]) -> Dict[str, Any]:
+    def update_preferred_categories(self, user_id: str, preferred_category_types: List[int]) -> Dict[str, Any]:
         """계산 결과 기반 사용자의 선호 카테고리 업데이트.
 
         Args:
@@ -417,7 +418,7 @@ class UserManager:
             'message': '페르소나 검증 완료'
         }
 
-    def get_user(self, user_id: int) -> Dict[str, Any]:
+    def get_user(self, user_id: str) -> Dict[str, Any]:
         """사용자 정보 조회 (비밀번호 제외).
 
         Args:
@@ -497,5 +498,5 @@ class UserManager:
                 'message': f'비밀번호가 일치하지 않습니다. 남은 시도: {remaining}회'
             }
 
-    def hash_password(self, password):
+    def hash_password(self, password: str):
         return hashlib.sha256(password.encode()).hexdigest()

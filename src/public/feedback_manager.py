@@ -50,7 +50,7 @@ class FeedbackManager:
     # ===== Partner 피드백 워크플로우 =====
 
     def request_interpretation_confirmation(self,
-                                         user_id: int,
+                                         user_id: str,
                                          cards: List[str],
                                          context: Dict[str, Any],
                                          interpretations: List[str],
@@ -208,7 +208,7 @@ class FeedbackManager:
 
     def record_interpretation_attempt(
         self,
-        user_id: int,
+        user_id: str,
         cards: List[str],
         persona: Dict[str, Any],
         context: Dict[str, Any],
