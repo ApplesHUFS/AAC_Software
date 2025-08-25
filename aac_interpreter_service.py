@@ -410,8 +410,7 @@ class AACInterpreterService:
                 cards=selected_cards,
                 persona=persona,
                 context=context,
-                interpretations=interpretation_result['interpretations'],
-                method=interpretation_result['method']
+                interpretations=interpretation_result['interpretations']
             )
 
             return {
@@ -435,7 +434,7 @@ class AACInterpreterService:
                                    cards: List[str],
                                    context: Dict[str, Any],
                                    interpretations: List[str],
-                                   partner_info: Dict[str, Any]) -> Dict[str, Any]:
+                                   partner_info: str) -> Dict[str, Any]:
         """Partner에게 해석 확인 요청.
 
         Args:
@@ -446,7 +445,30 @@ class AACInterpreterService:
             partner_info: Partner 정보
 
         Returns:
-            Dict containing 확인 요청 결과
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - confirmation_id (str): 생성된 확인 요청 id
+                - confirmation_request (dict): 생성된 확인 요청 데이터
+                - message (str): 결과 메시지
+        return {
+            'status': 'success',
+            'confirmation_id': confirmation_id,
+            'confirmation_request': {
+                'confirmation_id': confirmation_id,
+                'user_context': {
+                    'time': context.get('time'),
+                    'place': context.get('place'),
+                    'current_activity': context.get('current_activity')
+                },
+                'selected_cards': cards,
+                'interpretation_options': [
+                    {'index': i, 'interpretation': interp}
+                    for i, interp in enumerate(interpretations)
+                ],
+                'partner': partner_info,
+            },
+            'message': f'Partner 해석 확인 요청이 생성되었습니다. (ID: {confirmation_id})'
+        }
         """
         return self.feedback_manager.request_interpretation_confirmation(
             user_id=user_id,
@@ -468,7 +490,10 @@ class AACInterpreterService:
             direct_feedback: 직접 입력 피드백
 
         Returns:
-            Dict containing 피드백 처리 결과
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - feedback_result (dict): 생성된 피드백 데이터
+                - message (str): 결과 메시지
         """
         feedback_result = self.feedback_manager.submit_partner_confirmation(
             confirmation_id=confirmation_id,
@@ -496,31 +521,8 @@ class AACInterpreterService:
                     )
             except Exception as e:
                 print(f"메모리 업데이트 실패: {e}")
-                # 메모리 업데이트 실패는 전체 피드백 처리를 막지 않음
 
         return feedback_result
-
-    def get_pending_partner_confirmations(self, partner_filter: Optional[str] = None) -> Dict[str, Any]:
-        """대기 중인 Partner 확인 요청들 조회.
-
-        Args:
-            partner_filter: 특정 Partner로 필터링
-
-        Returns:
-            Dict containing 대기 중인 확인 요청들
-        """
-        return self.feedback_manager.get_pending_confirmations(partner_filter)
-
-    def _cleanup_old_requests(self, max_age_days: int=7)-> Dict[str, Any]:
-        """오래된 확인 요청들 정리.
-
-        Args:
-            max_age_days: 확인 요청을 보관할 최대 일수
-
-        Returns:
-            Dict[str, Any]: 정리 결과
-        """
-        return self.feedback_manager.cleanup_old_requests(max_age_days)
 
     def _calculate_preferred_categories(self, interesting_topics: List[str]) -> List[int]:
         """관심 주제를 기반으로 선호 클러스터 계산.
