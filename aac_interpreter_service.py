@@ -145,7 +145,7 @@ class AACInterpreterService:
                 'message': auth_result['message']
             }
 
-    def get_user_info(self, user_id: int) -> Dict[str, Any]:
+    def get_user_info(self, user_id: str) -> Dict[str, Any]:
         """사용자 정보 조회.
 
         Args:
@@ -159,7 +159,7 @@ class AACInterpreterService:
         """
         return self.user_manager.get_user(user_id)
 
-    def update_user_persona(self, user_id: int, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
+    def update_user_persona(self, user_id: str, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
         """사용자 페르소나 업데이트 및 필요시 선호 카테고리 재계산.
 
         interesting_topics가 업데이트된 경우 ClusterSimilarityCalculator를 통해
@@ -226,7 +226,7 @@ class AACInterpreterService:
             'category_recalculated': category_recalculated
         }
 
-    def update_user_context(self, user_id: int, place: str, interaction_partner: str,
+    def update_user_context(self, user_id: str, place: str, interaction_partner: str,
                            current_activity: str) -> Dict[str, Any]:
         """사용자 컨텍스트 업데이트.
 
@@ -255,7 +255,7 @@ class AACInterpreterService:
         context_result = self.context_manager.create_context(
             place=place,
             interaction_partner=interaction_partner,
-            user_id=str(user_id),
+            user_id=user_id,
             current_activity=current_activity
         )
 
@@ -272,7 +272,7 @@ class AACInterpreterService:
                 'message': context_result['message']
             }
 
-    def get_card_selection_interface(self, user_id: int, context: Dict[str, Any], context_id: str) -> Dict[str, Any]:
+    def get_card_selection_interface(self, user_id: str, context: Dict[str, Any], context_id: str) -> Dict[str, Any]:
         """카드 선택 인터페이스 데이터 생성.
 
         사용자의 preferred_category_types를 기반으로 추천된 카드들과 랜덤 카드들을
@@ -344,7 +344,7 @@ class AACInterpreterService:
         return self.card_recommender.validate_card_selection(selected_cards, available_options)
 
     def interpret_cards(self,
-                       user_id: int,
+                       user_id: str,
                        selected_cards: List[str],
                        context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """선택된 카드들을 해석.
@@ -430,7 +430,7 @@ class AACInterpreterService:
             }
 
     def request_partner_confirmation(self,
-                                   user_id: int,
+                                   user_id: str,
                                    cards: List[str],
                                    context: Dict[str, Any],
                                    interpretations: List[str],
