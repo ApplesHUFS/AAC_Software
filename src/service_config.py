@@ -38,7 +38,8 @@ SERVICE_CONFIG = {
     # ===== 카드 추천 시스템 설정 =====
     'display_cards_total': 20,         # 화면에 표시할 총 카드 수 (고정값)
     'recommendation_ratio': 0.7,       # 추천 카드 비율 (70% 추천, 30% 랜덤)
-    'cluster_count': 6,                # 전체 클러스터 수
+    'cluster_count': 6,                # 추천에 사용할 클러스터 수
+    'n_clusters': 64,                  # 클러스터링 시 사용된 총 클러스터 수
 
     # ===== 카드 선택 및 해석 설정 =====
     'min_card_selection': 1,           # 최소 선택 카드 수

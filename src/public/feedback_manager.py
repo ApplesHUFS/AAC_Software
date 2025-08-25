@@ -67,7 +67,8 @@ class FeedbackManager:
             partner_info: Partner 정보 (name, relationship 등)
 
         Returns:
-            Dict[str, Any]: 확인 요청 결과
+            Dict containing:
+                - status (str): 'success' 또는 'error'
         """
         if not isinstance(interpretations, list) or len(interpretations) != 3:
             return {

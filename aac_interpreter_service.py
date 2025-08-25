@@ -226,7 +226,7 @@ class AACInterpreterService:
         }
 
     def update_user_context(self, user_id: int, place: str, interaction_partner: str,
-                           current_activity: Optional[str] = None) -> Dict[str, Any]:
+                           current_activity: str) -> Dict[str, Any]:
         """사용자 컨텍스트 업데이트.
 
         Args:
@@ -254,8 +254,8 @@ class AACInterpreterService:
         context_result = self.context_manager.create_context(
             place=place,
             interaction_partner=interaction_partner,
-            current_activity=current_activity,
-            user_id=str(user_id)
+            user_id=str(user_id),
+            current_activity=current_activity
         )
 
         if context_result['status'] == 'success':
@@ -271,7 +271,7 @@ class AACInterpreterService:
                 'message': context_result['message']
             }
 
-    def get_card_selection_interface(self, user_id: int, context: Dict[str, Any], context_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_card_selection_interface(self, user_id: int, context: Dict[str, Any], context_id: str) -> Dict[str, Any]:
         """카드 선택 인터페이스 데이터 생성.
 
         사용자의 preferred_category_types를 기반으로 추천된 카드들과 랜덤 카드들을
@@ -285,16 +285,22 @@ class AACInterpreterService:
             Dict containing:
                 - status (str): 'success' 또는 'error'
                 - interface_data (Dict): 선택 인터페이스 데이터
+                    - 'selection_options': all_selection_cards,
+                    - 'context_info': {
+                        'time': context.get('time'),
+                        'place': context.get('place'),
+                        'interaction_partner': context.get('interaction_partner'),
+                        'current_activity': context.get('current_activity')
+                        },
+                        'selection_rules': {
+                            'min_cards': self.config.get('min_card_selection'),
+                            'max_cards': self.config.get('max_card_selection'),
+                            'total_options': len(all_selection_cards)
+                        },
+                        'total_pages': self.recommendation_history[context_id][-1]['page_number']
+                        }
                 - message (str): 결과 메시지
         """
-        # 카드 추천 시스템이 없는 경우
-        if self.card_recommender is None:
-            return {
-                'status': 'error',
-                'interface_data': {},
-                'message': '카드 추천 시스템이 초기화되지 않았습니다. 클러스터링 결과 파일을 확인하세요.'
-            }
-
         # 사용자 정보 조회
         user_info = self.user_manager.get_user(user_id)
         if user_info['status'] != 'success':
@@ -322,7 +328,10 @@ class AACInterpreterService:
             available_options: 선택 가능했던 옵션들
 
         Returns:
-            Dict containing validation result.
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - valid (bool): 유효성 여부
+                - message (str): 결과 메시지
         """
         if self.card_recommender is None:
             return {
@@ -532,7 +541,7 @@ class AACInterpreterService:
 
         Args:
             max_age_days: 확인 요청을 보관할 최대 일수
-        
+
         Returns:
             Dict[str, Any]: 정리 결과
         """
@@ -559,7 +568,7 @@ class AACInterpreterService:
             interesting_topics=interesting_topics,
             similarity_threshold=similarity_threshold,
             max_categories=required_cluster_count
-        ) # -> list로 된 선호 클러스터
+        )
 
     def get_card_recommendation_history_page(self, context_id: str, page_number: int) -> Dict[str, Any]:
         """카드 추천 히스토리 특정 페이지 조회.
@@ -572,17 +581,11 @@ class AACInterpreterService:
             Dict containing:
                 - status (str): 'success' 또는 'error'
                 - cards (List[str]): 카드 리스트
-                - page_info (Dict): 페이지 정보
+                - page_number (int): 현재 페이지 번호
+                - total_pages (int): 총 페이지 수
+                - timestamp (str): 생성 시간
                 - message (str): 결과 메시지
         """
-        if self.card_recommender is None:
-            return {
-                'status': 'error',
-                'cards': [],
-                'page_info': {},
-                'message': '카드 추천 시스템이 초기화되지 않았습니다.'
-            }
-
         return self.card_recommender.get_recommendation_history_page(context_id, page_number)
 
     def get_card_recommendation_history_summary(self, context_id: str) -> Dict[str, Any]:

@@ -28,8 +28,9 @@ class ContextManager:
     def create_context(self,
                       place: str,
                       interaction_partner: str,
-                      current_activity: Optional[str] = None,
-                      user_id: Optional[str] = None) -> Dict[str, Any]:
+                      user_id: str,
+                      current_activity: Optional[str] = None
+                      ) -> Dict[str, Any]:
         """새로운 대화 상황 컨텍스트 생성.
 
         Partner가 대화 상황 정보를 입력하여 컨텍스트를 생성합니다.
@@ -85,17 +86,6 @@ class ContextManager:
             'current_activity': current_activity,
             'created_at': current_time.isoformat()
         }
-
-        self.contexts[context_id] = context
-
-        # 사용자별 컨텍스트 히스토리 관리
-        if user_id not in self.user_context_history:
-            self.user_context_history[user_id] = []
-        self.user_context_history[user_id].append(context_id)
-
-        # 최대 50개까지만 보관 (메모리 관리)
-        if len(self.user_context_history[user_id]) > 50:
-            self.user_context_history[user_id] = self.user_context_history[user_id][-50:]
 
         return {
             'status': 'success',
