@@ -24,7 +24,7 @@ aac_service = AACInterpreterService()
 
 def api_response(success: bool = True, data: Any = None, message: str = "",
                 error: str = "", status_code: int = 200) -> tuple:
-    """React 친화적 통일된 API 응답 형식"""
+    """React 친화적 API 응답 형식"""
     response = {
         "success": success,
         "timestamp": datetime.now().isoformat(),
