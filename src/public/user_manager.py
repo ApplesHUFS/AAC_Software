@@ -103,6 +103,7 @@ class UserManager:
                 'interesting_topics': persona['interesting_topics'],
                 'preferred_category_types': persona['preferred_category_types'],
                 'password': self.hash_password(persona['password']),
+                'remaining_authenticate_limit': self.authenticate_limit,
                 'created_at': __import__('datetime').datetime.now().isoformat(),
                 'updated_at': __import__('datetime').datetime.now().isoformat()
             }
@@ -475,11 +476,7 @@ class UserManager:
                 'message': user_validation['message']
             }
 
-        #사용자별 시도 횟수 초기화
-        if 'remaining_limit' not in self.users[user_id]:
-            self.users[user_id]['remaining_limit'] = self.authenticate_limit
-
-        user_attempts = self.users[user_id]['remaninig_limit']
+        user_attempts = self.users[user_id]['remaining_authenticate_limit']
         
         if user_attempts <= 0:
             return {
@@ -490,15 +487,15 @@ class UserManager:
 
         user_password = self.users[user_id]['password']
         if user_password == password:
-            self.users[user_id]['remaining_limit'] = self.authenticate_limit
+            self.users[user_id]['remaining_authenticate_limit'] = self.authenticate_limit
             return {
                 'status': 'success',
                 'authenticated': True,
                 'message': '인증이 성공했습니다.'
             }
         else:
-            self.users[user_id]['remaining_attempts'] -= 1
-            remaining = self.users[user_id]['remaining_attempts']
+            self.users[user_id]['remaining_authenticate_limit'] -= 1
+            remaining = self.users[user_id]['remaining_authenticate_limit']
             return {
                 'status': 'error',
                 'authenticated': False,
