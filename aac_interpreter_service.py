@@ -78,10 +78,11 @@ class AACInterpreterService:
             print(f"컴포넌트 초기화 실패: {e}")
 
 
-    def register_user(self, user_id, persona: Dict[str, Any]) -> Dict[str, Any]:
+    def register_user(self, user_id: str, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 등록 및 페르소나 생성.
 
         Args:
+            user_id: 사용자 ID
             persona: 사용자 페르소나 정보. 다음 필드들이 필수:
                 - age (int): 사용자 나이 (1-100)
                 - gender (str): 성별 ('male' 또는 'female')
@@ -93,7 +94,7 @@ class AACInterpreterService:
         Returns:
             Dict containing:
                 - status (str): 'success' 또는 'error'
-                - user_id (int): 생성된 사용자 ID (-1 if error)
+                - user_id (str): 생성된 사용자 ID
                 - message (str): 결과 메시지
         """
 
@@ -101,7 +102,7 @@ class AACInterpreterService:
         if 'interesting_topics' not in persona:
             return {
                 'status': 'error',
-                'user_id': -1,
+                'user_id': None,
                 'message': 'interesting_topics가 필요합니다.'
             }
 
@@ -112,7 +113,7 @@ class AACInterpreterService:
 
         return self.user_manager.create_user(user_id, persona)
 
-    def authenticate_user(self, user_id: str, password: str) -> Dict[str, Any]:
+    def authenticate_user(self, user_id: str, password: str) -> Dict[str, Any]: #로그인
         """사용자 인증 및 세션 정보 반환.
 
         Args:
@@ -134,7 +135,7 @@ class AACInterpreterService:
                 'status': 'success',
                 'authenticated': True,
                 'user_info': user_info.get('user'),
-                'message': '인증 성공'
+                'message': '로그인 성공'
             }
         else:
             return {
