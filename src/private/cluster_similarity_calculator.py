@@ -93,10 +93,6 @@ class ClusterSimilarityCalculator:
         Returns:
             List[int]: 선호 클러스터 ID 리스트 (유사도 높은 순)
         """
-        # 기본값
-        if not interesting_topics or not self.cluster_tags:
-            available_clusters = list(self.cluster_tags.keys())
-            return available_clusters[:max_categories]
 
         # 모든 클러스터 태그를 하나의 리스트로 만들고 클러스터 매핑 정보 생성
         all_cluster_topics = []
