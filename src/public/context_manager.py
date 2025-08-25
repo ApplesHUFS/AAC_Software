@@ -154,7 +154,7 @@ class ContextManager:
         """
         if user_id not in self.user_context_history:
             return {
-                'status': 'success',
+                'status': 'error',
                 'contexts': [],
                 'total_count': 0,
                 'message': f'사용자 {user_id}의 컨텍스트 이력이 없습니다.'
@@ -290,7 +290,6 @@ class ContextManager:
         cutoff_time = datetime.now() - timedelta(days=max_age_days)
         cutoff_iso = cutoff_time.isoformat()
 
-        initial_count = len(self.contexts)
         to_delete = []
 
         # 오래된 컨텍스트 찾기

@@ -241,17 +241,24 @@ class UserManager:
                 - status (str): 'success' 또는 'error'
                 - message (str): 결과 메시지
         """
-        user_data = self.users[user_id]
-        user_data['preferred_category_types'] = preferred_category_types
-        user_data['needs_category_recalculation'] = False
-        user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
+        try:
+            user_data = self.users[user_id]
+            user_data['preferred_category_types'] = preferred_category_types
+            user_data['needs_category_recalculation'] = False
+            user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
 
-        self._save_users()
+            self._save_users()
 
-        return {
-            'status': 'success',
-            'message': f'사용자 {user_id}의 선호 카테고리가 업데이트되었습니다.'
-        }
+            return {
+                'status': 'success',
+                'message': f'사용자 {user_id}의 선호 카테고리가 업데이트되었습니다.'
+            }
+        
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': f'선호 카테고리 업데이트 중 오류 발생: {str(e)}'
+            }
 
     def _validate_required_fields(self, persona: Dict[str, Any]) -> Dict[str, Any]:
         """필수 필드 검증.
