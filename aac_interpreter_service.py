@@ -84,6 +84,7 @@ class AACInterpreterService:
         Args:
             user_id: 사용자 ID
             persona: 사용자 페르소나 정보. 다음 필드들이 필수:
+                - name (str): 사용자 이름 (가명 가능)
                 - age (int): 사용자 나이 (1-100)
                 - gender (str): 성별 ('male' 또는 'female')
                 - disability_type (str): 장애 유형
