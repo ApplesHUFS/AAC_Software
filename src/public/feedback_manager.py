@@ -69,6 +69,9 @@ class FeedbackManager:
         Returns:
             Dict containing:
                 - status (str): 'success' 또는 'error'
+                - confirmation_id (str): 생성된 확인 요청 id
+                - confirmation_request (dict): 생성된 확인 요청 데이터
+                - message (str): 결과 메시지
         """
         if not isinstance(interpretations, list) or len(interpretations) != 3:
             return {
@@ -128,7 +131,10 @@ class FeedbackManager:
             direct_feedback: 직접 입력한 올바른 해석
 
         Returns:
-            Dict[str, Any]: 피드백 제출 결과
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - feedback_result (dict): 생성된 피드백 데이터
+                - message (str): 결과 메시지
         """
         if confirmation_id not in self.pending_confirmations:
             return {
@@ -208,7 +214,10 @@ class FeedbackManager:
             partner_filter: 특정 Partner로 필터링 (선택사항)
 
         Returns:
-            Dict[str, Any]: 대기 중인 요청들
+            Dict containing:
+                - status (str): 'success'
+                - pending_requests (List): 대기 중인 확인 요청들
+                - total_count (int): 대기 중인 요청 수
         """
         pending_requests = []
 
@@ -245,7 +254,11 @@ class FeedbackManager:
             max_age_days: 보관할 최대 일수
 
         Returns:
-            Dict[str, Any]: 정리 결과
+            Dict containing:
+                - status (str): 'success'
+                - cleaned_count (int): 삭제된 요청 수
+                - remaining_count (int): 삭제 후 남아 있는 요청 수
+                - message (str): 결과 메시지
         """
         cutoff_time = datetime.now() - timedelta(days=max_age_days)
         cutoff_iso = cutoff_time.isoformat()
@@ -291,7 +304,10 @@ class FeedbackManager:
             method: 해석 방법 (online/offline)
 
         Returns:
-            Dict[str, Any]: 기록 결과
+            Dict containing:
+                - status (str): 'success'
+                - feedback_id (int): 해석 시도 기록 저장 시 생성된 피드백 id
+                - message (str): '해석 시도가 기록되었습니다.'
         """
         feedback_id = self._feedback_id_counter
         self._feedback_id_counter += 1
@@ -324,7 +340,10 @@ class FeedbackManager:
             feedback_id: 피드백 ID
 
         Returns:
-            Dict[str, Any]: 해석 시도 정보
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - interpretation_attempt (dict or None): 해석 시도 정보 또는 None
+                - message (str): 결과 메시지
         """
         for attempt in self._data["interpretations"]:
             if attempt["feedback_id"] == feedback_id:
@@ -349,7 +368,10 @@ class FeedbackManager:
             limit: 조회할 기록 수 제한
 
         Returns:
-            Dict[str, Any]: 확인 요청 이력
+            Dict containing:
+                - status (str): 'success'
+                - history (List): 조회된 확인 요청 기록들
+                - total_processed (int): 확인된 총 요청 기록 수
         """
         history = []
 
