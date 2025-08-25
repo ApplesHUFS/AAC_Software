@@ -37,17 +37,15 @@ class FeedbackManager:
 
     def _save_to_file(self):
         """피드백 데이터를 파일에 저장"""
-        if self.feedback_file_path:
-            with open(self.feedback_file_path, "w", encoding="utf-8") as f:
-                json.dump(self._data, f, ensure_ascii=False, indent=2)
+        with open(self.feedback_file_path, "w", encoding="utf-8") as f:
+            json.dump(self._data, f, ensure_ascii=False, indent=2)
 
     def _load_from_file(self):
         """파일에서 피드백 데이터 로드"""
-        if self.feedback_file_path and os.path.exists(self.feedback_file_path):
-            with open(self.feedback_file_path, "r", encoding="utf-8") as f:
-                self._data = json.load(f)
-            if self._data.get("feedbacks"):
-                self._feedback_id_counter = max([f["feedback_id"] for f in self._data["feedbacks"]]) + 1
+        with open(self.feedback_file_path, "r", encoding="utf-8") as f:
+            self._data = json.load(f)
+        if self._data.get("feedbacks"):
+            self._feedback_id_counter = max([f["feedback_id"] for f in self._data["feedbacks"]]) + 1
 
     # ===== Partner 피드백 워크플로우 =====
 
@@ -104,17 +102,16 @@ class FeedbackManager:
             'confirmation_request': {
                 'confirmation_id': confirmation_id,
                 'user_context': {
-                    'time': context.get('time', '알 수 없음'),
-                    'place': context.get('place', '알 수 없음'),
-                    'current_activity': context.get('current_activity', '')
+                    'time': context.get('time'),
+                    'place': context.get('place'),
+                    'current_activity': context.get('current_activity')
                 },
                 'selected_cards': cards,
                 'interpretation_options': [
                     {'index': i, 'interpretation': interp}
                     for i, interp in enumerate(interpretations)
                 ],
-                'partner_name': partner_info.get('name', '대화상대'),
-                'partner_relationship': partner_info.get('relationship', context.get('interaction_partner', '알 수 없음'))
+                'partner': partner_info,
             },
             'message': f'Partner 해석 확인 요청이 생성되었습니다. (ID: {confirmation_id})'
         }
@@ -207,81 +204,6 @@ class FeedbackManager:
             'message': f'Partner 피드백이 처리되었습니다. (유형: {feedback_result["feedback_type"]})'
         }
 
-    def get_pending_confirmations(self, partner_filter: Optional[str] = None) -> Dict[str, Any]:
-        """대기 중인 확인 요청들 조회
-
-        Args:
-            partner_filter: 특정 Partner로 필터링 (선택사항)
-
-        Returns:
-            Dict containing:
-                - status (str): 'success'
-                - pending_requests (List): 대기 중인 확인 요청들
-                - total_count (int): 대기 중인 요청 수
-        """
-        pending_requests = []
-
-        for confirmation_id, request in self.pending_confirmations.items():
-            if request['status'] == 'pending':
-                if partner_filter is None or request['partner_info'].get('name', '') == partner_filter:
-                    pending_requests.append({
-                        'confirmation_id': confirmation_id,
-                        'user_id': request['user_id'],
-                        'cards': request['cards'],
-                        'context_summary': {
-                            'place': request['context'].get('place', '알 수 없음'),
-                            'activity': request['context'].get('current_activity', ''),
-                            'time': request['context'].get('time', '알 수 없음')
-                        },
-                        'interpretations': request['interpretations'],
-                        'partner_name': request['partner_info'].get('name', '알 수 없음'),
-                        'created_at': request['created_at']
-                    })
-
-        # 생성 시간순으로 정렬 (최신순)
-        pending_requests.sort(key=lambda x: x['created_at'], reverse=True)
-
-        return {
-            'status': 'success',
-            'pending_requests': pending_requests,
-            'total_count': len(pending_requests)
-        }
-
-    def cleanup_old_requests(self, max_age_days: int = 7) -> Dict[str, Any]:
-        """오래된 확인 요청들 정리
-
-        Args:
-            max_age_days: 보관할 최대 일수
-
-        Returns:
-            Dict containing:
-                - status (str): 'success'
-                - cleaned_count (int): 삭제된 요청 수
-                - remaining_count (int): 삭제 후 남아 있는 요청 수
-                - message (str): 결과 메시지
-        """
-        cutoff_time = datetime.now() - timedelta(days=max_age_days)
-        cutoff_iso = cutoff_time.isoformat()
-
-        # 오래된 요청들 제거
-        to_remove = []
-        for confirmation_id, request in self.pending_confirmations.items():
-            if request['created_at'] < cutoff_iso:
-                to_remove.append(confirmation_id)
-
-        for confirmation_id in to_remove:
-            del self.pending_confirmations[confirmation_id]
-
-        cleaned_count = len(to_remove)
-        remaining_count = len(self.pending_confirmations)
-
-        return {
-            'status': 'success',
-            'cleaned_count': cleaned_count,
-            'remaining_count': remaining_count,
-            'message': f'{cleaned_count}개의 오래된 확인 요청이 정리되었습니다.'
-        }
-
     # ===== 해석 이력 및 피드백 관리 =====
 
     def record_interpretation_attempt(
@@ -301,7 +223,6 @@ class FeedbackManager:
             persona: 사용자 페르소나 정보
             context: 상황 정보
             interpretations: 생성된 해석들
-            method: 해석 방법 (online/offline)
 
         Returns:
             Dict containing:
@@ -319,87 +240,14 @@ class FeedbackManager:
             "persona": persona,
             "context": context,
             "interpretations": interpretations,
-            "method": method,
             "timestamp": datetime.now().isoformat()
         }
 
         self._data["interpretations"].append(attempt_record)
-        # AAC 사용자는 직접 피드백을 제공하지 않으므로 feedbacks 배열에 빈 엔트리 추가하지 않음
         self._save_to_file()
 
         return {
             "status": "success",
             "feedback_id": feedback_id,
             "message": "해석 시도가 기록되었습니다."
-        }
-
-    def get_interpretation_attempt(self, feedback_id: int) -> Dict[str, Any]:
-        """피드백 ID로 해석 시도 정보 조회
-
-        Args:
-            feedback_id: 피드백 ID
-
-        Returns:
-            Dict containing:
-                - status (str): 'success' 또는 'error'
-                - interpretation_attempt (dict or None): 해석 시도 정보 또는 None
-                - message (str): 결과 메시지
-        """
-        for attempt in self._data["interpretations"]:
-            if attempt["feedback_id"] == feedback_id:
-                return {
-                    "status": "success",
-                    "interpretation_attempt": attempt
-                }
-
-        return {
-            "status": "error",
-            "interpretation_attempt": None,
-            "message": f"피드백 ID {feedback_id}에 해당하는 해석 시도를 찾을 수 없습니다."
-        }
-
-    def get_confirmation_history(self,
-                               user_id: Optional[int] = None,
-                               limit: int = 20) -> Dict[str, Any]:
-        """Partner 확인 요청 이력 조회 (대화 메모리 용도)
-
-        Args:
-            user_id: 특정 사용자로 필터링 (선택사항)
-            limit: 조회할 기록 수 제한
-
-        Returns:
-            Dict containing:
-                - status (str): 'success'
-                - history (List): 조회된 확인 요청 기록들
-                - total_processed (int): 확인된 총 요청 기록 수
-        """
-        history = []
-
-        for confirmation_id, request in self.pending_confirmations.items():
-            if request['status'] in ['confirmed', 'direct_feedback']:
-                if user_id is None or request['user_id'] == user_id:
-                    feedback_result = request.get('feedback_result', {})
-                    history.append({
-                        'confirmation_id': confirmation_id,
-                        'user_id': request['user_id'],
-                        'cards': request['cards'],
-                        'context': request['context'],
-                        'interpretations': request['interpretations'],
-                        'feedback_type': feedback_result.get('feedback_type', '알 수 없음'),
-                        'final_interpretation': (
-                            feedback_result.get('selected_interpretation') or
-                            feedback_result.get('direct_feedback')
-                        ),
-                        'partner_name': request['partner_info'].get('name', '알 수 없음'),
-                        'created_at': request['created_at'],
-                        'confirmed_at': feedback_result.get('confirmed_at', '')
-                    })
-
-        # 확인 시간순으로 정렬 (최신순)
-        history.sort(key=lambda x: x.get('confirmed_at', ''), reverse=True)
-
-        return {
-            'status': 'success',
-            'history': history[:limit],
-            'total_processed': len(history)
         }
