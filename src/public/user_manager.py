@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Any
 import json
 import os
+import hashlib
 
 
 class UserManager:
@@ -12,8 +13,8 @@ class UserManager:
     Attributes:
         users_file_path: 사용자 데이터 저장 파일 경로
         users: 메모리상 사용자 데이터 딕셔너리
-        next_id: 다음 사용자 ID
         config: 설정 딕셔너리
+        authenticate_limit: 로그인 시도 제한 횟수
     """
 
     def __init__(self, users_file_path: Optional[str] = None, config: Optional[Dict] = None):
@@ -26,6 +27,7 @@ class UserManager:
         self.users_file_path = users_file_path
         self.config = config
         self.users = {}
+        self.authenticate_limit = 5
 
         # 기존 사용자 데이터 로드
         self._load_users()
@@ -50,13 +52,14 @@ class UserManager:
         except Exception as e:
             raise Exception(f'사용자 데이터 저장 실패: {str(e)}')
 
-    def create_user(self, user_id, persona: Dict[str, Any]) -> Dict[str, Any]:
+    def create_user(self, user_id: str, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 생성 및 페르소나 등록.
 
         데이터셋 스키마에 맞는 페르소나 정보를 검증하고 사용자를 생성합니다.
         preferred_category_types는 외부에서 계산되어 전달되어야 합니다.
 
         Args:
+            user_id: 사용자 ID
             persona: 사용자 페르소나 정보. 다음 필드들이 필수:
                 - age (int): 사용자 나이 (1-100)
                 - gender (str): 성별 ('male' 또는 'female')
@@ -70,19 +73,27 @@ class UserManager:
         Returns:
             Dict containing:
                 - status (str): 'success' 또는 'error'
+                - user_id (str): 생성된 사용자 ID
                 - message (str): 결과 메시지
         """
+        # 사용자 ID 중복 검사
+        if user_id in self.users:
+            return {
+                'status': 'error',
+                'user_id': user_id,
+                'message': '이미 존재하는 사용자 ID입니다.'
+            }
+
         # 입력 검증
         validation_result = self._validate_persona(persona)
         if not validation_result['valid']:
             return {
                 'status': 'error',
+                'user_id': user_id,
                 'message': validation_result['message']
             }
 
         try:
-            user_id = user_id
-
             user_data = {
                 'name': persona.get('name'),
                 'age': int(persona['age']),
@@ -91,7 +102,7 @@ class UserManager:
                 'communication_characteristics': persona['communication_characteristics'],
                 'interesting_topics': persona['interesting_topics'],
                 'preferred_category_types': persona['preferred_category_types'],
-                'password': persona['password'],
+                'password': self.hash_password(persona['password']),
                 'created_at': __import__('datetime').datetime.now().isoformat(),
                 'updated_at': __import__('datetime').datetime.now().isoformat()
             }
@@ -103,6 +114,7 @@ class UserManager:
 
             return {
                 'status': 'success',
+                'user_id': user_id,
                 'message': f'사용자 {user_id}가 성공적으로 생성되었습니다.'
             }
 
@@ -351,7 +363,7 @@ class UserManager:
 
         return {'valid': True, 'message': '관심 주제 검증 완료'}
 
-    def _validate_user_exists(self, user_id: int) -> Dict[str, Any]:
+    def _validate_user_exists(self, user_id: str) -> Dict[str, Any]:
         """사용자 존재 여부 검증.
 
         Args:
@@ -440,7 +452,7 @@ class UserManager:
             'message': '사용자 정보를 성공적으로 조회했습니다.'
         }
 
-    def authenticate_user(self, user_id: int, password: str) -> Dict[str, Any]:
+    def authenticate_user(self, user_id: str, password: str) -> Dict[str, Any]:
         """사용자 인증.
 
         Args:
@@ -451,7 +463,9 @@ class UserManager:
             Dict containing:
                 - status (str): 'success' 또는 'error'
                 - authenticated (bool): 인증 성공 여부
+                - remaining_limit: 남은 인증 횟수
                 - message (str): 결과 메시지
+
         """
         # 사용자 존재 검증
         user_validation = self._validate_user_exists(user_id)
@@ -462,16 +476,36 @@ class UserManager:
                 'message': user_validation['message']
             }
 
+        #사용자별 시도 횟수 초기화
+        if 'remaining_limit' not in self.users[user_id]:
+            self.users[user_id]['remaining_limit'] = self.authenticate_limit
+
+        user_attempts = self.users[user_id]['remaninig_limit']
+        
+        if user_attempts <= 0:
+            return {
+                'status': 'error',
+                'authenticated': False,
+                'message': '계정이 잠겼습니다.'
+            }
+
         user_password = self.users[user_id]['password']
         if user_password == password:
+            self.users[user_id]['remaining_limit'] = self.authenticate_limit
             return {
                 'status': 'success',
                 'authenticated': True,
                 'message': '인증이 성공했습니다.'
             }
         else:
+            self.users[user_id]['remaining_attempts'] -= 1
+            remaining = self.users[user_id]['remaining_attempts']
             return {
                 'status': 'error',
                 'authenticated': False,
-                'message': '비밀번호가 일치하지 않습니다.'
+                'message': f'비밀번호가 일치하지 않습니다. 남은 시도: {remaining}회'
             }
+
+    def hash_password(self, password):
+        return hashlib.sha256(password.encode()).hexdigest()
+    
