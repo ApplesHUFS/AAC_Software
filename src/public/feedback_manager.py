@@ -54,7 +54,7 @@ class FeedbackManager:
                                          cards: List[str],
                                          context: Dict[str, Any],
                                          interpretations: List[str],
-                                         partner_info: Dict[str, Any]) -> Dict[str, Any]:
+                                         partner_info: str) -> Dict[str, Any]:
         """Partner에게 Top-3 해석 중 올바른 해석 확인 요청
 
         Args:
@@ -62,7 +62,7 @@ class FeedbackManager:
             cards: 선택된 AAC 카드들
             context: 상황 정보 (time, place, interaction_partner, current_activity)
             interpretations: 생성된 3개 해석
-            partner_info: Partner 정보 (name, relationship 등)
+            partner_info: Partner 정보
 
         Returns:
             Dict containing:
@@ -223,6 +223,7 @@ class FeedbackManager:
             persona: 사용자 페르소나 정보
             context: 상황 정보
             interpretations: 생성된 해석들
+            method: 카드 해석 생성 방법 (online)
 
         Returns:
             Dict containing:
