@@ -84,7 +84,7 @@ class ConversationSummaryMemory:
             print(f"메모리 파일 저장 실패: {e}")
 
     def add_conversation_memory(self,
-                              user_id: int,
+                              user_id: str,
                               cards: List[str],
                               context: Dict[str, Any],
                               interpretations: List[str],
@@ -110,11 +110,9 @@ class ConversationSummaryMemory:
                 - memory_updated (bool): 메모리 업데이트 여부
                 - message (str): 결과 메시지
         """
-        user_id_str = str(user_id)
-
         # 사용자별 메모리 초기화
-        if user_id_str not in self.memory_data["user_memories"]:
-            self.memory_data["user_memories"][user_id_str] = {
+        if user_id not in self.memory_data["user_memories"]:
+            self.memory_data["user_memories"][user_id] = {
                 "conversation_history": [],
                 "summary": ""
             }
@@ -138,7 +136,7 @@ class ConversationSummaryMemory:
             "final_interpretation": final_interpretation
         }
 
-        self.memory_data["user_memories"][user_id_str]["conversation_history"].append(conversation_entry)
+        self.memory_data["user_memories"][user_id]["conversation_history"].append(conversation_entry)
 
         # 카드-해석 연결성 분석
         connection_analysis = self.llm_factory.analyze_card_interpretation_connection(
@@ -146,7 +144,7 @@ class ConversationSummaryMemory:
         )
 
         # LangChain ConversationSummaryMemory를 사용한 요약 생성
-        summary_result = self._update_summary_with_langchain(user_id_str, connection_analysis)
+        summary_result = self._update_summary_with_langchain(user_id, connection_analysis)
 
         # 메모리 저장
         self._save_memory()
@@ -158,17 +156,17 @@ class ConversationSummaryMemory:
             'message': f'사용자 {user_id}의 대화 메모리가 업데이트되었습니다.'
         }
 
-    def _update_summary_with_langchain(self, user_id_str: str, connection_analysis: str) -> str:
+    def _update_summary_with_langchain(self, user_id: str, connection_analysis: str) -> str:
         """LangChain ConversationSummaryMemory를 사용하여 요약 업데이트.
 
         Args:
-            user_id_str: 사용자 ID 문자열
+            user_id: 사용자 ID 문자열
             connection_analysis: 카드-해석 연결성 분석 결과
 
         Returns:
             str: 업데이트된 요약
         """
-        user_memory = self.memory_data["user_memories"][user_id_str]
+        user_memory = self.memory_data["user_memories"][user_id]
         conversation_history = user_memory["conversation_history"]
 
         try:
@@ -210,7 +208,7 @@ class ConversationSummaryMemory:
             print(f"LangChain 요약 생성 실패: {e}")
             raise RuntimeError(f"요약 생성에 실패했습니다: {str(e)}")
 
-    def get_user_memory_summary(self, user_id: int) -> Dict[str, Any]:
+    def get_user_memory_summary(self, user_id: str) -> Dict[str, Any]:
         """사용자의 대화 메모리 요약 조회.
 
         카드 해석 시 참고할 수 있도록 사용자의 과거 대화 패턴을 요약하여 반환합니다.
@@ -224,16 +222,15 @@ class ConversationSummaryMemory:
                 - summary (str): 대화 패턴 요약
                 - conversation_count (int): 대화 횟수
         """
-        user_id_str = str(user_id)
 
-        if user_id_str not in self.memory_data["user_memories"]:
+        if user_id not in self.memory_data["user_memories"]:
             return {
                 'status': "success",
                 'summary': "",
                 'conversation_count': 0
             }
 
-        user_memory = self.memory_data["user_memories"][user_id_str]
+        user_memory = self.memory_data["user_memories"][user_id]
 
         return {
             'status': 'success',
