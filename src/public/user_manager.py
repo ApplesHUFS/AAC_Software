@@ -177,10 +177,6 @@ class UserManager:
 
             # 각 필드 업데이트
             for field, new_value in persona_updates.items():
-                if field == 'password':
-                    # 비밀번호는 필드 업데이트 로직 추가 필요함 !!! -> 나중에 로그인 기능 만들고 하는게 어떨까 싶긴 함.
-                    continue
-
                 if field in updatable_fields:
                     validator = updatable_fields[field]
                     if validator(new_value):
@@ -477,7 +473,7 @@ class UserManager:
             }
 
         user_attempts = self.users[user_id]['remaining_authenticate_limit']
-        
+
         if user_attempts <= 0:
             return {
                 'status': 'error',
@@ -504,4 +500,3 @@ class UserManager:
 
     def hash_password(self, password):
         return hashlib.sha256(password.encode()).hexdigest()
-    
