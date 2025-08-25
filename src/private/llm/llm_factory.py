@@ -121,8 +121,7 @@ class LLMFactory:
         lines = [line.strip() for line in content.split('\n') if line.strip()]
 
         interpretations = []
-        for line in lines:
-            cleaned = line.strip()
+        for cleaned in lines:
             if cleaned:
                 # 번호나 접두사 제거
                 import re
@@ -179,8 +178,7 @@ class LLMFactory:
 - 현재 활동: {context.get('current_activity', '알 수 없음')}
 
 {past_interpretation if past_interpretation else ""}
-
-선택된 AAC 카드 이미지들을 순서대로 보고 해석해주세요:"""
+"""
         }]
 
         user_content.extend(image_content)
