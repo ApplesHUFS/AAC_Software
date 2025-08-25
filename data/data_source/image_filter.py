@@ -162,19 +162,19 @@ class ImageFilter:
     def _contains_word(self, text: str, keywords: Set[str]) -> bool:
         for keyword in keywords:
             keyword_lower=keyword.lower()
-            
+
             # 1) 한글 키워드 처리
             if re.search(r'[ㄱ-ㅎ가-힣]', keyword_lower):
                 pattern=r'(?<![가-힣])' + re.escape(keyword_lower) + r'(?![가-힣])'
             # 2) 영어 키워드 처리
             else:
                 pattern = r'\b' + re.escape(keyword_lower) + r'\b'
-            
+
             if re.search(pattern, text, re.IGNORECASE):
                 return True
-            
+
         return False
-            
+
         '''
         or 단순 일치
         for keyword in keywords:
