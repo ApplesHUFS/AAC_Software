@@ -23,7 +23,7 @@ class CardInterpreter:
         """
         self.config = config
 
-        # LLMFactory 초기화 - config에서 필요한 설정들을 추출
+        # LLMFactory 초기화
         llm_config = {
             'openai_model': self.config.get('openai_model'),
             'openai_temperature': self.config.get('openai_temperature'),
@@ -63,17 +63,6 @@ class CardInterpreter:
         """
         timestamp = datetime.now().isoformat()
 
-        # 입력 검증
-        validation = self._validate_input(persona, context, cards)
-        if not validation['valid']:
-            return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': f"입력 검증 실패: {', '.join(validation['errors'])}"
-            }
-
         # LLMFactory를 통한 해석 생성
         try:
             interpretations = self.llm_factory.generate_card_interpretations(
@@ -99,60 +88,3 @@ class CardInterpreter:
                 'timestamp': timestamp,
                 'message': f'카드 해석 실패: {str(e)}'
             }
-
-    def _validate_input(self,
-        persona: Dict[str, Any],
-        context: Dict[str, Any],
-        cards: List[str]
-    ) -> Dict[str, Any]:
-        """해석 입력 유효성 검증.
-
-        Args:
-            persona: 페르소나 정보
-            context: 컨텍스트 정보
-            cards: 카드 리스트
-
-        Returns:
-            Dict containing:
-                - valid (bool): 유효성 여부
-                - errors (List[str]): 오류 목록
-        """
-        errors = []
-
-        # 페르소나 검증
-        required_persona_fields = ['age', 'gender', 'disability_type', 'communication_characteristics']
-        if not isinstance(persona, dict):
-            errors.append("페르소나가 딕셔너리 형태가 아닙니다.")
-        else:
-            for field in required_persona_fields:
-                if field not in persona or not str(persona[field]).strip():
-                    errors.append(f"페르소나 '{field}' 값이 누락되었습니다.")
-
-        # 컨텍스트 검증
-        required_context_fields = ['time', 'place', 'interaction_partner', 'current_activity']
-        if not isinstance(context, dict):
-            errors.append("컨텍스트가 딕셔너리 형태가 아닙니다.")
-        else:
-            for field in required_context_fields:
-                if field not in context:
-                    errors.append(f"컨텍스트 '{field}' 값이 누락되었습니다.")
-
-        # 카드 검증
-        min_cards = self.config.get('min_card_selection', 1)
-        max_cards = self.config.get('max_card_selection', 4)
-
-        if not isinstance(cards, list):
-            errors.append("카드가 리스트 형태가 아닙니다.")
-        elif not (min_cards <= len(cards) <= max_cards):
-            errors.append(f"카드는 {min_cards}~{max_cards}개여야 합니다.")
-        else:
-            for idx, card in enumerate(cards):
-                if not isinstance(card, str) or not card.strip():
-                    errors.append(f"카드 {idx+1}이 유효하지 않습니다.")
-                elif not card.endswith('.png'):
-                    errors.append(f"카드 {idx+1}이 PNG 파일이 아닙니다.")
-
-        return {
-            'valid': len(errors) == 0,
-            'errors': errors
-        }

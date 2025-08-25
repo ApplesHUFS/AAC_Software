@@ -122,14 +122,13 @@ class LLMFactory:
 
         interpretations = []
         for cleaned in lines:
-            if cleaned:
-                # 번호나 접두사 제거
-                import re
-                cleaned = re.sub(r'^[\d\.\-\*]+\s*', '', cleaned)
-                cleaned = re.sub(r'^(첫\s*번째|두\s*번째|세\s*번째|해석\s*\d+)\s*:?\s*', '', cleaned)
+            # 번호나 접두사 제거
+            import re
+            cleaned = re.sub(r'^[\d\.\-\*]+\s*', '', cleaned)
+            cleaned = re.sub(r'^(첫\s*번째|두\s*번째|세\s*번째|해석\s*\d+)\s*:?\s*', '', cleaned)
 
-                if cleaned and len(cleaned) > 5:
-                    interpretations.append(cleaned)
+            if len(cleaned) > 5:
+                interpretations.append(cleaned)
 
         return interpretations[:3]
 
@@ -165,17 +164,17 @@ class LLMFactory:
         user_content = [{
             "type": "text",
             "text": f"""페르소나:
-- 나이: {persona.get('age', '알 수 없음')}
-- 성별: {persona.get('gender', '알 수 없음')}
-- 장애 유형: {persona.get('disability_type', '알 수 없음')}
-- 의사소통 특성: {persona.get('communication_characteristics', '알 수 없음')}
-- 관심 주제: {', '.join(persona.get('interesting_topics', []))}
+- 나이: {persona.get('age')}
+- 성별: {persona.get('gender')}
+- 장애 유형: {persona.get('disability_type')}
+- 의사소통 특성: {persona.get('communication_characteristics')}
+- 관심 주제: {', '.join(persona.get('interesting_topics'))}
 
 현재 상황:
-- 시간: {context.get('time', '알 수 없음')}
-- 장소: {context.get('place', '알 수 없음')}
-- 대화 상대: {context.get('interaction_partner', '알 수 없음')}
-- 현재 활동: {context.get('current_activity', '알 수 없음')}
+- 시간: {context.get('time')}
+- 장소: {context.get('place')}
+- 대화 상대: {context.get('interaction_partner')}
+- 현재 활동: {context.get('current_activity')}
 
 {past_interpretation if past_interpretation else ""}
 """
