@@ -152,33 +152,11 @@ def register():
                 status_code=400
             )
 
-        # 성별 옵션 제공
-        gender_mapping = {
-            '남성': 'male', '여성': 'female'
-        }
-
-        mapped_gender = gender_mapping.get(data.get('gender', ''), '')
-        if mapped_gender not in ['male', 'female']:
-            return api_response(
-                success=False,
-                error="성별은 '남성', '여성' 중 하나여야 합니다",
-                status_code=400
-            )
-
-        # 장애 유형 검증
-        valid_disability_types = ['의사소통장애', '자폐스펙트럼장애', '지적장애']
-        if data.get('disabilityType') not in valid_disability_types:
-            return api_response(
-                success=False,
-                error=f"장애유형은 다음 중 하나여야 합니다: {', '.join(valid_disability_types)}",
-                status_code=400
-            )
-
         # snake_case로 변환하여 서비스에 전달
         persona_data = {
             'name': data.get('name'),
             'age': int(data.get('age')),
-            'gender': mapped_gender,
+            'gender': data.get('gender'),
             'disability_type': data.get('disabilityType'),
             'communication_characteristics': data.get('communicationCharacteristics', ''),
             'interesting_topics': data.get('interestingTopics', []),
@@ -335,11 +313,6 @@ def update_profile(user_id):
         for camel_key, snake_key in field_mapping.items():
             if camel_key in data:
                 update_data[snake_key] = data[camel_key]
-
-        # 성별 매핑
-        if 'gender' in update_data:
-            gender_mapping = {'남성': 'male', '여성': 'female', 'male': 'male', 'female': 'female'}
-            update_data['gender'] = gender_mapping.get(update_data['gender'], update_data['gender'])
 
         result = aac_service.update_user_persona(user_id, update_data)
 

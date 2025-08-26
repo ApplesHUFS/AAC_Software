@@ -56,7 +56,7 @@ SERVICE_CONFIG = {
         'age', 'gender', 'disability_type',
         'communication_characteristics', 'interesting_topics', 'preferred_category_types', 'password'
     ],
-    'valid_genders': ['male', 'female'],
+    'valid_genders': ['남성', '여성'],
     'valid_disability_types': [
         '의사소통장애',
         '자폐스펙트럼장애',
