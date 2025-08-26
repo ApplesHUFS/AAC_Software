@@ -158,7 +158,7 @@ def register():
             'male': 'male', 'female': 'female'
         }
 
-        mapped_gender = gender_mapping.get(data.get('gender', ''), data.get('gender', ''))
+        mapped_gender = gender_mapping.get(data.get('gender', ''), '')
         if mapped_gender not in ['male', 'female']:
             return api_response(
                 success=False,
