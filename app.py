@@ -154,15 +154,14 @@ def register():
 
         # 성별 옵션 제공
         gender_mapping = {
-            '남성': 'male', '여성': 'female',
-            'male': 'male', 'female': 'female'
+            '남성': 'male', '여성': 'female'
         }
 
         mapped_gender = gender_mapping.get(data.get('gender', ''), '')
         if mapped_gender not in ['male', 'female']:
             return api_response(
                 success=False,
-                error="성별은 '남성', '여성', 'male', 'female' 중 하나여야 합니다",
+                error="성별은 '남성', '여성' 중 하나여야 합니다",
                 status_code=400
             )
 
