@@ -442,6 +442,7 @@ class UserManager:
         # 보안을 위해 비밀번호 제외하고 반환
         user_data = self.users[user_id].copy()
         user_data.pop('password', None)
+        user_data.pop('remaining_authenticate_limit', None)
 
         return {
             'status': 'success',
