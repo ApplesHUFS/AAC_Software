@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Set
 from collections import defaultdict
-
+from tqdm import tqdm
 
 class ImageFilter:
     def __init__(self, images_folder: str):
@@ -224,7 +224,7 @@ class ImageFilter:
         filtered_files: Dict[str, List[str]] = defaultdict(list)
         keyword_to_files: Dict[str, List[str]] = defaultdict(list)
 
-        for filename in png_files:
+        for filename in tqdm(png_files, desc="Analyzing images"):
             keyword = self._extract_keyword(filename)
             filter_reason = self._should_filter(keyword)
 
