@@ -203,4 +203,4 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   );
 };
 
-export { LoginForm, RegisterForm };
+export { RegisterForm };

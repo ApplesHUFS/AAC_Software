@@ -24,3 +24,5 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
     </div>
   );
 };
+
+export default CardItem;

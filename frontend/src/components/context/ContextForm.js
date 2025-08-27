@@ -94,3 +94,5 @@ const ContextForm = ({ userId, onContextCreated }) => {
     </div>
   );
 };
+
+export { ContextForm };
