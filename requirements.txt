@@ -13,3 +13,5 @@ openai
 langchain
 langchain-openai
 sentence-transformers
+flask
+flask_cors
