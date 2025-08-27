@@ -872,15 +872,15 @@ def submit_feedback():
 # ===== 서버 시작 =====
 
 if __name__ == '__main__':
-    print("🚀 AAC Interpreter API Server (React 최적화) 시작 중...")
-    print("🔗 서버 주소: http://localhost:8000")
-    print("🔍 헬스체크: http://localhost:8000/health")
-    print("🌐 CORS 설정: React 개발 서버 (3000, 5173) 허용")
-    print("📱 React 친화적 API 엔드포인트:")
-    print("   🔐 인증: /api/auth/*")
-    print("   📄 컨텍스트: /api/context/*")
-    print("   🎴 카드: /api/cards/*")
-    print("   💬 피드백: /api/feedback/*")
-    print("   🖼️ 이미지: /api/images/*")
+    print("AAC Interpreter API Server (React 최적화) 시작 중...")
+    print("서버 주소: http://localhost:8000")
+    print("헬스체크: http://localhost:8000/health")
+    print("CORS 설정: React 개발 서버 (3000, 5173) 허용")
+    print("React API 엔드포인트:")
+    print("   인증: /api/auth/*")
+    print("   컨텍스트: /api/context/*")
+    print("   카드: /api/cards/*")
+    print("   피드백: /api/feedback/*")
+    print("   이미지: /api/images/*")
 
     app.run(host='0.0.0.0', port=8000, debug=True)
