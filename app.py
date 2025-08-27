@@ -91,11 +91,6 @@ def home():
                     "request": "POST /api/feedback/request",
                     "submit": "POST /api/feedback/submit",
                     "pending": "GET /api/feedback/pending"
-                },
-                "memory": {
-                    "update": "POST /api/memory/update",
-                    "summary": "GET /api/memory/{userId}/summary",
-                    "patterns": "GET /api/memory/{userId}/patterns"
                 }
             }
         },
@@ -874,92 +869,18 @@ def submit_feedback():
             status_code=500
         )
 
-# ===== 5. 메모리 관리 =====
-
-@app.route('/api/memory/update', methods=['POST'])
-def update_memory():
-    """대화 메모리 업데이트"""
-    try:
-        data = validate_json_request()
-        if not data:
-            return api_response(
-                success=False,
-                error="유효한 JSON 데이터가 필요합니다",
-                status_code=400
-            )
-
-        user_id = data.get('userId')
-        cards = data.get('cards', [])
-        context = data.get('context', {})
-        interpretations = data.get('interpretations', [])
-        final_interpretation = data.get('finalInterpretation')
-
-        if not user_id:
-            return api_response(
-                success=False,
-                error="userId가 필요합니다",
-                status_code=400
-            )
-
-        # 메모리 시스템 확인
-        if not hasattr(aac_service, 'conversation_memory') or aac_service.conversation_memory is None:
-            print(f"메모리 업데이트 (기본 모드) - 사용자: {user_id}")
-            return api_response(
-                data={"memoryUpdated": True},
-                message="메모리 업데이트 완료 (기본 모드)"
-            )
-
-        if final_interpretation and cards:
-            result = aac_service.conversation_memory.add_conversation_memory(
-                user_id=user_id,
-                cards=cards,
-                context=context,
-                interpretations=interpretations,
-                selected_interpretation=final_interpretation if final_interpretation in interpretations else None,
-                user_correction=final_interpretation if final_interpretation not in interpretations else None
-            )
-
-            if result['status'] == 'success':
-                return api_response(
-                    data={
-                        "summary": result['summary'],
-                        "memoryUpdated": result['memory_updated']
-                    },
-                    message=result['message']
-                )
-            else:
-                return api_response(
-                    success=False,
-                    error=result['message'],
-                    status_code=500
-                )
-        else:
-            return api_response(
-                data={"memoryUpdated": True},
-                message="메모리 업데이트 완료"
-            )
-
-    except Exception as e:
-        print(f"메모리 업데이트 오류: {str(e)}")
-        return api_response(
-            success=False,
-            error=f"메모리 업데이트 중 오류가 발생했습니다: {str(e)}",
-            status_code=500
-        )
-
 # ===== 서버 시작 =====
 
 if __name__ == '__main__':
     print("🚀 AAC Interpreter API Server (React 최적화) 시작 중...")
-    print("📍 서버 주소: http://localhost:8000")
+    print("🔗 서버 주소: http://localhost:8000")
     print("🔍 헬스체크: http://localhost:8000/health")
     print("🌐 CORS 설정: React 개발 서버 (3000, 5173) 허용")
     print("📱 React 친화적 API 엔드포인트:")
     print("   🔐 인증: /api/auth/*")
-    print("   🔄 컨텍스트: /api/context/*")
+    print("   📄 컨텍스트: /api/context/*")
     print("   🎴 카드: /api/cards/*")
     print("   💬 피드백: /api/feedback/*")
-    print("   🧠 메모리: /api/memory/*")
-    print("   🖼️  이미지: /api/images/*")
+    print("   🖼️ 이미지: /api/images/*")
 
     app.run(host='0.0.0.0', port=8000, debug=True)
