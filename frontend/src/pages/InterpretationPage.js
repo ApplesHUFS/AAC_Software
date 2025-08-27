@@ -93,4 +93,4 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   );
 };
 
-export { AuthPage, DashboardPage, CardSelectionPage, InterpretationPage };
+export default InterpretationPage;

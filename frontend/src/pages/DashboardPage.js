@@ -70,3 +70,5 @@ const DashboardPage = ({ user, onLogout, onContextCreated }) => {
     </div>
   );
 };
+
+export default DashboardPage;

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AuthPage, DashboardPage, CardSelectionPage, InterpretationPage } from './pages/AuthPage';
+import AuthPage from './pages/AuthPage';
+import DashboardPage from './pages/DashboardPage';
+import CardSelectionPage from './pages/CardSelectionPage';
+import InterpretationPage from './pages/InterpretationPage';
 import './styles/App.css';
 
 const App = () => {

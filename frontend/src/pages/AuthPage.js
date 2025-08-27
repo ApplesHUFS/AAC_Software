@@ -36,3 +36,5 @@ const AuthPage = ({ onAuthSuccess }) => {
     </div>
   );
 };
+
+export default AuthPage;

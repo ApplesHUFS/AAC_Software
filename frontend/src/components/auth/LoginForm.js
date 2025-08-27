@@ -77,3 +77,5 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
     </div>
   );
 };
+
+export default LoginForm;

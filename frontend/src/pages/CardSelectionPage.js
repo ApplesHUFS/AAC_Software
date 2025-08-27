@@ -146,3 +146,5 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     </div>
   );
 };
+
+export default CardSelectionPage;
