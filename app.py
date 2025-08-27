@@ -958,7 +958,7 @@ def get_memory_summary(user_id):
                     "conversationCount": 0,
                     "available": False
                 },
-                message="메모리 시스템이 사용할 수 없습니다"
+                message="메모리 시스템을 사용할 수 없습니다"
             )
 
         result = aac_service.conversation_memory.get_user_memory_summary(user_id)
