@@ -477,7 +477,7 @@ def recommend_cards():
         if not hasattr(aac_service, 'card_recommender') or aac_service.card_recommender is None:
             return api_response(
                 success=False,
-                error="카드 추천 시스템이 사용할 수 없습니다",
+                error="카드 추천 시스템을 사용할 수 없습니다",
                 status_code=503
             )
 
@@ -719,7 +719,7 @@ def interpret_cards():
         if not hasattr(aac_service, 'card_interpreter') or aac_service.card_interpreter is None:
             return api_response(
                 success=False,
-                error="카드 해석 시스템이 사용할 수 없습니다",
+                error="카드 해석 시스템을 사용할 수 없습니다",
                 status_code=503
             )
 
