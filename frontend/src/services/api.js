@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:8000';
+// React proxy를 사용하므로 상대 경로로 설정
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'http://localhost:8000'  // 프로덕션에서는 직접 백엔드 주소
+  : '';  // 개발환경에서는 proxy 사용
 
 class ApiClient {
   constructor() {
@@ -51,4 +54,5 @@ class ApiClient {
   }
 }
 
-export default new ApiClient();
+const apiClient = new ApiClient();
+export default apiClient;
