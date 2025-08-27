@@ -159,18 +159,46 @@ class ImageFilter:
 
         }
 
+        self._compiled_patterns = {}
+        self._compile_patterns()
+
+    def _compile_patterns(self):
+        """모든 키워드의 정규표현식 패턴을 미리 컴파일"""
+        all_keyword_sets = [
+            self.inappropriate_keywords,
+            self.medical_technical_keywords,
+            self.academic_scientific_keywords,
+            self.cultural_specific_keywords,
+            self.administrative_legal_keywords,
+            self.location_keywords,
+            self.tools_objects_keywords,
+            self.concepts_keywords,
+            self.miscellaneous_keywords
+        ]
+        
+        for keyword_set in all_keyword_sets:
+            for keyword in keyword_set:
+                keyword_lower = keyword.lower()
+                
+                # 한글 키워드 처리
+                if re.search(r'[ㄱ-ㅎ가-힣]', keyword_lower):
+                    pattern = r'(?<![가-힣])' + re.escape(keyword_lower) + r'(?![가-힣])'
+                # 영어 키워드 처리
+                else:
+                    pattern = r'\b' + re.escape(keyword_lower) + r'\b'
+                
+                # 패턴을 미리 컴파일해서 저장
+                self._compiled_patterns[keyword_lower] = re.compile(pattern, re.IGNORECASE)
+
     def _contains_word(self, text: str, keywords: Set[str]) -> bool:
+        """미리 컴파일된 패턴을 사용하여 키워드 매칭"""
+        text_lower = text.lower()
+        
         for keyword in keywords:
-            keyword_lower=keyword.lower()
-
-            # 1) 한글 키워드 처리
-            if re.search(r'[ㄱ-ㅎ가-힣]', keyword_lower):
-                pattern=r'(?<![가-힣])' + re.escape(keyword_lower) + r'(?![가-힣])'
-            # 2) 영어 키워드 처리
-            else:
-                pattern = r'\b' + re.escape(keyword_lower) + r'\b'
-
-            if re.search(pattern, text, re.IGNORECASE):
+            keyword_lower = keyword.lower()
+            
+            compiled_pattern = self._compiled_patterns[keyword_lower]
+            if compiled_pattern.search(text_lower):
                 return True
 
         return False
