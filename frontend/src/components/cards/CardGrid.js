@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import CardItem from './CardItem';
 
 const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4 }) => {
@@ -55,11 +55,7 @@ const CardHistoryNavigation = ({ contextId, onPageChange }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadHistorySummary();
-  }, [contextId]);
-
-  const loadHistorySummary = async () => {
+  const loadHistorySummary = useCallback(async () => {
     try {
       const response = await fetch(`/api/cards/history/${contextId}`);
       const result = await response.json();
@@ -70,7 +66,11 @@ const CardHistoryNavigation = ({ contextId, onPageChange }) => {
     } catch (error) {
       console.error('히스토리 조회 실패:', error);
     }
-  };
+  }, [contextId]);
+
+  useEffect(() => {
+    loadHistorySummary();
+  }, [contextId, loadHistorySummary]);
 
   const loadHistoryPage = async (pageNumber) => {
     if (loading || pageNumber < 1 || pageNumber > totalPages) return;

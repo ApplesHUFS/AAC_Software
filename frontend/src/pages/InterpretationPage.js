@@ -33,22 +33,37 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   const [feedbackResult, setFeedbackResult] = useState(null);
   const [confirmationId, setConfirmationId] = useState(null);
 
-  useEffect(() => {
-    let isCancelled = false;
-    
-    const runGeneration = async () => {
-      if (!isCancelled) {
-        await generateInterpretations();
+  const requestPartnerConfirmation = useCallback(async (interpretations) => {
+    try {
+      const response = await fetch('/api/feedback/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.userId,
+          cards: selectedCards.map(card => card.filename || card),
+          context: {
+            time: contextData.time,
+            place: contextData.place,
+            interaction_partner: contextData.interactionPartner,
+            current_activity: contextData.currentActivity
+          },
+          interpretations: interpretations.map(interp => interp.text || interp),
+          partnerInfo: 'Partner'
+        })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // confirmationId를 상태에 저장
+        setConfirmationId(result.data.confirmationId);
+        setCurrentStep(STEPS.FEEDBACK);
+      } else {
+        setError(result.error || ERROR_MESSAGES.PARTNER_REQUEST_FAILED);
       }
-    };
-    
-    runGeneration();
-    
-    // Cleanup: API 호출 중 컴포넌트 언마운트 시 메모리 누수 방지
-    return () => {
-      isCancelled = true;
-    };
-  }, [generateInterpretations]); // Google 표준: 정확한 dependencies
+    } catch (error) {
+      setError(error.message || ERROR_MESSAGES.PARTNER_REQUEST_FAILED);
+    }
+  }, [user.userId, selectedCards, contextData]);
 
   const generateInterpretations = useCallback(async () => {
     try {
@@ -80,39 +95,24 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     } finally {
       setLoading(false);
     }
-  }, [user.userId, selectedCards, contextData.contextId]); // Google 표준: useCallback dependencies
+  }, [user.userId, selectedCards, contextData.contextId, requestPartnerConfirmation]); // Google 표준: useCallback dependencies
 
-  const requestPartnerConfirmation = async (interpretations) => {
-    try {
-      const response = await fetch('/api/feedback/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.userId,
-          cards: selectedCards.map(card => card.filename || card),
-          context: {
-            time: contextData.time,
-            place: contextData.place,
-            interaction_partner: contextData.interactionPartner,
-            current_activity: contextData.currentActivity
-          },
-          interpretations: interpretations.map(interp => interp.text || interp),
-          partnerInfo: 'Partner'
-        })
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        // confirmationId를 상태에 저장
-        setConfirmationId(result.data.confirmationId);
-        setCurrentStep(STEPS.FEEDBACK);
-      } else {
-        setError(result.error || ERROR_MESSAGES.PARTNER_REQUEST_FAILED);
+  useEffect(() => {
+    let isCancelled = false;
+    
+    const runGeneration = async () => {
+      if (!isCancelled) {
+        await generateInterpretations();
       }
-    } catch (error) {
-      setError(error.message || ERROR_MESSAGES.PARTNER_REQUEST_FAILED);
-    }
-  };
+    };
+    
+    runGeneration();
+    
+    // Cleanup: API 호출 중 컴포넌트 언마운트 시 메모리 누수 방지
+    return () => {
+      isCancelled = true;
+    };
+  }, [generateInterpretations]); // Google 표준: 정확한 dependencies
 
   const handleFeedbackSubmit = (result) => {
     setFeedbackResult(result.feedbackResult);

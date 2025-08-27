@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { CardGrid, SelectedCardsDisplay, CardHistoryNavigation } from '../components/cards/CardGrid';
 
@@ -7,13 +7,10 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    loadInitialCards();
-  }, []);
-
-  const loadInitialCards = async () => {
+  const loadInitialCards = useCallback(async () => {
     try {
       const response = await cardService.getRecommendations(user.userId, contextData.contextId);
       if (response.success) {
@@ -25,7 +22,11 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.userId, contextData.contextId]);
+
+  useEffect(() => {
+    loadInitialCards();
+  }, [loadInitialCards]);
 
   const handlePageChange = (newCards, pageNumber) => {
     setCards(newCards.map((filename, index) => ({
