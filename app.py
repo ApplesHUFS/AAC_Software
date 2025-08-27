@@ -34,7 +34,7 @@ def api_response(success: bool = True, data: Any = None, message: str = "",
         response["data"] = data if data is not None else {}
         response["message"] = message
     else:
-        response["error"] = error or message
+        response["error"] = error if error else "알 수 없는 오류가 발생했습니다"
         response["data"] = None
 
     return jsonify(response), status_code
@@ -944,77 +944,6 @@ def update_memory():
         return api_response(
             success=False,
             error=f"메모리 업데이트 중 오류가 발생했습니다: {str(e)}",
-            status_code=500
-        )
-
-@app.route('/api/memory/<user_id>/summary', methods=['GET'])
-def get_memory_summary(user_id):
-    """사용자 메모리 요약 조회"""
-    try:
-        if not hasattr(aac_service, 'conversation_memory') or aac_service.conversation_memory is None:
-            return api_response(
-                data={
-                    "summary": "",
-                    "conversationCount": 0,
-                    "available": False
-                },
-                message="메모리 시스템이 사용할 수 없습니다"
-            )
-
-        result = aac_service.conversation_memory.get_user_memory_summary(user_id)
-
-        return api_response(
-            data={
-                "userId": user_id,
-                "summary": result['summary'],
-                "conversationCount": result['conversation_count'],
-                "available": True
-            },
-            message="메모리 요약을 조회했습니다"
-        )
-
-    except Exception as e:
-        print(f"메모리 요약 조회 오류: {str(e)}")
-        return api_response(
-            success=False,
-            error=f"메모리 요약 조회 중 오류가 발생했습니다: {str(e)}",
-            status_code=500
-        )
-
-@app.route('/api/memory/<user_id>/patterns', methods=['GET'])
-def get_memory_patterns(user_id):
-    """사용자 사용 패턴 조회"""
-    try:
-        limit = request.args.get('limit', 5, type=int)
-
-        if not hasattr(aac_service, 'conversation_memory') or aac_service.conversation_memory is None:
-            return api_response(
-                data={
-                    "recentPatterns": [],
-                    "suggestions": [],
-                    "available": False
-                },
-                message="메모리 시스템이 사용할 수 없습니다"
-            )
-
-        result = aac_service.conversation_memory.get_recent_patterns(user_id, limit)
-
-        return api_response(
-            data={
-                "userId": user_id,
-                "recentPatterns": result['recent_patterns'],
-                "suggestions": result['suggestions'],
-                "limit": limit,
-                "available": True
-            },
-            message="사용 패턴을 조회했습니다"
-        )
-
-    except Exception as e:
-        print(f"사용 패턴 조회 오류: {str(e)}")
-        return api_response(
-            success=False,
-            error=f"사용 패턴 조회 중 오류가 발생했습니다: {str(e)}",
             status_code=500
         )
 
