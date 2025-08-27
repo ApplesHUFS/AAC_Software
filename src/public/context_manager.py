@@ -24,6 +24,7 @@ class ContextManager:
             config: 설정 딕셔너리.
         """
         self.config = config
+        self.contexts = {}
 
     def create_context(self,
                       place: str,
@@ -87,9 +88,49 @@ class ContextManager:
             'created_at': current_time.isoformat()
         }
 
+        self.contexts[context_id] = context # 조회를 위해 context 저장
+
         return {
             'status': 'success',
             'context_id': context_id,
             'context': context,
             'message': f'컨텍스트 {context_id}가 성공적으로 생성되었습니다.'
+        }
+
+    def get_context(self, context_id: str) -> Dict[str, Any]:
+        """컨텍스트 ID로 컨텍스트 정보 조회.
+
+        Args:
+            context_id: 조회할 컨텍스트 ID
+
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - context (Dict): 컨텍스트 정보 or 빈 딕셔너리
+                - message (str): 결과 메시지
+        """
+        if context_id not in self.contexts:
+            return {
+                'status': 'error',
+                'context': {},
+                'message': f'컨텍스트 ID {context_id}를 찾을 수 없습니다.'
+            }
+
+        context = self.contexts[context_id].copy()
+
+        # 조회할 context 정보들
+        display_context = {
+            'id': context_id,
+            'time': context['time'],
+            'place': context['place'],
+            'interaction_partner': context['interaction_partner'],
+            'current_activity': context['current_activity'],
+            'created_at': context['created_at'],
+            'status': 'active'
+        }
+
+        return {
+            'status': 'success',
+            'context': display_context,
+            'message': '컨텍스트를 성공적으로 조회했습니다.'
         }
