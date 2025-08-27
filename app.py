@@ -869,6 +869,119 @@ def submit_feedback():
             status_code=500
         )
 
+<<<<<<< HEAD
+=======
+# ===== 5. 메모리 관리 =====
+
+@app.route('/api/memory/update', methods=['POST'])
+def update_memory():
+    """대화 메모리 업데이트"""
+    try:
+        data = validate_json_request()
+        if not data:
+            return api_response(
+                success=False,
+                error="유효한 JSON 데이터가 필요합니다",
+                status_code=400
+            )
+
+        user_id = data.get('userId')
+        cards = data.get('cards', [])
+        context = data.get('context', {})
+        interpretations = data.get('interpretations', [])
+        final_interpretation = data.get('finalInterpretation')
+
+        if not user_id:
+            return api_response(
+                success=False,
+                error="userId가 필요합니다",
+                status_code=400
+            )
+
+        # 메모리 시스템 확인
+        if not hasattr(aac_service, 'conversation_memory') or aac_service.conversation_memory is None:
+            print(f"메모리 업데이트 (기본 모드) - 사용자: {user_id}")
+            return api_response(
+                data={"memoryUpdated": True},
+                message="메모리 업데이트 완료 (기본 모드)"
+            )
+
+        if final_interpretation and cards:
+            result = aac_service.conversation_memory.add_conversation_memory(
+                user_id=user_id,
+                cards=cards,
+                context=context,
+                interpretations=interpretations,
+                selected_interpretation=final_interpretation if final_interpretation in interpretations else None,
+                user_correction=final_interpretation if final_interpretation not in interpretations else None
+            )
+
+            if result['status'] == 'success':
+                return api_response(
+                    data={
+                        "summary": result['summary'],
+                        "memoryUpdated": result['memory_updated']
+                    },
+                    message=result['message']
+                )
+            else:
+                return api_response(
+                    success=False,
+                    error=result['message'],
+                    status_code=500
+                )
+        else:
+            return api_response(
+                data={"memoryUpdated": True},
+                message="메모리 업데이트 완료"
+            )
+
+    except Exception as e:
+        print(f"메모리 업데이트 오류: {str(e)}")
+        return api_response(
+            success=False,
+            error=f"메모리 업데이트 중 오류가 발생했습니다: {str(e)}",
+            status_code=500
+        )
+
+@app.route('/api/memory/<user_id>/patterns', methods=['GET'])
+def get_memory_patterns(user_id):
+    """사용자 사용 패턴 조회"""
+    try:
+        limit = request.args.get('limit', 5, type=int)
+
+        if not hasattr(aac_service, 'conversation_memory') or aac_service.conversation_memory is None:
+            return api_response(
+                data={
+                    "recentPatterns": [],
+                    "suggestions": [],
+                    "available": False
+                },
+                message="메모리 시스템을 사용할 수 없습니다"
+            )
+
+        result = aac_service.conversation_memory.get_recent_patterns(user_id, limit)
+
+        return api_response(
+            data={
+                "userId": user_id,
+                "recentPatterns": result['recent_patterns'],
+                "suggestions": result['suggestions'],
+                "limit": limit,
+                "available": True
+            },
+            message="사용 패턴을 조회했습니다"
+        )
+
+    except Exception as e:
+        print(f"사용 패턴 조회 오류: {str(e)}")
+        return api_response(
+            success=False,
+            error=f"사용 패턴 조회 중 오류가 발생했습니다: {str(e)}",
+            status_code=500
+        )
+
+>>>>>>> e69b488cb178c8101554da6cc6b847d40d23c08e
 # ===== 서버 시작 =====
 
 if __name__ == '__main__':
