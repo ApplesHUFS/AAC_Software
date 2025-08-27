@@ -172,7 +172,7 @@ def register():
                     "name": data.get('name'),
                     "status": "created"
                 },
-                message="회원가입이 완료되었습니다",
+                message=result['message'],
                 status_code=201
             )
         else:
@@ -232,7 +232,7 @@ def login():
                         "updatedAt": user_info.get('updated_at')
                     }
                 },
-                message="로그인 성공"
+                message=result['message']
             )
         else:
             return api_response(
@@ -270,7 +270,7 @@ def get_profile(user_id):
                     "createdAt": user_data.get('created_at'),
                     "updatedAt": user_data.get('updated_at')
                 },
-                message="사용자 정보를 조회했습니다"
+                message=result['message']
             )
         else:
             return api_response(
@@ -354,11 +354,11 @@ def create_context():
             )
 
         user_id = data.get('userId')
-        place = data.get('place').strip()
-        interaction_partner = data.get('interactionPartner').strip()
+        place = data.get('place', '').strip()
+        interaction_partner = data.get('interactionPartner', '').strip()
         current_activity = data.get('currentActivity', '').strip()
 
-        # 필수 필드 검증
+        # 기본 검증만 여기서 수행
         if not user_id:
             return api_response(success=False, error="userId가 필요합니다", status_code=400)
         if not place:
@@ -381,7 +381,7 @@ def create_context():
                     "currentActivity": current_activity,
                     "time": datetime.now().strftime("%H시 %M분")
                 },
-                message="컨텍스트가 생성되었습니다",
+                message=result['message'],
                 status_code=201
             )
         else:
@@ -416,7 +416,7 @@ def get_context(context_id):
                     "currentActivity": context.get('current_activity'),
                     "createdAt": context.get('created_at')
                 },
-                message="컨텍스트 정보를 조회했습니다"
+                message=result['message']
             )
         else:
             return api_response(
@@ -522,12 +522,12 @@ def recommend_cards():
                         "totalPages": interface_data.get('total_pages', 1)
                     }
                 },
-                message="카드 추천이 완료되었습니다"
+                message=result['message']
             )
         else:
             return api_response(
                 success=False,
-                error="카드 추천 생성에 실패했습니다",
+                error=result['message'],
                 status_code=500
             )
 
@@ -560,7 +560,7 @@ def get_card_history_summary(context_id):
                         for item in result['history_summary']
                     ]
                 },
-                message="추천 히스토리를 조회했습니다"
+                message=result['message']
             )
         else:
             return api_response(
@@ -610,7 +610,7 @@ def get_card_history_page(context_id, page_number):
                     "timestamp": result['timestamp'],
                     "contextId": context_id
                 },
-                message=f"페이지 {page_number}를 조회했습니다"
+                message=result['message']
             )
         else:
             return api_response(
@@ -747,12 +747,12 @@ def interpret_cards():
                         for filename in card_filenames
                     ]
                 },
-                message="카드 해석이 완료되었습니다"
+                message=result['message']
             )
         else:
             return api_response(
                 success=False,
-                error="카드 해석에 실패했습니다",
+                error=result['message'],
                 status_code=500
             )
 
@@ -871,33 +871,6 @@ def submit_feedback():
         return api_response(
             success=False,
             error=f"피드백 제출 중 오류가 발생했습니다: {str(e)}",
-            status_code=500
-        )
-
-@app.route('/api/feedback/pending', methods=['GET'])
-def get_pending_feedback():
-    """대기 중인 피드백 조회"""
-    try:
-        partner_filter = request.args.get('partner')
-
-        try:
-            result = aac_service.get_pending_partner_confirmations(partner_filter)
-        except AttributeError:
-            result = {'pending_requests': [], 'total_count': 0}
-
-        return api_response(
-            data={
-                "pendingRequests": result['pending_requests'],
-                "totalCount": result['total_count']
-            },
-            message="대기 중인 피드백을 조회했습니다"
-        )
-
-    except Exception as e:
-        print(f"대기 피드백 조회 오류: {str(e)}")
-        return api_response(
-            success=False,
-            error=f"대기 피드백 조회 중 오류가 발생했습니다: {str(e)}",
             status_code=500
         )
 
