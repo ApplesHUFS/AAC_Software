@@ -1,52 +1,26 @@
-import { useState } from 'react';
-import '../../styles/CardItem.css';
+import React from 'react';
 
-const CardItem = ({ card, isSelected, onSelect, disabled }) => {
-  const [imageError, setImageError] = useState(false);
-
+const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
   const handleClick = () => {
-    if (disabled && !isSelected) return;
-    onSelect(!isSelected);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
+    if (!disabled) {
+      onSelect(card);
+    }
   };
 
   return (
-    <div
+    <div 
       className={`card-item ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
       onClick={handleClick}
     >
       <div className="card-image-container">
-        {!imageError ? (
-          <img
-            src={`http://localhost:8000/${card.image_path}` || `/images/cards/${card.filename}` || `/images/cards/${card.id}.png`}
-            alt={card.name || card.label}
-            onError={handleImageError}
-            className="card-image"
-          />
-        ) : (
-          <div className="card-image-placeholder">
-            <span>이미지 없음</span>
-          </div>
-        )}
-
-        {isSelected && (
-          <div className="selection-overlay">
-            <div className="checkmark">✓</div>
-          </div>
-        )}
+        <img 
+          src={`http://localhost:8000${card.imagePath}`}
+          alt={card.name}
+          loading="lazy"
+        />
+        {isSelected && <div className="selection-indicator">✓</div>}
       </div>
-
-      <div className="card-info">
-        <h3 className="card-name">{card.name || card.label}</h3>
-        {card.category && (
-          <span className="card-category">{card.category}</span>
-        )}
-      </div>
+      <div className="card-name">{card.name}</div>
     </div>
   );
 };
-
-export default CardItem;

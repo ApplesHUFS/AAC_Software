@@ -1,20 +1,34 @@
+import React from 'react';
 import CardItem from './CardItem';
-import '../../styles/CardGrid.css';
 
 const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4 }) => {
+  const isCardSelected = (card) => {
+    return selectedCards.some(selected => selected.filename === card.filename);
+  };
+
+  const handleCardSelect = (card) => {
+    const isSelected = isCardSelected(card);
+    
+    if (isSelected) {
+      // 카드 선택 해제
+      onCardSelect(selectedCards.filter(selected => selected.filename !== card.filename));
+    } else if (selectedCards.length < maxSelection) {
+      // 카드 선택 추가
+      onCardSelect([...selectedCards, card]);
+    }
+  };
+
   return (
     <div className="card-grid">
-      {cards.map(card => (
+      {cards.map((card) => (
         <CardItem
-          key={card.id}
+          key={card.filename}
           card={card}
-          isSelected={selectedCards.includes(card.id)}
-          onSelect={(isSelected) => onCardSelect(card.id, isSelected)}
-          disabled={!selectedCards.includes(card.id) && selectedCards.length >= maxSelection}
+          isSelected={isCardSelected(card)}
+          onSelect={handleCardSelect}
+          disabled={!isCardSelected(card) && selectedCards.length >= maxSelection}
         />
       ))}
     </div>
   );
 };
-
-export default CardGrid;

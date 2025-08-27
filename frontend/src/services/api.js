@@ -1,39 +1,54 @@
-import axios from 'axios';
+const API_BASE_URL = 'http://localhost:8000';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+class ApiClient {
+  constructor() {
+    this.baseURL = API_BASE_URL;
+  }
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+  async request(endpoint, options = {}) {
+    const url = `${this.baseURL}${endpoint}`;
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
 
-export const userAPI = {
-  createUser: (userData) => api.post('/users', userData),
-  getUser: (userId) => api.get(`/users/${userId}`),
-  updatePersona: (userId, personaData) => api.put(`/users/${userId}/persona`, personaData),
-};
+    if (config.body && typeof config.body === 'object') {
+      config.body = JSON.stringify(config.body);
+    }
 
-export const contextAPI = {
-  createContext: (contextData) => api.post('/contexts', contextData),
-  getContext: (contextId) => api.get(`/contexts/${contextId}`),
-};
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
 
-export const cardAPI = {
-  getRecommendations: (requestData) =>
-    api.post('/cards/recommendations', requestData),
-  interpretCards: (selectedCards, userId, contextId) =>
-    api.post('/cards/interpret', { selectedCards, userId, contextId }),
-  getRecommendationHistoryPage: (contextId, pageNumber) =>
-    api.get(`/cards/recommendations/history/${contextId}/page/${pageNumber}`),
-  getRecommendationHistorySummary: (contextId) =>
-    api.get(`/cards/recommendations/history/${contextId}`),
-};
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
 
-export const feedbackAPI = {
-  submitFeedback: (feedbackData) => api.post('/feedback', feedbackData),
-  updateMemory: (memoryData) => api.post('/memory/update', memoryData),
-};
+      return data;
+    } catch (error) {
+      console.error('API Request failed:', error);
+      throw error;
+    }
+  }
 
-export default api;
+  get(endpoint, options = {}) {
+    return this.request(endpoint, { method: 'GET', ...options });
+  }
+
+  post(endpoint, body = {}, options = {}) {
+    return this.request(endpoint, { method: 'POST', body, ...options });
+  }
+
+  put(endpoint, body = {}, options = {}) {
+    return this.request(endpoint, { method: 'PUT', body, ...options });
+  }
+
+  delete(endpoint, options = {}) {
+    return this.request(endpoint, { method: 'DELETE', ...options });
+  }
+}
+
+export default new ApiClient();
