@@ -354,8 +354,8 @@ def create_context():
             )
 
         user_id = data.get('userId')
-        place = data.get('place', '').strip()
-        interaction_partner = data.get('interactionPartner', '').strip()
+        place = data.get('place').strip()
+        interaction_partner = data.get('interactionPartner').strip()
         current_activity = data.get('currentActivity', '').strip()
 
         # 필수 필드 검증
