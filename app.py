@@ -403,7 +403,7 @@ def create_context():
 def get_context(context_id):
     """컨텍스트 조회"""
     try:
-        result = aac_service.context_manager.get_context(context_id)
+        result = aac_service.get_context(context_id)
 
         if result['status'] == 'success':
             context = result['context']
@@ -458,7 +458,7 @@ def recommend_cards():
             )
 
         # 컨텍스트 정보 조회
-        context_result = aac_service.context_manager.get_context(context_id)
+        context_result = aac_service.get_context(context_id)
         if context_result['status'] != 'success':
             return api_response(
                 success=False,
@@ -706,7 +706,7 @@ def interpret_cards():
         # 컨텍스트 정보 조회
         context = None
         if context_id:
-            context_result = aac_service.context_manager.get_context(context_id)
+            context_result = aac_service.get_context(context_id)
             if context_result['status'] == 'success':
                 context = {
                     'time': context_result['context']['time'],

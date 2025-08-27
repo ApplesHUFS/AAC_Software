@@ -590,3 +590,19 @@ class AACInterpreterService:
             }
 
         return self.card_recommender.get_recommendation_history_summary(context_id)
+
+    def get_context(self, context_id: str) -> Dict[str, Any]:
+        """컨텍스트 정보 조회.
+        
+        context_manager의 get_context 메서드를 직접 호출할 수 있게 하는 래퍼 메서드입니다.
+        
+        Args:
+            context_id: 조회할 컨텍스트 ID
+            
+        Returns:
+            Dict containing:
+                - status (str): 'success' 또는 'error'
+                - context (Dict): 컨텍스트 정보 or 빈 딕셔너리
+                - message (str): 결과 메시지
+        """
+        return self.context_manager.get_context(context_id)
