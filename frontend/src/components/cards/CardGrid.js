@@ -122,7 +122,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
             loading="lazy"
             onLoad={handleImageLoad}
             onError={handleImageError}
-            style={{ display: imageLoaded ? 'block' : 'none' }}
+            style={{ visibility: imageLoaded ? 'visible' : 'hidden' }}
           />
         )}
         
