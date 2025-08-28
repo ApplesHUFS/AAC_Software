@@ -41,20 +41,6 @@ class AACServiceTester:
         })
         pprint(res)
 
-        print("\n=== 🔍 디버깅: 유사도 계산 확인 ===")
-        print("\n📋 테스트 1: ['음식', '놀이', '가족']")
-        result1 = self.service.debug_cluster_similarity(["음식", "놀이", "가족"])
-        
-        print("\n" + "="*50)
-        print("📋 테스트 2: ['흙', '가위', '머리카락']")
-        result2 = self.service.debug_cluster_similarity(["흙", "가위", "머리카락"])
-        
-        print("\n" + "="*50)
-        print("📊 결과 비교:")
-        print(f"임베딩이 다른가? {result1['first_embedding_sample'] != result2['first_embedding_sample']}")
-        print(f"유사도가 다른가? {result1['similarity_sample'] != result2['similarity_sample']}")  
-        print(f"선호 카테고리가 다른가? {result1['preferred_categories'] != result2['preferred_categories']}")
-
         print("\n=== 5. 사용자 컨텍스트 업데이트 ===")
         res = self.service.update_user_context(
             user_id="test_user",
