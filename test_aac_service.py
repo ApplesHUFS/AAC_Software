@@ -11,23 +11,7 @@ from aac_interpreter_service import AACInterpreterService
 
 class AACServiceTester:
     def __init__(self):
-        self.setup_test_files()
         self.service = AACInterpreterService()
-
-    def setup_test_files(self):
-        os.makedirs('user_data', exist_ok=True)
-
-        if not os.path.exists('user_data/users.json'):
-            with open('user_data/users.json', 'w', encoding='utf-8') as f:
-                json.dump({}, f)
-
-        if not os.path.exists('user_data/feedback.json'):
-            with open('user_data/feedback.json', 'w', encoding='utf-8') as f:
-                json.dump({"interpretations": [], "feedbacks": []}, f)
-
-        if not os.path.exists('user_data/conversation_memory.json'):
-            with open('user_data/conversation_memory.json', 'w', encoding='utf-8') as f:
-                json.dump({"user_memories": {}}, f)
 
     def run_all_tests(self):
         print("\n=== 1. 새 사용자 등록 및 페르소나 생성 ===")
