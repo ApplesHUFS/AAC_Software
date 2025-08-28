@@ -71,11 +71,11 @@ class ClusterSimilarityCalculator:
 
             embeddings1 = self.similarity_model.encode(topics1, convert_to_tensor=True)
             embeddings2 = self.similarity_model.encode(topics2, convert_to_tensor=True)
-
             similarities = torch.mm(embeddings1, embeddings2.T)
             similarities = (similarities + 1) / 2  # -1~1을 0~1로 변환
 
             return torch.clamp(similarities, 0.0, 1.0).cpu().numpy()
+
         except Exception as e:
             print(f"배치 유사도 계산 오류: {e}")
             raise e
