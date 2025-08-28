@@ -106,12 +106,20 @@ class ClusterSimilarityCalculator:
         # 토픽들과 태그들 유사도 계산
         similarities = self.compute_topic_similarities_batch(interesting_topics, all_cluster_topics)
 
-        # 클러스터별 최대 유사도 계산
-        cluster_max_similarities = {}
+        # cluster별로 모든 topic 인덱스 모으기
+        cluster_indices = {}
         for i, cluster_id in enumerate(cluster_topic_mapping):
-            max_sim = similarities[:, i].max()
-            if cluster_id not in cluster_max_similarities or max_sim > cluster_max_similarities[cluster_id]:
-                cluster_max_similarities[cluster_id] = max_sim
+            if cluster_id not in cluster_indices:
+                cluster_indices[cluster_id] = []
+            cluster_indices[cluster_id].append(i)
+
+        # 각 클러스터의 모든 태그에 대한 유사도 중 최대값/평균값 계산
+        cluster_max_similarities = {}
+        for cluster_id, indices in cluster_indices.items():
+            sims = similarities[:, indices]
+            max_sim = sims.max() # 또는 sims.mean() 등
+            cluster_max_similarities[cluster_id] = max_sim
+
 
         # 임계값 이상의 클러스터 선택 및 유사도 순 정렬
         candidates = [(cluster_id, sim) for cluster_id, sim in cluster_max_similarities.items()
