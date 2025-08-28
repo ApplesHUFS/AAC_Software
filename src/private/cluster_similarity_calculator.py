@@ -81,7 +81,7 @@ class ClusterSimilarityCalculator:
             raise e
 
     def calculate_preferred_categories(self, interesting_topics: List[str],
-                                     similarity_threshold: float = 0.6,
+                                     similarity_threshold: float = 0.3,
                                      max_categories: int = 6) -> List[int]:
         """사용자의 관심 주제를 기반으로 선호 카테고리 계산.
 
