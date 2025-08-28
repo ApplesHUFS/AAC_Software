@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { contextService } from '../../services/contextService';
 
+/**
+ * 대화 컨텍스트 입력 폼 컴포넌트
+ * 현재 상황 정보를 수집하여 개인화된 카드 추천에 활용
+ */
 const ContextForm = ({ userId, onContextCreated }) => {
   const [formData, setFormData] = useState({
     place: '',
@@ -10,32 +14,106 @@ const ContextForm = ({ userId, onContextCreated }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // 자주 사용되는 장소 예시
+  const PLACE_EXAMPLES = [
+    '집', '학교', '병원', '카페', '식당', '공원', '마트', '도서관', '직장', '친구 집'
+  ];
+
+  // 자주 사용되는 대화 상대 예시
+  const PARTNER_EXAMPLES = [
+    '엄마', '아빠', '형/누나/언니/오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
+  ];
+
+  // 자주 사용되는 활동 예시
+  const ACTIVITY_EXAMPLES = [
+    '식사', '공부', '놀이', '치료', '쇼핑', '산책', '운동', '독서', '영화 시청', '게임'
+  ];
+
+  /**
+   * 폼 입력 필드 변경 처리
+   */
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+
+    // 입력 시 에러 메시지 클리어
+    if (error) {
+      setError('');
+    }
   };
 
+  /**
+   * 예시 텍스트 클릭으로 입력 필드에 자동 입력
+   */
+  const handleExampleClick = (fieldName, value) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [fieldName]: value
+    }));
+  };
+
+  /**
+   * 폼 입력 검증
+   */
+  const validateForm = () => {
+    if (!formData.place.trim()) {
+      return '장소를 입력해주세요.';
+    }
+
+    if (!formData.interactionPartner.trim()) {
+      return '대화 상대를 입력해주세요.';
+    }
+
+    // currentActivity는 선택사항이므로 검증하지 않음
+
+    return null;
+  };
+
+  /**
+   * 컨텍스트 생성 폼 제출 처리
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
+    // 폼 검증
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+
     try {
+      // app.py 요구사항에 맞게 데이터 정제
       const contextData = {
         userId,
-        place: formData.place,
-        interactionPartner: formData.interactionPartner,
-        currentActivity: formData.currentActivity
+        place: formData.place.trim(),
+        interactionPartner: formData.interactionPartner.trim(),
+        currentActivity: formData.currentActivity.trim() || ''
       };
 
       const response = await contextService.createContext(contextData);
+      
       if (response.success) {
+        // app.py 응답 구조: response.data에 contextId, userId, place 등 포함
         onContextCreated(response.data);
+      } else {
+        setError(response.error || '컨텍스트 생성에 실패했습니다.');
       }
     } catch (error) {
-      setError(error.message || '컨텍스트 생성에 실패했습니다.');
+      console.error('컨텍스트 생성 에러:', error);
+      
+      // 에러 타입별 처리
+      if (error.message.includes('fetch')) {
+        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      } else {
+        setError(error.message || '컨텍스트 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      }
     } finally {
       setLoading(false);
     }
@@ -43,12 +121,21 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
   return (
     <div className="context-form">
-      <h2>대화 상황 입력</h2>
-      <p>현재 상황을 입력해주세요. 이 정보는 카드 추천과 해석에 사용됩니다.</p>
+      <div className="context-header">
+        <h2>대화 상황 입력</h2>
+        <p>
+          현재 상황을 입력해주세요. 이 정보는 당신의 관심사와 함께 
+          가장 적절한 AAC 카드를 추천하는데 사용됩니다.
+        </p>
+      </div>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
+        {/* 장소 입력 */}
         <div className="form-group">
-          <label htmlFor="place">장소 *</label>
+          <label htmlFor="place">
+            현재 장소 *
+            <span className="required-indicator">필수</span>
+          </label>
           <input
             type="text"
             id="place"
@@ -57,11 +144,32 @@ const ContextForm = ({ userId, onContextCreated }) => {
             onChange={handleChange}
             placeholder="예: 집, 학교, 병원, 카페 등"
             required
+            disabled={loading}
           />
+          <div className="examples-section">
+            <span className="examples-label">자주 사용되는 장소:</span>
+            <div className="examples-list">
+              {PLACE_EXAMPLES.map((example, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className="example-button"
+                  onClick={() => handleExampleClick('place', example)}
+                  disabled={loading}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
+        {/* 대화 상대 입력 */}
         <div className="form-group">
-          <label htmlFor="interactionPartner">대화 상대 *</label>
+          <label htmlFor="interactionPartner">
+            대화 상대 *
+            <span className="required-indicator">필수</span>
+          </label>
           <input
             type="text"
             id="interactionPartner"
@@ -70,26 +178,91 @@ const ContextForm = ({ userId, onContextCreated }) => {
             onChange={handleChange}
             placeholder="예: 엄마, 친구, 선생님, 의사 등"
             required
+            disabled={loading}
           />
+          <div className="examples-section">
+            <span className="examples-label">자주 사용되는 대화 상대:</span>
+            <div className="examples-list">
+              {PARTNER_EXAMPLES.map((example, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className="example-button"
+                  onClick={() => handleExampleClick('interactionPartner', example)}
+                  disabled={loading}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
+        {/* 현재 활동 입력 (선택사항) */}
         <div className="form-group">
-          <label htmlFor="currentActivity">현재 활동 (선택사항)</label>
+          <label htmlFor="currentActivity">
+            현재 활동
+            <span className="optional-indicator">선택사항</span>
+          </label>
           <input
             type="text"
             id="currentActivity"
             name="currentActivity"
             value={formData.currentActivity}
             onChange={handleChange}
-            placeholder="예: 식사 중, 수업 중, 놀이 중 등"
+            placeholder="예: 식사 중, 수업 중, 놀이 중 등 (비워두어도 됩니다)"
+            disabled={loading}
           />
+          <div className="examples-section">
+            <span className="examples-label">자주 사용되는 활동:</span>
+            <div className="examples-list">
+              {ACTIVITY_EXAMPLES.map((example, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className="example-button"
+                  onClick={() => handleExampleClick('currentActivity', example)}
+                  disabled={loading}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </div>
+          <small className="form-hint">
+            현재 하고 있는 구체적인 활동이 있다면 입력해주세요. 
+            더 정확한 카드 추천에 도움이 됩니다.
+          </small>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {/* 에러 메시지 */}
+        {error && (
+          <div className="error-message">
+            <span className="error-icon">⚠</span>
+            {error}
+          </div>
+        )}
         
-        <button type="submit" disabled={loading}>
-          {loading ? '생성 중...' : '컨텍스트 생성'}
-        </button>
+        {/* 제출 버튼 */}
+        <div className="form-actions">
+          <button 
+            type="submit" 
+            className="primary-button large"
+            disabled={loading}
+          >
+            {loading ? '컨텍스트 생성 중...' : 'AAC 카드 추천받기'}
+          </button>
+        </div>
+
+        {/* 도움말 */}
+        <div className="context-help">
+          <h4>입력 가이드</h4>
+          <ul>
+            <li><strong>장소:</strong> 구체적인 위치를 입력하면 상황에 맞는 카드를 추천받을 수 있어요</li>
+            <li><strong>대화 상대:</strong> 관계에 따라 적절한 표현 방식이 달라져요</li>
+            <li><strong>현재 활동:</strong> 하고 있는 일이 명확하면 더 정확한 추천이 가능해요</li>
+          </ul>
+        </div>
       </form>
     </div>
   );
