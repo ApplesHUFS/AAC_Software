@@ -1,17 +1,11 @@
 import api from './api';
 
-/**
- * 카드 관련 서비스
- * app.py의 카드 추천, 선택, 해석 API와 통신
- */
+// 카드 관련 서비스
+// app.py의 카드 추천, 선택, 해석 API와 통신
 export const cardService = {
-  /**
-   * 개인화된 카드 추천 요청
-   * app.py의 /api/cards/recommend 엔드포인트와 통신
-   * @param {string} userId - 사용자 ID
-   * @param {string} contextId - 대화 컨텍스트 ID
-   * @returns {Promise<Object>} 추천 카드 목록과 메타데이터
-   */
+  // 개인화된 카드 추천 요청
+  // 흐름명세서: 70% 관련 카드 + 30% 랜덤 카드로 20개 묶음 추천
+  // app.py의 /api/cards/recommend 엔드포인트와 통신
   async getRecommendations(userId, contextId) {
     try {
       // 입력 검증
@@ -54,13 +48,8 @@ export const cardService = {
     }
   },
 
-  /**
-   * 카드 선택 유효성 검증
-   * app.py의 /api/cards/validate 엔드포인트와 통신
-   * @param {Array} selectedCards - 선택된 카드 목록 (filename 또는 card 객체)
-   * @param {Array} availableOptions - 선택 가능한 카드 목록
-   * @returns {Promise<Object>} 검증 결과
-   */
+  // 카드 선택 유효성 검증
+  // app.py의 /api/cards/validate 엔드포인트와 통신
   async validateSelection(selectedCards, availableOptions = []) {
     try {
       // 입력 검증
@@ -112,14 +101,9 @@ export const cardService = {
     }
   },
 
-  /**
-   * 선택된 카드 해석 요청
-   * app.py의 /api/cards/interpret 엔드포인트와 통신
-   * @param {string} userId - 사용자 ID
-   * @param {Array} selectedCards - 선택된 카드 목록
-   * @param {string} contextId - 대화 컨텍스트 ID
-   * @returns {Promise<Object>} 해석 결과
-   */
+  // 선택된 카드 해석 요청
+  // 흐름명세서: OpenAI API로 3가지 해석 생성
+  // app.py의 /api/cards/interpret 엔드포인트와 통신
   async interpretCards(userId, selectedCards, contextId) {
     try {
       // 입력 검증
@@ -184,12 +168,9 @@ export const cardService = {
     }
   },
 
-  /**
-   * 카드 추천 히스토리 요약 조회
-   * app.py의 /api/cards/history/{contextId} 엔드포인트와 통신
-   * @param {string} contextId - 컨텍스트 ID
-   * @returns {Promise<Object>} 히스토리 요약 정보
-   */
+  // 카드 추천 히스토리 요약 조회
+  // 흐름명세서: 이전 페이지를 볼 수 있음
+  // app.py의 /api/cards/history/{contextId} 엔드포인트와 통신
   async getHistorySummary(contextId) {
     try {
       if (!contextId || !contextId.trim()) {
@@ -219,13 +200,8 @@ export const cardService = {
     }
   },
 
-  /**
-   * 특정 히스토리 페이지의 카드 목록 조회
-   * app.py의 /api/cards/history/{contextId}/page/{pageNumber} 엔드포인트와 통신
-   * @param {string} contextId - 컨텍스트 ID
-   * @param {number} pageNumber - 페이지 번호
-   * @returns {Promise<Object>} 해당 페이지의 카드 목록
-   */
+  // 특정 히스토리 페이지의 카드 목록 조회
+  // app.py의 /api/cards/history/{contextId}/page/{pageNumber} 엔드포인트와 통신
   async getHistoryPage(contextId, pageNumber) {
     try {
       if (!contextId || !contextId.trim()) {
@@ -259,11 +235,7 @@ export const cardService = {
     }
   },
 
-  /**
-   * 카드 이미지 URL 생성
-   * @param {string} filename - 카드 파일명
-   * @returns {string} 카드 이미지 URL
-   */
+  // 카드 이미지 URL 생성
   getCardImageUrl(filename) {
     if (!filename) {
       console.warn('카드 파일명이 제공되지 않았습니다.');
@@ -274,11 +246,7 @@ export const cardService = {
     return `http://localhost:8000/api/images/${filename}`;
   },
 
-  /**
-   * 카드 정보 검증
-   * @param {Object} card - 검증할 카드 객체
-   * @returns {boolean} 유효성 여부
-   */
+  // 카드 정보 검증
   validateCardObject(card) {
     if (!card || typeof card !== 'object') {
       return false;
@@ -300,11 +268,7 @@ export const cardService = {
     return true;
   },
 
-  /**
-   * 선택된 카드들의 메타데이터 생성
-   * @param {Array} selectedCards - 선택된 카드 목록
-   * @returns {Object} 메타데이터
-   */
+  // 선택된 카드들의 메타데이터 생성
   generateSelectionMetadata(selectedCards) {
     if (!Array.isArray(selectedCards)) {
       return { count: 0, valid: false };
@@ -322,12 +286,8 @@ export const cardService = {
     return metadata;
   },
 
-  /**
-   * 카드 추천 결과 정규화
-   * app.py에서 받은 카드 데이터를 프론트엔드에서 사용하기 좋은 형태로 변환
-   * @param {Array} rawCards - app.py에서 받은 원시 카드 데이터
-   * @returns {Array} 정규화된 카드 데이터
-   */
+  // 카드 추천 결과 정규화
+  // app.py에서 받은 카드 데이터를 프론트엔드에서 사용하기 좋은 형태로 변환
   normalizeCardData(rawCards) {
     if (!Array.isArray(rawCards)) {
       console.warn('카드 데이터가 배열이 아닙니다:', rawCards);

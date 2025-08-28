@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { contextService } from '../../services/contextService';
 
-/**
- * 대화 컨텍스트 입력 폼 컴포넌트
- * 현재 상황 정보를 수집하여 개인화된 카드 추천에 활용
- */
+// 대화 컨텍스트 입력 폼 컴포넌트
+// 현재 상황 정보를 수집하여 개인화된 카드 추천에 활용
 const ContextForm = ({ userId, onContextCreated }) => {
   const [formData, setFormData] = useState({
     place: '',
@@ -29,9 +27,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
     '식사', '공부', '놀이', '치료', '쇼핑', '산책', '운동', '독서', '영화 시청', '게임'
   ];
 
-  /**
-   * 폼 입력 필드 변경 처리
-   */
+  // 폼 입력 필드 변경 처리
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({
@@ -45,9 +41,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
     }
   };
 
-  /**
-   * 예시 텍스트 클릭으로 입력 필드에 자동 입력
-   */
+  // 예시 텍스트 클릭으로 입력 필드에 자동 입력
   const handleExampleClick = (fieldName, value) => {
     setFormData(prevData => ({
       ...prevData,
@@ -55,9 +49,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
     }));
   };
 
-  /**
-   * 폼 입력 검증
-   */
+  // 폼 입력 검증
   const validateForm = () => {
     if (!formData.place.trim()) {
       return '장소를 입력해주세요.';
@@ -72,9 +64,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
     return null;
   };
 
-  /**
-   * 컨텍스트 생성 폼 제출 처리
-   */
+  // 컨텍스트 생성 폼 제출 처리
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');

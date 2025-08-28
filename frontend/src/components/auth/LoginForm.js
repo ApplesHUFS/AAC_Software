@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
 
-/**
- * 로그인 폼 컴포넌트
- * 사용자 인증 처리 및 로그인 성공 시 사용자 데이터 전달
- */
+// 로그인 폼 컴포넌트
+// 사용자 인증 처리 및 로그인 성공 시 사용자 데이터 전달
 const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [formData, setFormData] = useState({
     userId: '',
@@ -13,9 +11,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  /**
-   * 폼 입력 필드 변경 처리
-   */
+  // 폼 입력 필드 변경 처리
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({
@@ -29,10 +25,8 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
     }
   };
 
-  /**
-   * 로그인 폼 제출 처리
-   * app.py의 로그인 응답 구조에 맞게 처리
-   */
+  // 로그인 폼 제출 처리
+  // app.py의 로그인 응답 구조에 맞게 처리
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);

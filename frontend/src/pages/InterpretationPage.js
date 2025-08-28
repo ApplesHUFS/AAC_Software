@@ -2,18 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { InterpretationDisplay, FeedbackForm, InterpretationResult } from '../components/interpretation/InterpretationDisplay';
 
-/**
- * 해석 진행 단계 상수
- */
+// 해석 진행 단계 상수
 const STEPS = {
   INTERPRETING: 'interpreting',    // AI가 카드 해석 중
   FEEDBACK: 'feedback',           // Partner 피드백 대기 중
   COMPLETED: 'completed'          // 해석 완료
 };
 
-/**
- * 에러 메시지 상수
- */
+// 에러 메시지 상수
 const ERROR_MESSAGES = {
   NETWORK_ERROR: '네트워크 연결을 확인해주세요. 서버에 연결할 수 없습니다.',
   TIMEOUT_ERROR: '요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.',
@@ -24,10 +20,8 @@ const ERROR_MESSAGES = {
   MISSING_CONTEXT: '대화 컨텍스트 정보가 없습니다.'
 };
 
-/**
- * AAC 카드 해석 및 피드백 수집 페이지
- * 흐름명세서에 따른 카드 해석 → Partner 피드백 요청 → 피드백 수집 → 완료
- */
+// AAC 카드 해석 및 피드백 수집 페이지
+// 흐름명세서에 따른 카드 해석 → Partner 피드백 요청 → 피드백 수집 → 완료
 const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplete }) => {
   // 해석 관련 상태
   const [interpretations, setInterpretations] = useState([]);
@@ -42,10 +36,8 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   // 진행 상태 추적
   const [interpretationMethod, setInterpretationMethod] = useState('');
 
-  /**
-   * Partner 피드백 확인 요청
-   * 흐름명세서 4.5단계: partner에게 해석 확인 요청
-   */
+  // Partner 피드백 확인 요청
+  // 흐름명세서 4.5단계: partner에게 해석 확인 요청
   const requestPartnerConfirmation = useCallback(async (interpretationData) => {
     try {
       const requestPayload = {
@@ -81,10 +73,8 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     }
   }, [user.userId, selectedCards, contextData]);
 
-  /**
-   * AI 카드 해석 생성
-   * 흐름명세서 4.4단계: 선택된 카드들을 상황에 맞게 해석
-   */
+  // AI 카드 해석 생성
+  // 흐름명세서 4.4단계: 선택된 카드들을 상황에 맞게 해석 (OpenAI API로 3가지 해석 생성)
   const generateInterpretations = useCallback(async () => {
     // 입력 검증
     if (!user?.userId) {
@@ -112,7 +102,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
 
       if (response.success && response.data) {
         const interpretationData = response.data.interpretations || [];
-        const feedbackId = response.data.feedbackId;
         const method = response.data.method || 'ai';
 
         setInterpretations(interpretationData);
@@ -138,9 +127,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     }
   }, [user, selectedCards, contextData, requestPartnerConfirmation]);
 
-  /**
-   * 컴포넌트 마운트 시 해석 생성 시작
-   */
+  // 컴포넌트 마운트 시 해석 생성 시작
   useEffect(() => {
     let isCancelled = false;
     
@@ -168,10 +155,8 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     };
   }, [generateInterpretations]);
 
-  /**
-   * Partner 피드백 제출 완료 처리
-   * 흐름명세서 마지막 단계: 피드백 수집 완료 후 세션 종료
-   */
+  // Partner 피드백 제출 완료 처리
+  // 흐름명세서 마지막 단계: 피드백 수집 완료 후 세션 종료
   const handleFeedbackSubmit = useCallback((feedbackResponse) => {
     if (feedbackResponse?.data?.feedbackResult) {
       setFeedbackResult(feedbackResponse.data.feedbackResult);
@@ -181,16 +166,12 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     }
   }, []);
 
-  /**
-   * 새 대화 세션 시작
-   */
+  // 새 대화 세션 시작
   const handleStartNewSession = useCallback(() => {
     onSessionComplete();
   }, [onSessionComplete]);
 
-  /**
-   * 해석 재시도
-   */
+  // 해석 재시도
   const handleRetry = useCallback(() => {
     setError('');
     setLoading(true);

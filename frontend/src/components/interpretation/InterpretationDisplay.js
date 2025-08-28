@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { feedbackService } from '../../services/feedbackService';
 
-/**
- * 해석 결과 표시 컴포넌트
- * AI가 생성한 카드 해석들을 사용자에게 표시
- */
+// 해석 결과 표시 컴포넌트
+// AI가 생성한 카드 해석들을 사용자에게 표시
 const InterpretationDisplay = ({ 
   interpretations, 
   selectedCards, 
@@ -113,10 +111,8 @@ const InterpretationDisplay = ({
   );
 };
 
-/**
- * Partner 피드백 폼 컴포넌트
- * 해석 선택 또는 직접 피드백 입력 처리
- */
+// Partner 피드백 폼 컴포넌트
+// 해석 선택 또는 직접 피드백 입력 처리
 const FeedbackForm = ({ 
   interpretations, 
   selectedCards, 
@@ -131,9 +127,7 @@ const FeedbackForm = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  /**
-   * 피드백 타입 변경 처리
-   */
+  // 피드백 타입 변경 처리
   const handleFeedbackTypeChange = (type) => {
     setFeedbackType(type);
     setError('');
@@ -146,25 +140,19 @@ const FeedbackForm = ({
     }
   };
 
-  /**
-   * 해석 선택 처리
-   */
+  // 해석 선택 처리
   const handleInterpretationSelect = (index) => {
     setSelectedInterpretationIndex(index);
     setError('');
   };
 
-  /**
-   * 직접 피드백 입력 변경 처리
-   */
+  // 직접 피드백 입력 변경 처리
   const handleDirectFeedbackChange = (e) => {
     setDirectFeedback(e.target.value);
     setError('');
   };
 
-  /**
-   * 피드백 제출 검증
-   */
+  // 피드백 제출 검증
   const validateFeedback = () => {
     if (!confirmationId) {
       return '피드백 요청 정보가 없습니다. 페이지를 새로고침해주세요.';
@@ -186,9 +174,7 @@ const FeedbackForm = ({
     return null;
   };
 
-  /**
-   * 피드백 제출 처리
-   */
+  // 피드백 제출 처리
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
     setError('');
@@ -350,10 +336,8 @@ const FeedbackForm = ({
   );
 };
 
-/**
- * 해석 완료 결과 컴포넌트
- * 최종 해석 결과와 세션 요약 표시
- */
+// 해석 완료 결과 컴포넌트
+// 최종 해석 결과와 세션 요약 표시
 const InterpretationResult = ({ 
   feedbackResult, 
   selectedCards, 
@@ -361,9 +345,7 @@ const InterpretationResult = ({
   interpretations,
   onStartNewSession 
 }) => {
-  /**
-   * 최종 해석 텍스트 추출
-   */
+  // 최종 해석 텍스트 추출
   const getFinalInterpretation = () => {
     return feedbackResult?.selected_interpretation || 
            feedbackResult?.direct_feedback || 
@@ -372,9 +354,7 @@ const InterpretationResult = ({
            '해석 결과를 찾을 수 없습니다.';
   };
 
-  /**
-   * 피드백 타입 추출
-   */
+  // 피드백 타입 추출
   const getFeedbackType = () => {
     if (feedbackResult?.feedback_type === 'interpretation_selected' || 
         feedbackResult?.selectedInterpretation) {
@@ -386,9 +366,7 @@ const InterpretationResult = ({
     return '알 수 없음';
   };
 
-  /**
-   * 완료 시간 포맷팅
-   */
+  // 완료 시간 포맷팅
   const getCompletionTime = () => {
     const timestamp = feedbackResult?.confirmed_at || 
                      feedbackResult?.timestamp || 

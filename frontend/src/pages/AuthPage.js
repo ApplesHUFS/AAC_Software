@@ -2,34 +2,25 @@ import React, { useState } from 'react';
 import { LoginForm } from '../components/auth/LoginForm';
 import { RegisterForm } from '../components/auth/RegisterForm';
 
-/**
- * 인증 페이지 컴포넌트
- * 로그인과 회원가입 폼을 전환하여 표시
- */
+// 인증 페이지 컴포넌트
+// 로그인과 회원가입 폼을 전환하여 표시
 const AuthPage = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
 
-  /**
-   * 로그인 성공 처리
-   * App.js로 로그인 성공 이벤트 전달
-   */
+  // 로그인 성공 처리
+  // App.js로 로그인 성공 이벤트 전달
   const handleLoginSuccess = (loginResponseData) => {
     onAuthSuccess(loginResponseData);
   };
 
-  /**
-   * 회원가입 성공 처리
-   * 성공 후 로그인 페이지로 자동 전환
-   */
+  // 회원가입 성공 처리
+  // 성공 후 로그인 페이지로 자동 전환
   const handleRegisterSuccess = (registerData) => {
     // 회원가입 성공 후 로그인 페이지로 이동
     setIsLogin(true);
-    // 추후 자동 로그인 기능을 원한다면 여기서 구현
   };
 
-  /**
-   * 로그인/회원가입 폼 전환 처리
-   */
+  // 로그인/회원가입 폼 전환 처리
   const switchToRegister = () => setIsLogin(false);
   const switchToLogin = () => setIsLogin(true);
 

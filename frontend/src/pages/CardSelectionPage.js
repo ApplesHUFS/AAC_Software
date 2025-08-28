@@ -2,10 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { CardGrid, SelectedCardsDisplay, CardHistoryNavigation } from '../components/cards/CardGrid';
 
-/**
- * 카드 선택 페이지 컴포넌트
- * 개인화된 카드 추천, 선택, 히스토리 관리를 담당
- */
+// 카드 선택 페이지 컴포넌트
+// 흐름명세서: 개인화된 카드 추천(70% 관련 + 30% 랜덤), 선택, 히스토리 관리를 담당
 const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   // 카드 관련 상태
   const [cards, setCards] = useState([]);
@@ -18,10 +16,8 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   // UI 상태
   const [isRerolling, setIsRerolling] = useState(false);
 
-  /**
-   * 초기 카드 추천 로드
-   * 사용자 페르소나와 컨텍스트를 기반으로 카드 추천 요청
-   */
+  // 초기 카드 추천 로드
+  // 흐름명세서: 사용자 페르소나와 컨텍스트를 기반으로 20개 카드 묶음 추천
   const loadInitialCards = useCallback(async () => {
     if (!user?.userId || !contextData?.contextId) {
       setError('사용자 정보 또는 컨텍스트 정보가 없습니다.');
@@ -55,17 +51,13 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     }
   }, [user?.userId, contextData?.contextId]);
 
-  /**
-   * 컴포넌트 마운트 시 초기 카드 로드
-   */
+  // 컴포넌트 마운트 시 초기 카드 로드
   useEffect(() => {
     loadInitialCards();
   }, [loadInitialCards]);
 
-  /**
-   * 히스토리 페이지 변경 처리
-   * 이전 추천 결과를 다시 불러오기
-   */
+  // 히스토리 페이지 변경 처리
+  // 흐름명세서: 이전 추천 결과를 다시 볼 수 있음
   const handlePageChange = useCallback((newCards, pageNumber) => {
     const formattedCards = newCards.map((filename, index) => ({
       id: filename.split('_')[0] || filename.replace('.png', ''),
@@ -80,10 +72,8 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     setCurrentPage(pageNumber);
   }, []);
 
-  /**
-   * 카드 재추천 (리롤) 처리
-   * 새로운 카드 세트를 요청
-   */
+  // 카드 재추천 (리롤) 처리
+  // 흐름명세서: 재추천 로직으로 마음에 안드는 카드들이 있으면 리롤 가능함
   const handleRerollCards = async () => {
     if (isRerolling) return;
 
@@ -108,10 +98,8 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     }
   };
 
-  /**
-   * 카드 선택/해제 처리
-   * 최대 4개까지 선택 가능
-   */
+  // 카드 선택/해제 처리
+  // 흐름명세서: 사용자의 카드 선택 (1~4개)
   const handleCardSelection = useCallback((newSelectedCards) => {
     setSelectedCards(newSelectedCards);
     
@@ -121,18 +109,14 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     }
   }, [error]);
 
-  /**
-   * 선택된 카드 개별 제거 처리
-   */
+  // 선택된 카드 개별 제거 처리
   const handleRemoveSelectedCard = useCallback((cardToRemove) => {
     setSelectedCards(prevSelected => 
       prevSelected.filter(card => card.filename !== cardToRemove.filename)
     );
   }, []);
 
-  /**
-   * 카드 선택 완료 및 해석 단계로 진행
-   */
+  // 카드 선택 완료 및 해석 단계로 진행
   const handleProceedToInterpretation = async () => {
     // 선택된 카드 검증
     if (selectedCards.length === 0) {

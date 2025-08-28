@@ -1,32 +1,23 @@
 import React, { useState } from 'react';
 import { ContextForm } from '../components/context/ContextForm';
 
-/**
- * 대시보드 페이지 컴포넌트
- * 로그인된 사용자의 메인 페이지로 사용자 정보 표시 및 새 대화 세션 시작
- */
+// 대시보드 페이지 컴포넌트
+// 로그인된 사용자의 메인 페이지로 사용자 정보 표시 및 새 대화 세션 시작
 const DashboardPage = ({ user, onLogout, onContextCreated }) => {
   const [showContextForm, setShowContextForm] = useState(false);
 
-  /**
-   * 새 대화 세션 시작 버튼 클릭 처리
-   */
+  // 새 대화 세션 시작 버튼 클릭 처리
   const handleStartNewSession = () => {
     setShowContextForm(true);
   };
 
-  /**
-   * 컨텍스트 생성 완료 처리
-   * 부모 컴포넌트로 생성된 컨텍스트 데이터 전달
-   */
+  // 컨텍스트 생성 완료 처리
+  // 부모 컴포넌트로 생성된 컨텍스트 데이터 전달
   const handleContextCreated = (contextData) => {
     onContextCreated(contextData);
   };
 
-  /**
-   * 프로필 수정 버튼 클릭 처리
-   * TODO: 프로필 수정 페이지로 이동 로직 구현
-   */
+  // 프로필 수정 버튼 클릭 처리
   const handleEditProfile = () => {
     // 향후 프로필 수정 페이지 구현 시 사용
     console.log('프로필 수정 기능 준비 중');

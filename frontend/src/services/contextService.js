@@ -1,20 +1,11 @@
 import api from './api';
 
-/**
- * 대화 컨텍스트 관리 서비스
- * app.py의 컨텍스트 관련 API와 통신하여 대화 상황 관리
- */
+// 대화 컨텍스트 관리 서비스
+// app.py의 컨텍스트 관련 API와 통신하여 대화 상황 관리
 export const contextService = {
-  /**
-   * 새로운 대화 컨텍스트 생성
-   * app.py의 /api/context POST 엔드포인트와 통신
-   * @param {Object} contextData - 컨텍스트 생성 데이터
-   * @param {string} contextData.userId - 사용자 ID
-   * @param {string} contextData.place - 대화 장소
-   * @param {string} contextData.interactionPartner - 대화 상대
-   * @param {string} [contextData.currentActivity] - 현재 활동 (선택사항)
-   * @returns {Promise<Object>} 생성된 컨텍스트 정보
-   */
+  // 새로운 대화 컨텍스트 생성
+  // 흐름명세서 4.1단계: partner한테 context 입력 요청
+  // app.py의 /api/context POST 엔드포인트와 통신
   async createContext(contextData) {
     try {
       // 입력 검증
@@ -83,12 +74,8 @@ export const contextService = {
     }
   },
 
-  /**
-   * 기존 컨텍스트 조회
-   * app.py의 /api/context/{contextId} GET 엔드포인트와 통신
-   * @param {string} contextId - 조회할 컨텍스트 ID
-   * @returns {Promise<Object>} 컨텍스트 정보
-   */
+  // 기존 컨텍스트 조회
+  // app.py의 /api/context/{contextId} GET 엔드포인트와 통신
   async getContext(contextId) {
     try {
       if (!contextId || !contextId.trim()) {
@@ -121,131 +108,7 @@ export const contextService = {
     }
   },
 
-  /**
-   * 컨텍스트 업데이트
-   * TODO: app.py에 해당 엔드포인트 구현 필요
-   * @param {string} contextId - 업데이트할 컨텍스트 ID
-   * @param {Object} updateData - 업데이트할 데이터
-   * @returns {Promise<Object>} 업데이트 결과
-   */
-  async updateContext(contextId, updateData) {
-    try {
-      if (!contextId || !contextId.trim()) {
-        throw new Error('컨텍스트 ID가 필요합니다.');
-      }
-
-      if (!updateData || typeof updateData !== 'object') {
-        throw new Error('업데이트할 데이터가 필요합니다.');
-      }
-
-      // 현재 app.py에 해당 엔드포인트가 없으므로 임시로 에러 반환
-      throw new Error('컨텍스트 업데이트 기능은 아직 구현되지 않았습니다.');
-
-      // TODO: app.py에 PUT /api/context/{contextId} 구현 후 주석 해제
-      // const payload = {
-      //   place: updateData.place?.trim(),
-      //   interactionPartner: updateData.interactionPartner?.trim(),
-      //   currentActivity: updateData.currentActivity?.trim() || ''
-      // };
-      // 
-      // // undefined 값들 제거
-      // Object.keys(payload).forEach(key => {
-      //   if (payload[key] === undefined) {
-      //     delete payload[key];
-      //   }
-      // });
-      // 
-      // const response = await api.put(`/api/context/${contextId.trim()}`, payload);
-      // 
-      // if (response.success) {
-      //   return response;
-      // } else {
-      //   throw new Error(response.error || '컨텍스트 업데이트에 실패했습니다.');
-      // }
-    } catch (error) {
-      console.error('컨텍스트 업데이트 실패:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 컨텍스트 삭제
-   * TODO: app.py에 해당 엔드포인트 구현 필요
-   * @param {string} contextId - 삭제할 컨텍스트 ID
-   * @returns {Promise<Object>} 삭제 결과
-   */
-  async deleteContext(contextId) {
-    try {
-      if (!contextId || !contextId.trim()) {
-        throw new Error('컨텍스트 ID가 필요합니다.');
-      }
-
-      // 현재 app.py에 해당 엔드포인트가 없으므로 임시로 에러 반환
-      throw new Error('컨텍스트 삭제 기능은 아직 구현되지 않았습니다.');
-
-      // TODO: app.py에 DELETE /api/context/{contextId} 구현 후 주석 해제
-      // const response = await api.delete(`/api/context/${contextId.trim()}`);
-      // 
-      // if (response.success) {
-      //   return response;
-      // } else {
-      //   throw new Error(response.error || '컨텍스트 삭제에 실패했습니다.');
-      // }
-    } catch (error) {
-      console.error('컨텍스트 삭제 실패:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 사용자의 모든 컨텍스트 조회
-   * TODO: app.py에 해당 엔드포인트 구현 필요
-   * @param {string} userId - 사용자 ID
-   * @param {Object} [options] - 조회 옵션
-   * @param {number} [options.page=1] - 페이지 번호
-   * @param {number} [options.limit=10] - 페이지당 항목 수
-   * @returns {Promise<Object>} 컨텍스트 목록
-   */
-  async getUserContexts(userId, options = {}) {
-    try {
-      if (!userId || !userId.trim()) {
-        throw new Error('사용자 ID가 필요합니다.');
-      }
-
-      const { page = 1, limit = 10 } = options;
-
-      if (page < 1) {
-        throw new Error('페이지 번호는 1 이상이어야 합니다.');
-      }
-
-      if (limit < 1 || limit > 100) {
-        throw new Error('페이지당 항목 수는 1-100 범위여야 합니다.');
-      }
-
-      // 현재 app.py에 해당 엔드포인트가 없으므로 임시로 에러 반환
-      throw new Error('사용자 컨텍스트 목록 조회 기능은 아직 구현되지 않았습니다.');
-
-      // TODO: app.py에 GET /api/context/user/{userId} 구현 후 주석 해제
-      // const response = await api.get(`/api/context/user/${userId.trim()}`, {
-      //   params: { page, limit }
-      // });
-      // 
-      // if (response.success && response.data) {
-      //   return response;
-      // } else {
-      //   throw new Error(response.error || '컨텍스트 목록을 불러올 수 없습니다.');
-      // }
-    } catch (error) {
-      console.error('사용자 컨텍스트 조회 실패:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * 컨텍스트 데이터 검증
-   * @param {Object} contextData - 검증할 컨텍스트 데이터
-   * @returns {Object} 검증 결과 { valid: boolean, errors: string[] }
-   */
+  // 컨텍스트 데이터 검증
   validateContextData(contextData) {
     const errors = [];
 
@@ -283,11 +146,7 @@ export const contextService = {
     };
   },
 
-  /**
-   * 컨텍스트 요약 정보 생성
-   * @param {Object} contextData - 컨텍스트 데이터
-   * @returns {string} 컨텍스트 요약 문자열
-   */
+  // 컨텍스트 요약 정보 생성
   generateContextSummary(contextData) {
     if (!contextData || typeof contextData !== 'object') {
       return '알 수 없는 상황';
@@ -312,11 +171,7 @@ export const contextService = {
     return summary || '대화 상황';
   },
 
-  /**
-   * 컨텍스트 ID 유효성 검증
-   * @param {string} contextId - 검증할 컨텍스트 ID
-   * @returns {boolean} 유효성 여부
-   */
+  // 컨텍스트 ID 유효성 검증
   isValidContextId(contextId) {
     if (!contextId || typeof contextId !== 'string') {
       return false;
@@ -330,12 +185,7 @@ export const contextService = {
     return idPattern.test(trimmedId);
   },
 
-  /**
-   * 컨텍스트 시간 포맷팅
-   * @param {string|Date} timestamp - 타임스탬프
-   * @param {string} [format='relative'] - 포맷 타입 ('relative', 'absolute', 'time')
-   * @returns {string} 포맷된 시간 문자열
-   */
+  // 컨텍스트 시간 포맷팅
   formatContextTime(timestamp, format = 'relative') {
     if (!timestamp) return '';
 

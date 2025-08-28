@@ -5,10 +5,8 @@ import CardSelectionPage from './pages/CardSelectionPage';
 import InterpretationPage from './pages/InterpretationPage';
 import './styles/App.css';
 
-/**
- * AAC 카드 해석 시스템 메인 앱 컴포넌트
- * 전체 애플리케이션의 라우팅과 세션 관리를 담당
- */
+// AAC 카드 해석 시스템 메인 앱 컴포넌트
+// 전체 애플리케이션의 라우팅과 세션 관리를 담당
 const App = () => {
   // 애플리케이션 상태 관리
   const [currentUser, setCurrentUser] = useState(null);
@@ -16,10 +14,8 @@ const App = () => {
   const [contextData, setContextData] = useState(null);
   const [selectedCards, setSelectedCards] = useState([]);
 
-  /**
-   * 컴포넌트 마운트 시 세션 복원
-   * localStorage에서 사용자 정보와 진행 상태를 복원
-   */
+  // 컴포넌트 마운트 시 세션 복원
+  // localStorage에서 사용자 정보와 진행 상태를 복원
   useEffect(() => {
     const restoreSession = () => {
       try {
@@ -62,10 +58,8 @@ const App = () => {
     restoreSession();
   }, []);
 
-  /**
-   * 로그인 성공 시 사용자 데이터 설정
-   * app.py의 login 응답 구조에 맞게 처리
-   */
+  // 로그인 성공 시 사용자 데이터 설정
+  // app.py의 login 응답 구조에 맞게 처리
   const handleAuthSuccess = (loginResponse) => {
     // app.py에서 data.user 구조로 사용자 정보를 제공
     const userData = {
@@ -79,10 +73,8 @@ const App = () => {
     localStorage.setItem('aac_user', JSON.stringify(userData));
   };
 
-  /**
-   * 로그아웃 처리
-   * 모든 상태와 로컬 스토리지 정리
-   */
+  // 로그아웃 처리
+  // 모든 상태와 로컬 스토리지 정리
   const handleLogout = () => {
     setCurrentUser(null);
     setContextData(null);
@@ -91,10 +83,8 @@ const App = () => {
     clearSession();
   };
 
-  /**
-   * 대화 컨텍스트 생성 완료 처리
-   * 카드 선택 단계로 이동
-   */
+  // 대화 컨텍스트 생성 완료 처리
+  // 카드 선택 단계로 이동
   const handleContextCreated = (context) => {
     setContextData(context);
     setCurrentStep('cards');
@@ -103,10 +93,8 @@ const App = () => {
     localStorage.setItem('aac_current_step', 'cards');
   };
 
-  /**
-   * 카드 선택 완료 처리
-   * 해석 단계로 이동
-   */
+  // 카드 선택 완료 처리
+  // 해석 단계로 이동
   const handleCardSelectionComplete = (cards) => {
     setSelectedCards(cards);
     setCurrentStep('interpretation');
@@ -115,10 +103,8 @@ const App = () => {
     localStorage.setItem('aac_current_step', 'interpretation');
   };
 
-  /**
-   * 해석 세션 완료 처리
-   * 대시보드로 돌아가고 세션 데이터 정리
-   */
+  // 해석 세션 완료 처리
+  // 대시보드로 돌아가고 세션 데이터 정리
   const handleSessionComplete = () => {
     setContextData(null);
     setSelectedCards([]);
@@ -129,10 +115,8 @@ const App = () => {
     localStorage.setItem('aac_current_step', 'dashboard');
   };
 
-  /**
-   * 전체 세션 정리
-   * 모든 localStorage 데이터 제거
-   */
+  // 전체 세션 정리
+  // 모든 localStorage 데이터 제거
   const clearSession = () => {
     localStorage.removeItem('aac_user');
     localStorage.removeItem('aac_context');

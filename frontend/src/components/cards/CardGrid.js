@@ -1,21 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../../services/cardService';
 
-/**
- * 카드 그리드 컴포넌트
- * 추천된 카드들을 격자 형태로 표시하고 선택 기능 제공
- */
+// 카드 그리드 컴포넌트
+// 추천된 카드들을 격자 형태로 표시하고 선택 기능 제공
 const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabled = false }) => {
-  /**
-   * 카드가 선택되었는지 확인
-   */
+  // 카드가 선택되었는지 확인
   const isCardSelected = useCallback((card) => {
     return selectedCards.some(selected => selected.filename === card.filename);
   }, [selectedCards]);
 
-  /**
-   * 카드 선택/해제 처리
-   */
+  // 카드 선택/해제 처리
   const handleCardSelect = useCallback((card) => {
     if (disabled) return;
 
@@ -66,26 +60,20 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
   );
 };
 
-/**
- * 개별 카드 아이템 컴포넌트
- * 카드 이미지, 이름, 선택 상태 표시
- */
+// 개별 카드 아이템 컴포넌트
+// 카드 이미지, 이름, 선택 상태 표시
 const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  /**
-   * 카드 클릭 처리
-   */
+  // 카드 클릭 처리
   const handleClick = useCallback(() => {
     if (!disabled && !imageError) {
       onSelect(card);
     }
   }, [disabled, imageError, onSelect, card]);
 
-  /**
-   * 키보드 접근성 처리
-   */
+  // 키보드 접근성 처리
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -93,17 +81,13 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
     }
   }, [handleClick]);
 
-  /**
-   * 이미지 로드 완료 처리
-   */
+  // 이미지 로드 완료 처리
   const handleImageLoad = useCallback(() => {
     setImageLoaded(true);
     setImageError(false);
   }, []);
 
-  /**
-   * 이미지 로드 에러 처리
-   */
+  // 이미지 로드 에러 처리
   const handleImageError = useCallback(() => {
     setImageError(true);
     setImageLoaded(false);
@@ -160,10 +144,8 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
   );
 };
 
-/**
- * 선택된 카드 표시 컴포넌트
- * 사이드바에서 선택된 카드들을 관리
- */
+// 선택된 카드 표시 컴포넌트
+// 사이드바에서 선택된 카드들을 관리
 const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => {
   if (selectedCards.length === 0) {
     return (
@@ -223,10 +205,8 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
   );
 };
 
-/**
- * 카드 히스토리 내비게이션 컴포넌트
- * 이전 추천 결과들을 탐색할 수 있는 기능
- */
+// 카드 히스토리 내비게이션 컴포넌트
+// 이전 추천 결과들을 탐색할 수 있는 기능
 const CardHistoryNavigation = ({ 
   contextId, 
   currentPage = 1, 
@@ -238,9 +218,7 @@ const CardHistoryNavigation = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  /**
-   * 히스토리 정보 로드
-   */
+  // 히스토리 정보 로드
   const fetchHistoryInfo = useCallback(async () => {
     if (!contextId) return;
 
@@ -263,16 +241,12 @@ const CardHistoryNavigation = ({
     }
   }, [contextId]);
 
-  /**
-   * 컴포넌트 마운트 시 히스토리 정보 로드
-   */
+  // 컴포넌트 마운트 시 히스토리 정보 로드
   useEffect(() => {
     fetchHistoryInfo();
   }, [fetchHistoryInfo]);
 
-  /**
-   * 페이지 변경 처리
-   */
+  // 페이지 변경 처리
   const handlePageChange = useCallback(async (pageNumber) => {
     if (pageNumber === currentPage || disabled || loading) return;
     

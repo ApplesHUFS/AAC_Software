@@ -1,14 +1,10 @@
-/**
- * API 클라이언트
- * app.py 백엔드와의 HTTP 통신을 담당하는 중앙화된 클라이언트
- */
+// API 클라이언트
+// app.py 백엔드와의 HTTP 통신을 담당하는 중앙화된 클라이언트
 
 // 백엔드 서버 주소 (환경에 따라 설정)
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-/**
- * HTTP 상태 코드 상수
- */
+// HTTP 상태 코드 상수
 const HTTP_STATUS = {
   OK: 200,
   CREATED: 201,
@@ -22,14 +18,10 @@ const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503
 };
 
-/**
- * 요청 타임아웃 설정 (밀리초)
- */
+// 요청 타임아웃 설정 (밀리초)
 const REQUEST_TIMEOUT = 30000; // 30초
 
-/**
- * 재시도 설정
- */
+// 재시도 설정
 const RETRY_CONFIG = {
   maxRetries: 3,
   retryDelay: 1000, // 1초
@@ -41,9 +33,7 @@ const RETRY_CONFIG = {
   }
 };
 
-/**
- * 에러 메시지 매핑
- */
+// 에러 메시지 매핑
 const ERROR_MESSAGES = {
   [HTTP_STATUS.BAD_REQUEST]: '요청이 올바르지 않습니다.',
   [HTTP_STATUS.UNAUTHORIZED]: '인증이 필요합니다.',
@@ -58,9 +48,7 @@ const ERROR_MESSAGES = {
   PARSE_ERROR: '서버 응답을 처리할 수 없습니다.'
 };
 
-/**
- * API 클라이언트 클래스
- */
+// API 클라이언트 클래스
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
@@ -70,12 +58,7 @@ class ApiClient {
     };
   }
 
-  /**
-   * 타임아웃이 적용된 fetch 래퍼
-   * @param {string} url - 요청 URL
-   * @param {Object} options - fetch 옵션
-   * @returns {Promise<Response>} fetch Response
-   */
+  // 타임아웃이 적용된 fetch 래퍼
   async fetchWithTimeout(url, options) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -97,21 +80,12 @@ class ApiClient {
     }
   }
 
-  /**
-   * 지연 함수 (재시도 간격)
-   * @param {number} ms - 지연 시간 (밀리초)
-   * @returns {Promise<void>}
-   */
+  // 지연 함수 (재시도 간격)
   async delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * 재시도 로직이 포함된 요청 실행
-   * @param {Function} requestFn - 요청 함수
-   * @param {number} retryCount - 현재 재시도 횟수
-   * @returns {Promise<any>} 요청 결과
-   */
+  // 재시도 로직이 포함된 요청 실행
   async executeWithRetry(requestFn, retryCount = 0) {
     try {
       return await requestFn();
@@ -129,11 +103,7 @@ class ApiClient {
     }
   }
 
-  /**
-   * 응답 처리 (app.py 응답 구조에 맞춤)
-   * @param {Response} response - fetch Response 객체
-   * @returns {Promise<Object>} 파싱된 응답 데이터
-   */
+  // 응답 처리 (app.py 응답 구조에 맞춤)
   async processResponse(response) {
     let responseData;
 
@@ -185,12 +155,7 @@ class ApiClient {
     return responseData;
   }
 
-  /**
-   * 기본 HTTP 요청 메서드
-   * @param {string} endpoint - API 엔드포인트
-   * @param {Object} options - 요청 옵션
-   * @returns {Promise<Object>} API 응답
-   */
+  // 기본 HTTP 요청 메서드
   async request(endpoint, options = {}) {
     // URL 구성
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
@@ -236,12 +201,7 @@ class ApiClient {
     return this.executeWithRetry(requestFn);
   }
 
-  /**
-   * GET 요청
-   * @param {string} endpoint - API 엔드포인트
-   * @param {Object} options - 요청 옵션
-   * @returns {Promise<Object>} API 응답
-   */
+  // GET 요청
   async get(endpoint, options = {}) {
     // 쿼리 파라미터 처리
     if (options.params) {
@@ -264,13 +224,7 @@ class ApiClient {
     });
   }
 
-  /**
-   * POST 요청
-   * @param {string} endpoint - API 엔드포인트
-   * @param {any} body - 요청 본문
-   * @param {Object} options - 요청 옵션
-   * @returns {Promise<Object>} API 응답
-   */
+  // POST 요청
   async post(endpoint, body = null, options = {}) {
     return this.request(endpoint, { 
       method: 'POST', 
@@ -279,13 +233,7 @@ class ApiClient {
     });
   }
 
-  /**
-   * PUT 요청
-   * @param {string} endpoint - API 엔드포인트
-   * @param {any} body - 요청 본문
-   * @param {Object} options - 요청 옵션
-   * @returns {Promise<Object>} API 응답
-   */
+  // PUT 요청
   async put(endpoint, body = null, options = {}) {
     return this.request(endpoint, { 
       method: 'PUT', 
@@ -294,12 +242,7 @@ class ApiClient {
     });
   }
 
-  /**
-   * DELETE 요청
-   * @param {string} endpoint - API 엔드포인트
-   * @param {Object} options - 요청 옵션
-   * @returns {Promise<Object>} API 응답
-   */
+  // DELETE 요청
   async delete(endpoint, options = {}) {
     return this.request(endpoint, { 
       method: 'DELETE', 
@@ -307,13 +250,7 @@ class ApiClient {
     });
   }
 
-  /**
-   * PATCH 요청
-   * @param {string} endpoint - API 엔드포인트
-   * @param {any} body - 요청 본문
-   * @param {Object} options - 요청 옵션
-   * @returns {Promise<Object>} API 응답
-   */
+  // PATCH 요청
   async patch(endpoint, body = null, options = {}) {
     return this.request(endpoint, { 
       method: 'PATCH', 
@@ -322,10 +259,7 @@ class ApiClient {
     });
   }
 
-  /**
-   * 헬스체크 요청
-   * @returns {Promise<boolean>} 서버 상태
-   */
+  // 헬스체크 요청
   async healthCheck() {
     try {
       const response = await this.get('/health');
@@ -336,26 +270,17 @@ class ApiClient {
     }
   }
 
-  /**
-   * 기본 URL 설정
-   * @param {string} baseURL - 새로운 기본 URL
-   */
+  // 기본 URL 설정
   setBaseURL(baseURL) {
     this.baseURL = baseURL;
   }
 
-  /**
-   * 기본 헤더 설정
-   * @param {Object} headers - 설정할 헤더
-   */
+  // 기본 헤더 설정
   setDefaultHeaders(headers) {
     this.defaultHeaders = { ...this.defaultHeaders, ...headers };
   }
 
-  /**
-   * 인증 토큰 설정 (향후 JWT 사용 시)
-   * @param {string} token - 인증 토큰
-   */
+  // 인증 토큰 설정 (향후 JWT 사용 시)
   setAuthToken(token) {
     if (token) {
       this.setDefaultHeaders({ 'Authorization': `Bearer ${token}` });
@@ -364,28 +289,7 @@ class ApiClient {
     }
   }
 
-  /**
-   * 요청 인터셉터 (요청 전 처리)
-   * @param {Function} interceptor - 인터셉터 함수
-   */
-  addRequestInterceptor(interceptor) {
-    // 향후 구현 예정
-    console.warn('요청 인터셉터는 아직 구현되지 않았습니다.');
-  }
-
-  /**
-   * 응답 인터셉터 (응답 후 처리)
-   * @param {Function} interceptor - 인터셉터 함수
-   */
-  addResponseInterceptor(interceptor) {
-    // 향후 구현 예정
-    console.warn('응답 인터셉터는 아직 구현되지 않았습니다.');
-  }
-
-  /**
-   * 디버그 모드 설정
-   * @param {boolean} enabled - 디버그 모드 활성화 여부
-   */
+  // 디버그 모드 설정
   setDebugMode(enabled) {
     this.debugMode = enabled;
     if (enabled) {
@@ -393,10 +297,7 @@ class ApiClient {
     }
   }
 
-  /**
-   * 현재 설정 정보 조회
-   * @returns {Object} 현재 API 클라이언트 설정
-   */
+  // 현재 설정 정보 조회
   getConfig() {
     return {
       baseURL: this.baseURL,

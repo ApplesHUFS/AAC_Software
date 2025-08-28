@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
 
-/**
- * 회원가입 폼 컴포넌트
- * 사용자 페르소나 정보를 포함한 회원가입 처리
- */
+// 회원가입 폼 컴포넌트
+// 사용자 페르소나 정보를 포함한 회원가입 처리
 const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [formData, setFormData] = useState({
     userId: '',
@@ -20,13 +18,11 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 선택지 옵션들
+  // 선택지 옵션들 - 흐름명세서에 따른 장애 유형
   const GENDER_OPTIONS = ['남성', '여성'];
   const DISABILITY_OPTIONS = ['지적장애', '자폐스펙트럼장애', '의사소통장애'];
 
-  /**
-   * 일반 폼 필드 변경 처리
-   */
+  // 일반 폼 필드 변경 처리
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({
@@ -40,9 +36,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
-  /**
-   * 관심 주제 추가 처리
-   */
+  // 관심 주제 추가 처리
   const handleAddTopic = () => {
     const trimmedTopic = topicInput.trim();
     
@@ -72,9 +66,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
-  /**
-   * 관심 주제 제거 처리
-   */
+  // 관심 주제 제거 처리
   const handleRemoveTopic = (topicToRemove) => {
     setFormData(prevData => ({
       ...prevData,
@@ -82,9 +74,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }));
   };
 
-  /**
-   * 관심 주제 입력 키보드 이벤트 처리 (엔터키로 추가)
-   */
+  // 관심 주제 입력 키보드 이벤트 처리 (엔터키로 추가)
   const handleTopicKeyPress = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -92,9 +82,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
-  /**
-   * 폼 입력 검증
-   */
+  // 폼 입력 검증
   const validateForm = () => {
     if (!formData.userId.trim()) {
       return '사용자 ID를 입력해주세요.';
@@ -139,9 +127,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     return null;
   };
 
-  /**
-   * 회원가입 폼 제출 처리
-   */
+  // 회원가입 폼 제출 처리
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
