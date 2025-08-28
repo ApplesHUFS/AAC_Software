@@ -122,7 +122,8 @@ class ClusterSimilarityCalculator:
 
 
         # 임계값 이상의 클러스터 선택 및 유사도 순 정렬
-        candidates = [(cluster_id, sim) for cluster_id, sim in cluster_max_similarities.items()]
+        candidates = [(cluster_id, sim) for cluster_id, sim in cluster_max_similarities.items()
+                     if sim >= similarity_threshold]
 
         candidates.sort(key=lambda x: x[1], reverse=True)
         preferred_categories = [cluster_id for cluster_id, _ in candidates[:max_categories]]
