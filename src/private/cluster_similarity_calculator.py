@@ -6,6 +6,8 @@ from typing import Dict, List, Optional, Any
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 
+from torch.nn.functional import normalize
+
 
 class ClusterSimilarityCalculator:
     """클러스터 유사도 계산기.
@@ -71,6 +73,10 @@ class ClusterSimilarityCalculator:
 
             embeddings1 = self.similarity_model.encode(topics1, convert_to_tensor=True)
             embeddings2 = self.similarity_model.encode(topics2, convert_to_tensor=True)
+            #정규화
+            embeddings1=normalize(embeddings1, p=2, dim=1)
+            embeddings2=normalize(embeddings2, p=2, dim=1)
+            
             similarities = torch.mm(embeddings1, embeddings2.T)
             similarities = (similarities + 1) / 2  # -1~1을 0~1로 변환
 
