@@ -87,13 +87,13 @@ class AACServiceTester:
         pprint(res)
 
         print("\n=== 8. 선택된 카드 해석 ===")
-        res = self.service.interpret_cards("test_user", cards[:2], context)
+        res = self.service.interpret_cards("test_user", selected_cards[:2], context)
         pprint(res)
 
         print("\n=== 9. Partner에게 해석 확인 요청 ===")
         res = self.service.request_partner_confirmation(
             user_id="test_user",
-            cards=cards[:2],
+            cards=selected_cards[:2],
             context=context,
             interpretations=["해석1", "해석2", "해석3"],
             partner_info="보호자"
