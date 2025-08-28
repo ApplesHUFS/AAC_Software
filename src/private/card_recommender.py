@@ -245,17 +245,18 @@ class CardRecommender:
             self.recommendation_history[context_id] = []
 
         history = self.recommendation_history[context_id]
-        total_pages = history[-1]['page_number']
 
-        if total_pages == 0:
+        if not history:
             return {
                 'status': 'error',
                 'cards': [],
                 'page_number': 0,
                 'total_pages': 0,
                 'timestamp': '',
-                'message': f'컨텍스트 {context_id}의 추천이 없습니다.'
+                'message': f'컨텍스트 {context_id}의 추천 히스토리가 없습니다.'
             }
+        
+        total_pages = len(history)
 
         # 페이지 번호 검증
         if page_number < 1 or page_number > total_pages:

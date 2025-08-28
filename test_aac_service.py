@@ -34,7 +34,7 @@ class AACServiceTester:
         persona = {
             "name": "홍길동",
             "age": 22,
-            "gender": "male",
+            "gender": "남성",
             "disability_type": "지적장애",
             "communication_characteristics": "단순한 단어나 짧은 구문을 선호",
             "interesting_topics": ["음식", "놀이", "가족"],
@@ -75,12 +75,15 @@ class AACServiceTester:
             "current_activity": "식사"
         }
         res = self.service.get_card_selection_interface("test_user", context, context_id)
-        cards = res.get('interface_data', {}).get('selection_options', [])[:2]
+        interface_data = res.get('interface_data', {})
+        all_selection_cards = interface_data.get('selection_options', [])
+        selected_cards = all_selection_cards[:2]
+        
         pprint(res)
 
         print("\n=== 7. 사용자 카드 선택 검증 ===")
         all_cards = [f"test_card_{i}_{j}.png" for i in range(10) for j in range(2)]
-        res = self.service.validate_card_selection(cards[:2], all_cards[:20])
+        res = self.service.validate_card_selection(selected_cards, all_selection_cards)
         pprint(res)
 
         print("\n=== 8. 선택된 카드 해석 ===")
