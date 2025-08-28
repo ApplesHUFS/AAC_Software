@@ -606,3 +606,45 @@ class AACInterpreterService:
                 - message (str): 결과 메시지
         """
         return self.context_manager.get_context(context_id)
+    
+    def debug_cluster_similarity(self, interesting_topics: List[str]) -> Dict[str, Any]:
+        print(f"테스트 관심주제: {interesting_topics}")
+        
+        # 1. 모델 상태 확인
+        print(f"모델 정보: {self.cluster_calculator.similarity_model}")
+        
+        # 2. 임베딩 테스트 - fixed
+        test_texts = ["음악", "영화", "스포츠"]
+        embeddings = self.cluster_calculator.similarity_model.encode(test_texts)
+        print(f"테스트 임베딩 형태: {embeddings.shape}")
+        print(f"첫 번째 임베딩 샘플: {embeddings[0][:5]}")
+        
+        # 3. 실제 관심주제 임베딩
+        user_embeddings = self.cluster_calculator.similarity_model.encode(interesting_topics)
+        print(f"사용자 임베딩 형태: {user_embeddings.shape}")
+        print(f"사용자 첫 임베딩 샘플: {user_embeddings[0][:5]}")
+        
+        # 4. 첫 몇 개 클러스터 태그 확인
+        print(f"\n 클러스터 태그 샘플:")
+        for i, (cluster_id, tags) in enumerate(list(self.cluster_calculator.cluster_tags.items())[:3]):
+            print(f"클러스터 {cluster_id}: {tags}")
+        
+        # 5. 유사도 직접 계산
+        first_cluster_tags = list(self.cluster_calculator.cluster_tags.values())[0]
+        sims = self.cluster_calculator.compute_topic_similarities_batch(interesting_topics, first_cluster_tags)
+        print(f"\n 첫 번째 클러스터와의 유사도:")
+        print(f"형태: {sims.shape}")
+        print(f"값: {sims}")
+        
+        # 6. 실제 선호 카테고리 계산
+        result = self.cluster_calculator.calculate_preferred_categories(interesting_topics)
+        print(f"\n 계산된 선호 카테고리: {result}")
+        
+        return {
+            "status": "success",
+            "embeddings_shape": user_embeddings.shape,
+            "first_embedding_sample": user_embeddings[0][:5].tolist(),
+            "similarity_shape": sims.shape,
+            "similarity_sample": sims.tolist(),
+            "preferred_categories": result
+        }
