@@ -113,12 +113,22 @@ class ClusterSimilarityCalculator:
             if cluster_id not in cluster_max_similarities or max_sim > cluster_max_similarities[cluster_id]:
                 cluster_max_similarities[cluster_id] = max_sim
 
-        # 모든 클러스터를 유사도 순으로 정렬하고 임계값 이상 우선으로 선택
-        all_clusters = list(cluster_max_similarities.items())
-        # 임계값 이상이면 (1, 유사도), 미만이면 (0, 유사도)로 정렬 키 생성
-        # 즉, 임계값 이상 클러스터들이 먼저, 그 안에서는 유사도 높은 순으로 정렬
-        all_clusters.sort(key=lambda x: (x[1] >= similarity_threshold, x[1]), reverse=True)
+        # 임계값 이상의 클러스터 선택 및 유사도 순 정렬
+        candidates = [(cluster_id, sim) for cluster_id, sim in cluster_max_similarities.items()
+                     if sim >= similarity_threshold]
 
-        # 정렬된 클러스터에서 상위 max_categories개의 클러스터 ID 추출 (임계값보다 낮아도 포함 가능, 0개 포함 예외처리)
-        preferred_categories = [cluster_id for cluster_id, _ in all_clusters[:max_categories]]
-        return preferred_categories
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        preferred_categories = [cluster_id for cluster_id, _ in candidates[:max_categories]]
+
+        # 만약 충분하지 않다면 유사도가 낮더라도 추가
+        if len(preferred_categories) < max_categories:
+            remaining_clusters = [(cluster_id, sim) for cluster_id, sim in cluster_max_similarities.items()
+                                if cluster_id not in preferred_categories]
+            remaining_clusters.sort(key=lambda x: x[1], reverse=True)
+
+            needed_count = max_categories - len(preferred_categories)
+            additional_clusters = [cluster_id for cluster_id, _ in remaining_clusters[:needed_count]]
+            preferred_categories.extend(additional_clusters)
+
+        return preferred_categories[:max_categories]
+    
