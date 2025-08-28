@@ -80,7 +80,7 @@ class ClusterSimilarityCalculator:
             similarities = similarities.cpu().numpy()  # (len(topics1), len(topics2))
 
 
-            return torch.clamp(similarities, 0.0, 1.0).cpu().numpy()
+            return similarities
         except Exception as e:
             print(f"배치 유사도 계산 오류: {e}")
             raise e
