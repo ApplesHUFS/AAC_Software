@@ -34,23 +34,19 @@ class UserManager:
 
     def _load_users(self):
         """사용자 데이터 파일 로드."""
-        try:
-            with open(self.users_file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                self.users = {k: v for k, v in data.items()}
+        if not os.path.exists('user_data/users.json'):
+            with open('user_data/users.json', 'w', encoding='utf-8') as f:
+                json.dump({}, f)
 
-        except Exception as e:
-            print(f"사용자 데이터 파일 로드 실패: {e}")
-            self.users = {}
+        with open(self.users_file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            self.users = {k: v for k, v in data.items()}
 
     def _save_users(self):
         """사용자 데이터 저장."""
-        try:
-            os.makedirs(os.path.dirname(self.users_file_path), exist_ok=True)
-            with open(self.users_file_path, 'w', encoding='utf-8') as f:
-                json.dump({k: v for k, v in self.users.items()}, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            raise Exception(f'사용자 데이터 저장 실패: {str(e)}')
+        os.makedirs(os.path.dirname(self.users_file_path), exist_ok=True)
+        with open(self.users_file_path, 'w', encoding='utf-8') as f:
+            json.dump({k: v for k, v in self.users.items()}, f, ensure_ascii=False, indent=2)
 
     def create_user(self, user_id: str, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 생성 및 페르소나 등록.

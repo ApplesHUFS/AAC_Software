@@ -67,21 +67,17 @@ class ConversationSummaryMemory:
 
     def _load_memory(self):
         """메모리 파일에서 데이터 로드."""
-        try:
-            with open(self.memory_file_path, 'r', encoding='utf-8') as f:
-                self.memory_data = json.load(f)
-        except Exception as e:
-            print(f"메모리 파일 로드 실패: {e}")
-            self.memory_data = {"user_memories": {}}
+        if not os.path.exists('user_data/conversation_memory.json'):
+            with open('user_data/conversation_memory.json', 'w', encoding='utf-8') as f:
+                json.dump({"user_memories": {}}, f)
+        with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+            self.memory_data = json.load(f)
 
     def _save_memory(self):
         """메모리 데이터를 파일에 저장."""
-        try:
-            os.makedirs(os.path.dirname(self.memory_file_path), exist_ok=True)
-            with open(self.memory_file_path, 'w', encoding='utf-8') as f:
-                json.dump(self.memory_data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
-            print(f"메모리 파일 저장 실패: {e}")
+        os.makedirs(os.path.dirname(self.memory_file_path), exist_ok=True)
+        with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+            json.dump(self.memory_data, f, ensure_ascii=False, indent=2)
 
     def add_conversation_memory(self,
                               user_id: str,

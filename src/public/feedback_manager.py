@@ -42,6 +42,10 @@ class FeedbackManager:
 
     def _load_from_file(self):
         """파일에서 피드백 데이터 로드"""
+        if not os.path.exists('user_data/feedback.json'):
+            with open('user_data/feedback.json', 'w', encoding='utf-8') as f:
+                json.dump({"interpretations": [], "feedbacks": []}, f)
+
         with open(self.feedback_file_path, "r", encoding="utf-8") as f:
             self._data = json.load(f)
         if self._data.get("feedbacks"):
