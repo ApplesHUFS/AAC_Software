@@ -37,7 +37,7 @@ class AACServiceTester:
 
         print("\n=== 4. 사용자 페르소나 업데이트 및 필요시 선호 카테고리 재계산 ===")
         res = self.service.update_user_persona("test_user", {
-            "interesting_topics": ["흙"]
+            "interesting_topics": ["흙", "가위", "머리카락"]
         })
         pprint(res)
 
