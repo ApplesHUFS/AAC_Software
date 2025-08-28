@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ContextForm } from '../components/context/ContextForm';
 
 const DashboardPage = ({ user, onLogout, onContextCreated }) => {
-  const [showContextForm, setShowContextForm] = useState(false);
+  const [showContextForm, setShowContextForm] = useState(true);
 
   const handleStartNewSession = () => {
     setShowContextForm(true);
