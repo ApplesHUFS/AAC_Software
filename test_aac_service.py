@@ -21,7 +21,7 @@ class AACServiceTester:
             "gender": "남성",
             "disability_type": "지적장애",
             "communication_characteristics": "단순한 단어나 짧은 구문을 선호",
-            "interesting_topics": ["음식", "놀이", "가족"],
+            "interesting_topics": ["게임", "친구", "소방차"],
             "password": "test123"
         }
         res = self.service.register_user("test_user", persona)
