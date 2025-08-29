@@ -1,7 +1,8 @@
+// CardHistoryNavigation.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../../services/cardService';
 
-// 카드 히스토리 내비게이션 컴포넌트
+// 카드 히스토리 네비게이션 컴포넌트
 // 흐름명세서: 이전 추천 결과들을 탐색할 수 있는 기능
 const CardHistoryNavigation = ({ 
   contextId, 
@@ -15,9 +16,12 @@ const CardHistoryNavigation = ({
   const [error, setError] = useState('');
 
   // 히스토리 정보 로드
-  // app.py의 /api/cards/history/{contextId} 엔드포인트 사용
   const fetchHistoryInfo = useCallback(async () => {
-    if (!contextId) return;
+    if (!contextId) {
+      setHistoryInfo(null);
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -38,31 +42,24 @@ const CardHistoryNavigation = ({
     }
   }, [contextId]);
 
-  // 컴포넌트 마운트 시 히스토리 정보 로드
+  // 컴포넌트 마운트 및 contextId 변경 시 히스토리 정보 로드
   useEffect(() => {
     fetchHistoryInfo();
   }, [fetchHistoryInfo]);
 
   // 페이지 변경 처리
-  // app.py의 /api/cards/history/{contextId}/page/{pageNumber} 엔드포인트 사용
-  const handlePageChange = useCallback(async (pageNumber) => {
+  const handlePageNavigation = useCallback(async (pageNumber) => {
     if (pageNumber === currentPage || disabled || loading) return;
     
-    if (pageNumber < 1 || pageNumber > totalPages) return;
+    if (pageNumber < 1 || (historyInfo && pageNumber > historyInfo.totalPages)) return;
 
-    try {
-      const response = await cardService.getHistoryPage(contextId, pageNumber);
-      
-      if (response.success && response.data) {
-        onPageChange(response.data.cards, pageNumber);
-      } else {
-        console.error('페이지 로드 실패:', response.error);
-      }
-    } catch (error) {
-      console.error('히스토리 페이지 로드 실패:', error);
+    // 부모 컴포넌트의 페이지 변경 함수 호출
+    if (onPageChange) {
+      onPageChange(pageNumber);
     }
-  }, [contextId, currentPage, totalPages, disabled, loading, onPageChange]);
+  }, [currentPage, disabled, loading, historyInfo, onPageChange]);
 
+  // 로딩 상태
   if (loading) {
     return (
       <div className="card-history-navigation loading">
@@ -73,6 +70,7 @@ const CardHistoryNavigation = ({
     );
   }
 
+  // 에러 상태
   if (error) {
     return (
       <div className="card-history-navigation error">
@@ -86,6 +84,7 @@ const CardHistoryNavigation = ({
     );
   }
 
+  // 히스토리가 없거나 페이지가 1개뿐인 경우
   if (!historyInfo || historyInfo.totalPages <= 1) {
     return (
       <div className="card-history-navigation single">
@@ -108,7 +107,7 @@ const CardHistoryNavigation = ({
       {/* 페이지 컨트롤 */}
       <div className="page-controls">
         <button 
-          onClick={() => handlePageChange(currentPage - 1)}
+          onClick={() => handlePageNavigation(currentPage - 1)}
           disabled={disabled || loading || currentPage <= 1}
           className="nav-button prev"
           title="이전 카드셋"
@@ -123,7 +122,7 @@ const CardHistoryNavigation = ({
         </div>
         
         <button 
-          onClick={() => handlePageChange(currentPage + 1)}
+          onClick={() => handlePageNavigation(currentPage + 1)}
           disabled={disabled || loading || currentPage >= historyInfo.totalPages}
           className="nav-button next"
           title="다음 카드셋"
@@ -141,7 +140,7 @@ const CardHistoryNavigation = ({
               <button
                 key={summary.pageNumber}
                 className={`page-button ${currentPage === summary.pageNumber ? 'active' : ''}`}
-                onClick={() => handlePageChange(summary.pageNumber)}
+                onClick={() => handlePageNavigation(summary.pageNumber)}
                 disabled={disabled || loading}
                 title={`${summary.cardCount}개 카드 - ${summary.timestamp}`}
               >
@@ -153,7 +152,7 @@ const CardHistoryNavigation = ({
         </div>
       )}
 
-      {/* 내비게이션 도움말 */}
+      {/* 네비게이션 도움말 */}
       <div className="navigation-help">
         <small>
           이전에 추천받은 카드들을 다시 볼 수 있습니다. 

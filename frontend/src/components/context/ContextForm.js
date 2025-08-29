@@ -1,8 +1,7 @@
+// ContextForm.js - 백엔드 검증에 의존하는 간소화된 컨텍스트 폼
 import React, { useState } from 'react';
 import { contextService } from '../../services/contextService';
 
-// 대화 컨텍스트 입력 폼 컴포넌트
-// 현재 상황 정보를 수집하여 개인화된 카드 추천에 활용
 const ContextForm = ({ userId, onContextCreated }) => {
   const [formData, setFormData] = useState({
     place: '',
@@ -12,17 +11,15 @@ const ContextForm = ({ userId, onContextCreated }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 자주 사용되는 장소 예시
+  // 자주 사용되는 예시들
   const PLACE_EXAMPLES = [
     '집', '학교', '병원', '카페', '식당', '공원', '마트', '도서관', '직장', '친구 집'
   ];
 
-  // 자주 사용되는 대화 상대 예시
   const PARTNER_EXAMPLES = [
     '엄마', '아빠', '형/누나/언니/오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
   ];
 
-  // 자주 사용되는 활동 예시
   const ACTIVITY_EXAMPLES = [
     '식사', '공부', '놀이', '치료', '쇼핑', '산책', '운동', '독서', '영화 시청', '게임'
   ];
@@ -35,13 +32,12 @@ const ContextForm = ({ userId, onContextCreated }) => {
       [name]: value
     }));
 
-    // 입력 시 에러 메시지 클리어
     if (error) {
       setError('');
     }
   };
 
-  // 예시 텍스트 클릭으로 입력 필드에 자동 입력
+  // 예시 텍스트 클릭으로 자동 입력
   const handleExampleClick = (fieldName, value) => {
     setFormData(prevData => ({
       ...prevData,
@@ -49,37 +45,13 @@ const ContextForm = ({ userId, onContextCreated }) => {
     }));
   };
 
-  // 폼 입력 검증
-  const validateForm = () => {
-    if (!formData.place.trim()) {
-      return '장소를 입력해주세요.';
-    }
-
-    if (!formData.interactionPartner.trim()) {
-      return '대화 상대를 입력해주세요.';
-    }
-
-    // currentActivity는 선택사항이므로 검증하지 않음
-
-    return null;
-  };
-
-  // 컨텍스트 생성 폼 제출 처리
+  // 컨텍스트 생성 폼 제출 처리 (백엔드에서 모든 검증 수행)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    // 폼 검증
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
     setLoading(true);
 
     try {
-      // app.py 요구사항에 맞게 데이터 정제
       const contextData = {
         userId,
         place: formData.place.trim(),
@@ -90,20 +62,13 @@ const ContextForm = ({ userId, onContextCreated }) => {
       const response = await contextService.createContext(contextData);
       
       if (response.success) {
-        // app.py 응답 구조: response.data에 contextId, userId, place 등 포함
         onContextCreated(response.data);
       } else {
         setError(response.error || '컨텍스트 생성에 실패했습니다.');
       }
     } catch (error) {
       console.error('컨텍스트 생성 에러:', error);
-      
-      // 에러 타입별 처리
-      if (error.message.includes('fetch')) {
-        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
-      } else {
-        setError(error.message || '컨텍스트 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      }
+      setError(error.message || '컨텍스트 생성 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -225,7 +190,6 @@ const ContextForm = ({ userId, onContextCreated }) => {
           </small>
         </div>
 
-        {/* 에러 메시지 */}
         {error && (
           <div className="error-message">
             <span className="error-icon">⚠</span>
@@ -233,7 +197,6 @@ const ContextForm = ({ userId, onContextCreated }) => {
           </div>
         )}
         
-        {/* 제출 버튼 */}
         <div className="form-actions">
           <button 
             type="submit" 
@@ -244,7 +207,6 @@ const ContextForm = ({ userId, onContextCreated }) => {
           </button>
         </div>
 
-        {/* 도움말 */}
         <div className="context-help">
           <h4>입력 가이드</h4>
           <ul>

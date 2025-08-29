@@ -1,6 +1,8 @@
+// CardSelectionPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
-import { CardGrid, SelectedCardsDisplay, CardHistoryNavigation } from '../components/cards/CardGrid';
+import { CardGrid, SelectedCardsDisplay } from '../components/cards/CardGrid';
+import CardHistoryNavigation from '../components/cards/CardHistoryNavigation';
 
 // 카드 선택 페이지 컴포넌트
 // 흐름명세서: 개인화된 카드 추천(70% 관련 + 30% 랜덤), 선택, 히스토리 관리를 담당
@@ -10,14 +12,16 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // 페이지 히스토리 관리 상태
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   
   // UI 상태
   const [isRerolling, setIsRerolling] = useState(false);
 
   // 초기 카드 추천 로드
-  // 흐름명세서: 사용자 페르소나와 컨텍스트를 기반으로 20개 카드 묶음 추천
   const loadInitialCards = useCallback(async () => {
     if (!user?.userId || !contextData?.contextId) {
       setError('사용자 정보 또는 컨텍스트 정보가 없습니다.');
@@ -32,9 +36,14 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       const response = await cardService.getRecommendations(user.userId, contextData.contextId);
       
       if (response.success && response.data) {
-        setCards(response.data.cards || []);
-        setCurrentPage(response.data.pagination?.currentPage || 1);
-        setTotalPages(response.data.pagination?.totalPages || 1);
+        const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
+        setCards(normalizedCards);
+        
+        // 히스토리 정보 업데이트
+        const pagination = response.data.pagination || {};
+        setCurrentPage(pagination.currentPage || 1);
+        setTotalPages(pagination.totalPages || 1);
+        setHistoryLoaded(true);
       } else {
         setError(response.error || '카드 추천을 받을 수 없습니다.');
       }
@@ -57,25 +66,33 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   }, [loadInitialCards]);
 
   // 히스토리 페이지 변경 처리
-  // 흐름명세서: 이전 추천 결과를 다시 볼 수 있음
-  const handlePageChange = useCallback((newCards, pageNumber) => {
-    const formattedCards = newCards.map((filename, index) => ({
-      id: filename.split('_')[0] || filename.replace('.png', ''),
-      name: filename.replace('.png', '').replace('_', ' '),
-      filename,
-      imagePath: `/api/images/${filename}`,
-      index,
-      selected: false
-    }));
+  const handlePageChange = useCallback(async (pageNumber) => {
+    if (!contextData?.contextId || pageNumber === currentPage || loading) return;
+    
+    try {
+      setLoading(true);
+      setError('');
 
-    setCards(formattedCards);
-    setCurrentPage(pageNumber);
-  }, []);
+      const response = await cardService.getHistoryPage(contextData.contextId, pageNumber);
+      
+      if (response.success && response.data) {
+        const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
+        setCards(normalizedCards);
+        setCurrentPage(pageNumber);
+      } else {
+        setError(response.error || '히스토리 페이지를 불러올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('히스토리 페이지 로드 에러:', error);
+      setError(error.message || '히스토리 페이지 로딩 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [contextData?.contextId, currentPage, loading]);
 
   // 카드 재추천 (리롤) 처리
-  // 흐름명세서: 재추천 로직으로 마음에 안드는 카드들이 있으면 리롤 가능함
-  const handleRerollCards = async () => {
-    if (isRerolling) return;
+  const handleRerollCards = useCallback(async () => {
+    if (isRerolling || !user?.userId || !contextData?.contextId) return;
 
     setIsRerolling(true);
     setError('');
@@ -84,9 +101,20 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       const response = await cardService.getRecommendations(user.userId, contextData.contextId);
       
       if (response.success && response.data) {
-        setCards(response.data.cards || []);
-        setCurrentPage(response.data.pagination?.currentPage || 1);
-        setTotalPages(response.data.pagination?.totalPages || 1);
+        const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
+        setCards(normalizedCards);
+        
+        // 리롤 시 페이지 정보 업데이트
+        const pagination = response.data.pagination || {};
+        const newCurrentPage = pagination.currentPage || 1;
+        const newTotalPages = pagination.totalPages || 1;
+        
+        setCurrentPage(newCurrentPage);
+        setTotalPages(newTotalPages);
+        
+        // 히스토리가 업데이트되었음을 표시
+        setHistoryLoaded(false);
+        setTimeout(() => setHistoryLoaded(true), 100);
       } else {
         setError(response.error || '카드 재추천에 실패했습니다.');
       }
@@ -96,18 +124,29 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     } finally {
       setIsRerolling(false);
     }
-  };
+  }, [isRerolling, user?.userId, contextData?.contextId]);
 
   // 카드 선택/해제 처리
-  // 흐름명세서: 사용자의 카드 선택 (1~4개)
-  const handleCardSelection = useCallback((newSelectedCards) => {
-    setSelectedCards(newSelectedCards);
+  const handleCardSelection = useCallback((card) => {
+    if (loading) return;
+
+    const isSelected = selectedCards.some(selected => selected.filename === card.filename);
+    
+    if (isSelected) {
+      // 카드 선택 해제
+      const newSelection = selectedCards.filter(selected => selected.filename !== card.filename);
+      setSelectedCards(newSelection);
+    } else if (selectedCards.length < 4) {
+      // 카드 선택 추가
+      const newSelection = [...selectedCards, card];
+      setSelectedCards(newSelection);
+    }
     
     // 에러 메시지가 있으면 클리어
     if (error && !error.includes('서버') && !error.includes('네트워크')) {
       setError('');
     }
-  }, [error]);
+  }, [selectedCards, loading, error]);
 
   // 선택된 카드 개별 제거 처리
   const handleRemoveSelectedCard = useCallback((cardToRemove) => {
@@ -117,7 +156,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   }, []);
 
   // 카드 선택 완료 및 해석 단계로 진행
-  const handleProceedToInterpretation = async () => {
+  const handleProceedToInterpretation = useCallback(async () => {
     // 선택된 카드 검증
     if (selectedCards.length === 0) {
       setError('최소 1개의 카드를 선택해주세요.');
@@ -134,10 +173,10 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       setError('');
 
       // 서버에서 카드 선택 유효성 검증
-      const validationResponse = await cardService.validateSelection(
-        selectedCards.map(card => card.filename),
-        cards.map(card => card.filename)
-      );
+      const cardFilenames = selectedCards.map(card => card.filename);
+      const availableOptions = cards.map(card => card.filename);
+      
+      const validationResponse = await cardService.validateSelection(cardFilenames, availableOptions);
 
       if (validationResponse.success && validationResponse.data?.valid) {
         // 선택 완료 - 해석 단계로 이동
@@ -151,7 +190,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCards, cards, onCardSelectionComplete]);
 
   // 로딩 상태 렌더링
   if (loading && cards.length === 0) {
@@ -246,14 +285,16 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
 
         {/* 메인 영역 - 카드 그리드 및 히스토리 */}
         <div className="selection-main">
-          {/* 히스토리 내비게이션 */}
-          <CardHistoryNavigation 
-            contextId={contextData.contextId}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            disabled={loading}
-          />
+          {/* 히스토리 네비게이션 */}
+          {historyLoaded && (
+            <CardHistoryNavigation 
+              contextId={contextData.contextId}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              disabled={loading}
+            />
+          )}
           
           {/* 카드 그리드 */}
           {cards.length > 0 ? (
@@ -279,13 +320,15 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
           )}
 
           {/* 카드 정보 */}
-          <div className="cards-info">
-            <p>
-              <strong>{cards.length}개</strong>의 카드가 추천되었습니다. 
-              당신의 관심사 "<strong>{user.interestingTopics?.slice(0, 3).join(', ')}</strong>"와 
-              현재 상황을 고려한 결과입니다.
-            </p>
-          </div>
+          {cards.length > 0 && (
+            <div className="cards-info">
+              <p>
+                <strong>{cards.length}개</strong>의 카드가 추천되었습니다. 
+                당신의 관심사 "<strong>{user.interestingTopics?.slice(0, 3).join(', ')}</strong>"와 
+                현재 상황을 고려한 결과입니다.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

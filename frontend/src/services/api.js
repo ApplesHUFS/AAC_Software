@@ -1,4 +1,4 @@
-// API 클라이언트
+// api.js - API 클라이언트
 // app.py 백엔드와의 HTTP 통신을 담당하는 중앙화된 클라이언트
 
 // 백엔드 서버 주소 (환경에 따라 설정)
@@ -269,43 +269,6 @@ class ApiClient {
       return false;
     }
   }
-
-  // 기본 URL 설정
-  setBaseURL(baseURL) {
-    this.baseURL = baseURL;
-  }
-
-  // 기본 헤더 설정
-  setDefaultHeaders(headers) {
-    this.defaultHeaders = { ...this.defaultHeaders, ...headers };
-  }
-
-  // 인증 토큰 설정 (향후 JWT 사용 시)
-  setAuthToken(token) {
-    if (token) {
-      this.setDefaultHeaders({ 'Authorization': `Bearer ${token}` });
-    } else {
-      delete this.defaultHeaders['Authorization'];
-    }
-  }
-
-  // 디버그 모드 설정
-  setDebugMode(enabled) {
-    this.debugMode = enabled;
-    if (enabled) {
-      console.log('API 클라이언트 디버그 모드가 활성화되었습니다.');
-    }
-  }
-
-  // 현재 설정 정보 조회
-  getConfig() {
-    return {
-      baseURL: this.baseURL,
-      defaultHeaders: { ...this.defaultHeaders },
-      timeout: REQUEST_TIMEOUT,
-      retryConfig: { ...RETRY_CONFIG }
-    };
-  }
 }
 
 // API 클라이언트 인스턴스 생성 및 내보내기
@@ -313,8 +276,10 @@ const apiClient = new ApiClient();
 
 // 개발 환경에서 디버그 정보 출력
 if (process.env.NODE_ENV === 'development') {
-  console.log('API 클라이언트 초기화됨:', apiClient.getConfig());
-  apiClient.setDebugMode(true);
+  console.log('API 클라이언트 초기화됨:', {
+    baseURL: apiClient.baseURL,
+    timeout: REQUEST_TIMEOUT
+  });
 }
 
 export default apiClient;

@@ -1,11 +1,8 @@
+// cardService.js - 히스토리 관련 함수 수정
 import api from './api';
 
-// 카드 관련 서비스
-// app.py의 카드 추천, 선택, 해석 API와 통신
 export const cardService = {
   // 개인화된 카드 추천 요청
-  // 흐름명세서: 70% 관련 카드 + 30% 랜덤 카드로 20개 묶음 추천
-  // app.py의 /api/cards/recommend 엔드포인트와 통신
   async getRecommendations(userId, contextId) {
     try {
       // 입력 검증
@@ -25,7 +22,7 @@ export const cardService = {
       const response = await api.post('/api/cards/recommend', payload);
 
       if (response.success && response.data) {
-        // app.py 응답 구조 검증
+        // 응답 구조 검증
         if (!response.data.cards || !Array.isArray(response.data.cards)) {
           throw new Error('올바르지 않은 카드 추천 응답 형식입니다.');
         }
@@ -48,8 +45,71 @@ export const cardService = {
     }
   },
 
+  // 카드 히스토리 요약 정보 조회
+  async getHistorySummary(contextId) {
+    try {
+      if (!contextId || !contextId.trim()) {
+        throw new Error('컨텍스트 ID가 필요합니다.');
+      }
+
+      const response = await api.get(`/api/cards/history/${contextId.trim()}`);
+
+      if (response.success && response.data) {
+        // 응답 구조 검증
+        if (typeof response.data.totalPages !== 'number') {
+          throw new Error('올바르지 않은 히스토리 응답 형식입니다.');
+        }
+
+        return response;
+      } else {
+        throw new Error(response.error || '히스토리 정보를 불러올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('히스토리 요약 조회 실패:', error);
+      
+      if (error.message.includes('404')) {
+        throw new Error('해당 컨텍스트의 히스토리를 찾을 수 없습니다.');
+      }
+      
+      throw error;
+    }
+  },
+
+  // 특정 히스토리 페이지의 카드 목록 조회
+  async getHistoryPage(contextId, pageNumber) {
+    try {
+      if (!contextId || !contextId.trim()) {
+        throw new Error('컨텍스트 ID가 필요합니다.');
+      }
+
+      if (!pageNumber || pageNumber < 1) {
+        throw new Error('올바른 페이지 번호가 필요합니다.');
+      }
+
+      const response = await api.get(`/api/cards/history/${contextId.trim()}/page/${pageNumber}`);
+
+      if (response.success && response.data) {
+        // 응답 구조 검증
+        if (!response.data.cards || !Array.isArray(response.data.cards)) {
+          throw new Error('올바르지 않은 히스토리 페이지 응답 형식입니다.');
+        }
+
+        return response;
+      } else {
+        throw new Error(response.error || '히스토리 페이지를 불러올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('히스토리 페이지 조회 실패:', error);
+      
+      if (error.message.includes('404')) {
+        throw new Error('요청한 히스토리 페이지를 찾을 수 없습니다.');
+      }
+      
+      throw error;
+    }
+  },
+
   // 카드 선택 유효성 검증
-  // app.py의 /api/cards/validate 엔드포인트와 통신
   async validateSelection(selectedCards, availableOptions = []) {
     try {
       // 입력 검증
@@ -72,7 +132,6 @@ export const cardService = {
         } else if (card && card.filename) {
           return card.filename;
         } else if (card && card.name) {
-          // name에서 filename 생성 (임시 처리)
           return card.name.replace(/ /g, '_') + '.png';
         } else {
           throw new Error('올바르지 않은 카드 형식입니다.');
@@ -102,8 +161,6 @@ export const cardService = {
   },
 
   // 선택된 카드 해석 요청
-  // 흐름명세서: OpenAI API로 3가지 해석 생성
-  // app.py의 /api/cards/interpret 엔드포인트와 통신
   async interpretCards(userId, selectedCards, contextId) {
     try {
       // 입력 검증
@@ -141,7 +198,7 @@ export const cardService = {
       const response = await api.post('/api/cards/interpret', payload);
 
       if (response.success && response.data) {
-        // app.py 응답 구조 검증
+        // 응답 구조 검증
         if (!response.data.interpretations || !Array.isArray(response.data.interpretations)) {
           throw new Error('올바르지 않은 해석 응답 형식입니다.');
         }
@@ -168,73 +225,6 @@ export const cardService = {
     }
   },
 
-  // 카드 추천 히스토리 요약 조회
-  // 흐름명세서: 이전 페이지를 볼 수 있음
-  // app.py의 /api/cards/history/{contextId} 엔드포인트와 통신
-  async getHistorySummary(contextId) {
-    try {
-      if (!contextId || !contextId.trim()) {
-        throw new Error('컨텍스트 ID가 필요합니다.');
-      }
-
-      const response = await api.get(`/api/cards/history/${contextId.trim()}`);
-
-      if (response.success && response.data) {
-        // 응답 구조 검증
-        if (typeof response.data.totalPages !== 'number') {
-          throw new Error('올바르지 않은 히스토리 응답 형식입니다.');
-        }
-
-        return response;
-      } else {
-        throw new Error(response.error || '히스토리 정보를 불러올 수 없습니다.');
-      }
-    } catch (error) {
-      console.error('히스토리 요약 조회 실패:', error);
-      
-      if (error.message.includes('404')) {
-        throw new Error('해당 컨텍스트의 히스토리를 찾을 수 없습니다.');
-      }
-      
-      throw error;
-    }
-  },
-
-  // 특정 히스토리 페이지의 카드 목록 조회
-  // app.py의 /api/cards/history/{contextId}/page/{pageNumber} 엔드포인트와 통신
-  async getHistoryPage(contextId, pageNumber) {
-    try {
-      if (!contextId || !contextId.trim()) {
-        throw new Error('컨텍스트 ID가 필요합니다.');
-      }
-
-      if (!pageNumber || pageNumber < 1) {
-        throw new Error('올바른 페이지 번호가 필요합니다.');
-      }
-
-      const response = await api.get(`/api/cards/history/${contextId.trim()}/page/${pageNumber}`);
-
-      if (response.success && response.data) {
-        // 응답 구조 검증
-        if (!response.data.cards || !Array.isArray(response.data.cards)) {
-          throw new Error('올바르지 않은 히스토리 페이지 응답 형식입니다.');
-        }
-
-        return response;
-      } else {
-        throw new Error(response.error || '히스토리 페이지를 불러올 수 없습니다.');
-      }
-    } catch (error) {
-      console.error('히스토리 페이지 조회 실패:', error);
-      
-      if (error.message.includes('404')) {
-        throw new Error('요청한 히스토리 페이지를 찾을 수 없습니다.');
-      }
-      
-      throw error;
-    }
-  },
-
   // 카드 이미지 URL 생성
   getCardImageUrl(filename) {
     if (!filename) {
@@ -242,8 +232,46 @@ export const cardService = {
       return '/placeholder-card.png'; // 기본 이미지
     }
 
-    // app.py의 이미지 서빙 경로
     return `http://localhost:8000/api/images/${filename}`;
+  },
+
+  // 카드 추천 결과 정규화
+  // app.py에서 받은 카드 데이터를 프론트엔드에서 사용하기 좋은 형태로 변환
+  normalizeCardData(rawCards) {
+    if (!Array.isArray(rawCards)) {
+      console.warn('카드 데이터가 배열이 아닙니다:', rawCards);
+      return [];
+    }
+
+    return rawCards.map((card, index) => {
+      // app.py에서 보내는 형식에 맞춰 처리
+      if (typeof card === 'string') {
+        // 파일명만 있는 경우
+        const filename = card;
+        const name = filename.replace('.png', '').replace(/_/g, ' ');
+        return {
+          id: filename.split('_')[0] || index.toString(),
+          name: name,
+          filename: filename,
+          imagePath: `/api/images/${filename}`,
+          index: index,
+          selected: false
+        };
+      } else if (card && typeof card === 'object') {
+        // 객체 형태인 경우 (app.py 응답 형식)
+        return {
+          id: card.id || card.filename?.split('_')[0] || index.toString(),
+          name: card.name || card.filename?.replace('.png', '').replace(/_/g, ' ') || `Card ${index + 1}`,
+          filename: card.filename || `${card.name?.replace(/ /g, '_')}.png`,
+          imagePath: card.imagePath || `/api/images/${card.filename}`,
+          index: card.index || index,
+          selected: card.selected || false
+        };
+      } else {
+        console.warn('올바르지 않은 카드 데이터 형식:', card);
+        return null;
+      }
+    }).filter(Boolean); // null 값 제거
   },
 
   // 카드 정보 검증
@@ -284,44 +312,5 @@ export const cardService = {
     metadata.hasValidStructure = metadata.filenames.length === selectedCards.length;
     
     return metadata;
-  },
-
-  // 카드 추천 결과 정규화
-  // app.py에서 받은 카드 데이터를 프론트엔드에서 사용하기 좋은 형태로 변환
-  normalizeCardData(rawCards) {
-    if (!Array.isArray(rawCards)) {
-      console.warn('카드 데이터가 배열이 아닙니다:', rawCards);
-      return [];
-    }
-
-    return rawCards.map((card, index) => {
-      // app.py에서 보내는 형식에 맞춰 처리
-      if (typeof card === 'string') {
-        // 파일명만 있는 경우
-        const filename = card;
-        const name = filename.replace('.png', '').replace(/_/g, ' ');
-        return {
-          id: filename.split('_')[0] || index.toString(),
-          name: name,
-          filename: filename,
-          imagePath: `/api/images/${filename}`,
-          index: index,
-          selected: false
-        };
-      } else if (card && typeof card === 'object') {
-        // 객체 형태인 경우
-        return {
-          id: card.id || card.filename?.split('_')[0] || index.toString(),
-          name: card.name || card.filename?.replace('.png', '').replace(/_/g, ' ') || `Card ${index + 1}`,
-          filename: card.filename || `${card.name?.replace(/ /g, '_')}.png`,
-          imagePath: card.imagePath || `/api/images/${card.filename}`,
-          index: card.index || index,
-          selected: card.selected || false
-        };
-      } else {
-        console.warn('올바르지 않은 카드 데이터 형식:', card);
-        return null;
-      }
-    }).filter(Boolean); // null 값 제거
   }
 };

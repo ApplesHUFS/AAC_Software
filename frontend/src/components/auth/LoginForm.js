@@ -1,8 +1,7 @@
+// LoginForm.js - 백엔드 검증에 의존하는 간소화된 로그인 폼
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
 
-// 로그인 폼 컴포넌트
-// 사용자 인증 처리 및 로그인 성공 시 사용자 데이터 전달
 const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [formData, setFormData] = useState({
     userId: '',
@@ -19,52 +18,28 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
       [name]: value
     }));
     
-    // 입력 시 에러 메시지 클리어
     if (error) {
       setError('');
     }
   };
 
   // 로그인 폼 제출 처리
-  // app.py의 로그인 응답 구조에 맞게 처리
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    // 입력 검증
-    if (!formData.userId.trim()) {
-      setError('사용자 ID를 입력해주세요.');
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.password) {
-      setError('비밀번호를 입력해주세요.');
-      setLoading(false);
-      return;
-    }
-
     try {
       const response = await authService.login(formData.userId.trim(), formData.password);
       
       if (response.success && response.data.authenticated) {
-        // app.py 응답 구조: response.data에 userId, authenticated, user 포함
         onLoginSuccess(response.data);
       } else {
-        setError('로그인에 실패했습니다. 사용자 ID와 비밀번호를 확인해주세요.');
+        setError('로그인에 실패했습니다.');
       }
     } catch (error) {
       console.error('로그인 에러:', error);
-      
-      // 네트워크 에러와 인증 에러 구분
-      if (error.message.includes('fetch')) {
-        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
-      } else if (error.message.includes('401')) {
-        setError('사용자 ID 또는 비밀번호가 올바르지 않습니다.');
-      } else {
-        setError(error.message || '로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      }
+      setError(error.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -105,7 +80,6 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
           />
         </div>
 
-        {/* 에러 메시지 표시 */}
         {error && (
           <div className="error-message">
             <span className="error-icon">⚠</span>
@@ -113,7 +87,6 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
           </div>
         )}
         
-        {/* 로그인 버튼 */}
         <button 
           type="submit" 
           className="primary-button"
@@ -123,7 +96,6 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
         </button>
       </form>
       
-      {/* 회원가입 링크 */}
       <div className="auth-switch">
         <p>
           계정이 없으신가요? 
@@ -135,15 +107,6 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
           >
             회원가입
           </button>
-        </p>
-      </div>
-
-      {/* 로그인 도움말 */}
-      <div className="auth-help">
-        <p>
-          <small>
-            로그인에 문제가 있으신가요? 회원가입 시 입력한 사용자 ID와 비밀번호를 확인해주세요.
-          </small>
         </p>
       </div>
     </div>
