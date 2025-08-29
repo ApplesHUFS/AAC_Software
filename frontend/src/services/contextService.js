@@ -1,8 +1,8 @@
-// contextService.js - 백엔드 검증 의존
+// contextService.js - 컨텍스트 관련 서비스
 import api from './api';
 
 export const contextService = {
-  // 새로운 대화 컨텍스트 생성 (백엔드 검증에 의존)
+  // 새로운 대화 컨텍스트 생성
   async createContext(contextData) {
     try {
       const response = await api.post('/api/context', contextData);

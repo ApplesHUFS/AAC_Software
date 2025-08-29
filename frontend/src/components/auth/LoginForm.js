@@ -1,3 +1,4 @@
+
 // LoginForm.js - 백엔드 검증에 의존하는 간소화된 로그인 폼
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';

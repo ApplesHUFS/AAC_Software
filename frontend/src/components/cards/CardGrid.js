@@ -1,8 +1,7 @@
-// CardGrid.js
+// CardGrid.js - 정리된 카드 그리드 컴포넌트
 import React, { useState, useCallback } from 'react';
 
-// 카드 그리드 컴포넌트
-// 추천된 카드들을 격자 형태로 표시하고 선택 기능 제공
+// 카드 그리드 컴포넌트 - 추천된 카드들을 격자 형태로 표시
 const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabled = false }) => {
   // 카드가 선택되었는지 확인
   const isCardSelected = useCallback((card) => {
@@ -12,8 +11,6 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
   // 카드 선택/해제 처리
   const handleCardClick = useCallback((card) => {
     if (disabled) return;
-
-    // 부모 컴포넌트에 카드 객체를 전달 (선택 상태는 부모에서 관리)
     onCardSelect(card);
   }, [disabled, onCardSelect]);
 
@@ -40,7 +37,6 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
         />
       ))}
       
-      {/* 그리드 정보 */}
       <div className="grid-info">
         <p>
           {cards.length}개의 카드 중 {selectedCards.length}개 선택됨 
@@ -52,7 +48,6 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
 };
 
 // 개별 카드 아이템 컴포넌트
-// 흐름명세서: 선택된 카드들은 카드 위에 체크 표시가 뜸
 const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -137,7 +132,6 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
 };
 
 // 선택된 카드 표시 컴포넌트
-// 흐름명세서: 선택된 카드들은 상위의 특수 공간에서도 보임, 카드 페이지가 리롤되어도 이미 선택된 카드들이 바뀌지 않음
 const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => {
   if (selectedCards.length === 0) {
     return (
@@ -194,7 +188,6 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
         </p>
       </div>
 
-      {/* 선택 가이드 */}
       <div className="selection-guide">
         <h5>선택 안내</h5>
         <ul>
