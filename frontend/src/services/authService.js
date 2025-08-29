@@ -1,8 +1,9 @@
-// authService.js - 백엔드 검증 의존
+
+// authService.js - 인증 관련 서비스
 import api from './api';
 
 export const authService = {
-  // 사용자 회원가입 (백엔드 검증에 의존)
+  // 사용자 회원가입
   async register(userData) {
     try {
       const response = await api.post('/api/auth/register', userData);
@@ -13,7 +14,7 @@ export const authService = {
     }
   },
 
-  // 사용자 로그인 (백엔드 검증에 의존)
+  // 사용자 로그인
   async login(userId, password) {
     try {
       const payload = {
@@ -40,7 +41,7 @@ export const authService = {
     }
   },
 
-  // 사용자 프로필 업데이트 (백엔드 검증에 의존)
+  // 사용자 프로필 업데이트
   async updateProfile(userId, updateData) {
     try {
       const response = await api.put(`/api/auth/profile/${userId.trim()}`, updateData);

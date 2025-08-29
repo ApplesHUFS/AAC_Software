@@ -1,4 +1,4 @@
-// InterpretationPage.js
+// InterpretationPage.js - 카드 해석 및 피드백 페이지
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { feedbackService } from '../services/feedbackService';
@@ -10,8 +10,7 @@ const STEPS = {
   COMPLETED: 'completed'          // 해석 완료
 };
 
-// AAC 카드 해석 및 피드백 수집 페이지
-// 흐름명세서에 따른 카드 해석 → Partner 피드백 요청 → 피드백 수집 → 완료
+// 흐름명세서: 카드 해석 → Partner 피드백 요청 → 피드백 수집 → 완료
 const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplete }) => {
   // 해석 관련 상태
   const [interpretations, setInterpretations] = useState([]);
@@ -23,11 +22,10 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(STEPS.INTERPRETING);
   
-  // 진행 상태 추적
+  // 해석 방법
   const [interpretationMethod, setInterpretationMethod] = useState('');
 
   // Partner 피드백 확인 요청
-  // 흐름명세서 4.5단계: partner에게 해석 확인 요청
   const requestPartnerConfirmation = useCallback(async (interpretationData) => {
     try {
       const requestPayload = {
@@ -58,19 +56,9 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   }, [user.userId, selectedCards, contextData]);
 
   // AI 카드 해석 생성
-  // 흐름명세서 4.4단계: 선택된 카드들을 상황에 맞게 해석 (OpenAI API로 3가지 해석 생성)
   const generateInterpretations = useCallback(async () => {
-    // 입력 검증
-    if (!user?.userId) {
-      throw new Error('사용자 정보가 없습니다.');
-    }
-    
-    if (!selectedCards || selectedCards.length === 0) {
-      throw new Error('선택된 카드가 없습니다.');
-    }
-    
-    if (!contextData?.contextId) {
-      throw new Error('대화 컨텍스트 정보가 없습니다.');
+    if (!user?.userId || !selectedCards?.length || !contextData?.contextId) {
+      throw new Error('필수 정보가 누락되었습니다.');
     }
 
     try {
@@ -99,15 +87,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       }
     } catch (error) {
       console.error('해석 생성 에러:', error);
-      
-      // 에러 타입별 처리
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('네트워크 연결을 확인해주세요. 서버에 연결할 수 없습니다.');
-      } else if (error.message.includes('timeout')) {
-        throw new Error('요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.');
-      } else {
-        throw new Error(error.message || '해석 생성 중 예기치 못한 오류가 발생했습니다.');
-      }
+      throw error;
     }
   }, [user, selectedCards, contextData, requestPartnerConfirmation]);
 
@@ -133,14 +113,12 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     
     runInterpretation();
     
-    // Cleanup: API 호출 중 컴포넌트 언마운트 시 메모리 누수 방지
     return () => {
       isCancelled = true;
     };
   }, [generateInterpretations]);
 
   // Partner 피드백 제출 완료 처리
-  // 흐름명세서 마지막 단계: 피드백 수집 완료 후 세션 종료
   const handleFeedbackSubmit = useCallback((feedbackResponse) => {
     if (feedbackResponse?.data?.feedbackResult) {
       setFeedbackResult(feedbackResponse.data.feedbackResult);
@@ -164,7 +142,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     setConfirmationId(null);
     setFeedbackResult(null);
     
-    // 재시도 실행
     generateInterpretations().catch((error) => {
       setError(error.message);
       setLoading(false);
@@ -280,15 +257,9 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
 };
 
 // 해석 결과 표시 컴포넌트
-const InterpretationDisplay = ({ 
-  interpretations, 
-  selectedCards, 
-  contextInfo, 
-  method = 'ai'
-}) => {
+const InterpretationDisplay = ({ interpretations, selectedCards, contextInfo, method = 'ai' }) => {
   return (
     <div className="interpretation-display">
-      {/* 해석 헤더 */}
       <div className="interpretation-header">
         <h2>카드 해석 결과</h2>
         <div className="interpretation-method">
@@ -314,12 +285,6 @@ const InterpretationDisplay = ({
             <div className="context-item">
               <span className="context-label">활동:</span>
               <span className="context-value">{contextInfo.currentActivity}</span>
-            </div>
-          )}
-          {contextInfo.time && (
-            <div className="context-item">
-              <span className="context-label">시간:</span>
-              <span className="context-value">{contextInfo.time}</span>
             </div>
           )}
         </div>
@@ -353,10 +318,7 @@ const InterpretationDisplay = ({
         </p>
         
         {interpretations.map((interpretation, index) => (
-          <div 
-            key={index}
-            className="interpretation-item"
-          >
+          <div key={index} className="interpretation-item">
             <div className="interpretation-number">{index + 1}</div>
             <div className="interpretation-text">
               {interpretation.text || interpretation}
@@ -369,14 +331,7 @@ const InterpretationDisplay = ({
 };
 
 // Partner 피드백 폼 컴포넌트
-const FeedbackForm = ({ 
-  interpretations, 
-  selectedCards, 
-  contextInfo, 
-  userId, 
-  confirmationId,
-  onFeedbackSubmit 
-}) => {
+const FeedbackForm = ({ interpretations, contextInfo, confirmationId, onFeedbackSubmit }) => {
   const [selectedInterpretationIndex, setSelectedInterpretationIndex] = useState(null);
   const [directFeedback, setDirectFeedback] = useState('');
   const [feedbackType, setFeedbackType] = useState('interpretation');
@@ -505,7 +460,6 @@ const FeedbackForm = ({
           </div>
         )}
 
-        {/* 에러 메시지 */}
         {error && (
           <div className="error-message">
             <span className="error-icon">⚠</span>
@@ -513,7 +467,6 @@ const FeedbackForm = ({
           </div>
         )}
 
-        {/* 제출 버튼 */}
         <button 
           type="submit"
           className="primary-button"
@@ -527,13 +480,7 @@ const FeedbackForm = ({
 };
 
 // 해석 완료 결과 컴포넌트
-const InterpretationResult = ({ 
-  feedbackResult, 
-  selectedCards, 
-  contextInfo, 
-  interpretations,
-  onStartNewSession 
-}) => {
+const InterpretationResult = ({ feedbackResult, selectedCards, contextInfo, onStartNewSession }) => {
   const getFinalInterpretation = () => {
     return feedbackResult?.selected_interpretation || 
            feedbackResult?.direct_feedback || 

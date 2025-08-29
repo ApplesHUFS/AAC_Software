@@ -1,8 +1,8 @@
-// CardHistoryNavigation.js
+
+// CardHistoryNavigation.js - 카드 히스토리 네비게이션 컴포넌트
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../../services/cardService';
 
-// 카드 히스토리 네비게이션 컴포넌트
 // 흐름명세서: 이전 추천 결과들을 탐색할 수 있는 기능
 const CardHistoryNavigation = ({ 
   contextId, 
@@ -43,7 +43,6 @@ const CardHistoryNavigation = ({
     }
   }, [contextId]);
 
-  // 컴포넌트 마운트 및 contextId 변경 시 히스토리 정보 로드
   useEffect(() => {
     fetchHistoryInfo();
   }, [fetchHistoryInfo, refreshTrigger]); // refreshTrigger 추가
@@ -54,7 +53,6 @@ const CardHistoryNavigation = ({
     
     if (pageNumber < 1 || (historyInfo && pageNumber > historyInfo.totalPages)) return;
 
-    // 부모 컴포넌트의 페이지 변경 함수 호출
     if (onPageChange) {
       onPageChange(pageNumber);
     }
@@ -105,7 +103,6 @@ const CardHistoryNavigation = ({
         </span>
       </div>
 
-      {/* 페이지 컨트롤 */}
       <div className="page-controls">
         <button 
           onClick={() => handlePageNavigation(currentPage - 1)}
@@ -132,7 +129,6 @@ const CardHistoryNavigation = ({
         </button>
       </div>
 
-      {/* 히스토리 페이지 목록 */}
       {historyInfo.historySummary && historyInfo.historySummary.length > 0 && (
         <div className="page-list">
           <h5>추천 기록</h5>
@@ -153,7 +149,6 @@ const CardHistoryNavigation = ({
         </div>
       )}
 
-      {/* 네비게이션 도움말 */}
       <div className="navigation-help">
         <small>
           이전에 추천받은 카드들을 다시 볼 수 있습니다. 

@@ -1,7 +1,8 @@
+
+// DashboardPage.js - 대시보드 페이지 컴포넌트
 import React, { useState } from 'react';
 import { ContextForm } from '../components/context/ContextForm';
 
-// 대시보드 페이지 컴포넌트
 // 로그인된 사용자의 메인 페이지로 사용자 정보 표시 및 새 대화 세션 시작
 const DashboardPage = ({ user, onLogout, onContextCreated }) => {
   const [showContextForm, setShowContextForm] = useState(false);
@@ -12,7 +13,6 @@ const DashboardPage = ({ user, onLogout, onContextCreated }) => {
   };
 
   // 컨텍스트 생성 완료 처리
-  // 부모 컴포넌트로 생성된 컨텍스트 데이터 전달
   const handleContextCreated = (contextData) => {
     onContextCreated(contextData);
   };
@@ -88,28 +88,6 @@ const DashboardPage = ({ user, onLogout, onContextCreated }) => {
                 </div>
               </div>
             </div>
-
-            {/* 의사소통 특성 정보 */}
-            {user.communicationCharacteristics && (
-              <div className="communication-info">
-                <h4>의사소통 특성</h4>
-                <p>{user.communicationCharacteristics}</p>
-              </div>
-            )}
-
-            {/* 관심 주제 목록 */}
-            {user.interestingTopics && user.interestingTopics.length > 0 && (
-              <div className="interests-section">
-                <h4>관심 주제</h4>
-                <div className="topics-list">
-                  {user.interestingTopics.map((topic, index) => (
-                    <span key={index} className="topic-tag">
-                      {topic}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           /* 컨텍스트 입력 폼 */
@@ -117,6 +95,28 @@ const DashboardPage = ({ user, onLogout, onContextCreated }) => {
             userId={user.userId}
             onContextCreated={handleContextCreated}
           />
+        )}
+
+        {/* 의사소통 특성 정보 */}
+        {!showContextForm && user.communicationCharacteristics && (
+          <div className="communication-info">
+            <h4>의사소통 특성</h4>
+            <p>{user.communicationCharacteristics}</p>
+          </div>
+        )}
+
+        {/* 관심 주제 목록 */}
+        {!showContextForm && user.interestingTopics && user.interestingTopics.length > 0 && (
+          <div className="interests-section">
+            <h4>관심 주제</h4>
+            <div className="topics-list">
+              {user.interestingTopics.map((topic, index) => (
+                <span key={index} className="topic-tag">
+                  {topic}
+                </span>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

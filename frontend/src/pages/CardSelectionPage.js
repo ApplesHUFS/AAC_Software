@@ -1,11 +1,10 @@
-// CardSelectionPage.js
+// CardSelectionPage.js - 카드 선택 페이지 컴포넌트
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { CardGrid, SelectedCardsDisplay } from '../components/cards/CardGrid';
 import CardHistoryNavigation from '../components/cards/CardHistoryNavigation';
 
-// 카드 선택 페이지 컴포넌트
-// 흐름명세서: 개인화된 카드 추천(70% 관련 + 30% 랜덤), 선택, 히스토리 관리를 담당
+// 흐름명세서: 개인화된 카드 추천(70% 관련 + 30% 랜덤), 선택, 히스토리 관리
 const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   // 카드 관련 상태
   const [cards, setCards] = useState([]);
@@ -46,18 +45,12 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         const pagination = response.data.pagination || {};
         setCurrentPage(pagination.currentPage || 1);
         setTotalPages(pagination.totalPages || 1);
-        setHistoryLoaded(true);
       } else {
         setError(response.error || '카드 추천을 받을 수 없습니다.');
       }
     } catch (error) {
       console.error('카드 로딩 에러:', error);
-      
-      if (error.message.includes('fetch')) {
-        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
-      } else {
-        setError(error.message || '카드 로딩 중 오류가 발생했습니다.');
-      }
+      setError(error.message || '카드 로딩 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -140,25 +133,21 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     
     if (isSelected) {
       // 카드 선택 해제
-      const newSelection = selectedCards.filter(selected => selected.filename !== card.filename);
-      setSelectedCards(newSelection);
+      setSelectedCards(prev => prev.filter(selected => selected.filename !== card.filename));
     } else if (selectedCards.length < 4) {
       // 카드 선택 추가
-      const newSelection = [...selectedCards, card];
-      setSelectedCards(newSelection);
+      setSelectedCards(prev => [...prev, card]);
     }
     
-    // 에러 메시지가 있으면 클리어
-    if (error && !error.includes('서버') && !error.includes('네트워크')) {
+    // 에러 메시지 클리어
+    if (error) {
       setError('');
     }
   }, [selectedCards, loading, error]);
 
   // 선택된 카드 개별 제거 처리
   const handleRemoveSelectedCard = useCallback((cardToRemove) => {
-    setSelectedCards(prevSelected => 
-      prevSelected.filter(card => card.filename !== cardToRemove.filename)
-    );
+    setSelectedCards(prev => prev.filter(card => card.filename !== cardToRemove.filename));
   }, []);
 
   // 카드 선택 완료 및 해석 단계로 진행
@@ -178,11 +167,9 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       setLoading(true);
       setError('');
 
-      // 서버에서 카드 선택 유효성 검증
-      const cardFilenames = selectedCards.map(card => card.filename);
-      const availableOptions = cards.map(card => card.filename);
-      
-      const validationResponse = await cardService.validateSelection(cardFilenames, availableOptions);
+      // 백엔드에서 카드 선택 유효성 검증
+      const availableOptions = cards; // 현재 표시된 모든 카드
+      const validationResponse = await cardService.validateSelection(selectedCards, availableOptions);
 
       if (validationResponse.success && validationResponse.data?.valid) {
         // 선택 완료 - 해석 단계로 이동
@@ -268,16 +255,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
             >
               해석하기 ({selectedCards.length}개 선택됨)
             </button>
-          </div>
-
-          {/* 선택 가이드 */}
-          <div className="selection-guide">
-            <h4>선택 가이드</h4>
-            <ul>
-              <li>1-4개의 카드를 선택하세요</li>
-              <li>표현하고 싶은 내용을 담은 카드들을 선택하세요</li>
-              <li>카드 순서는 의미를 전달하는데 중요할 수 있어요</li>
-            </ul>
           </div>
 
           {/* 에러 메시지 */}

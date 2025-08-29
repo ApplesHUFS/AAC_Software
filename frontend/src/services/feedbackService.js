@@ -1,8 +1,8 @@
-// feedbackService.js - 백엔드 검증 의존
+// feedbackService.js - 피드백 관련 서비스
 import api from './api';
 
 export const feedbackService = {
-  // Partner 확인 요청 (백엔드 검증에 의존)
+  // Partner 확인 요청
   async requestPartnerConfirmation(requestData) {
     try {
       const response = await api.post('/api/feedback/request', requestData);
@@ -13,7 +13,7 @@ export const feedbackService = {
     }
   },
 
-  // Partner 피드백 제출 (백엔드 검증에 의존)
+  // Partner 피드백 제출
   async submitPartnerFeedback(confirmationId, feedbackData) {
     try {
       const payload = {
