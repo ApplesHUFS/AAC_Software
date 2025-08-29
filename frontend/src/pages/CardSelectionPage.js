@@ -43,6 +43,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         const pagination = response.data.pagination || {};
         setCurrentPage(pagination.currentPage || 1);
         setTotalPages(pagination.totalPages || 1);
+        setHistoryLoaded(true);
       } else {
         setError(response.error || '카드 추천을 받을 수 없습니다.');
       }
