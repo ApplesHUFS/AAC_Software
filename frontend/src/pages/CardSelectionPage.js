@@ -15,6 +15,10 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   // 페이지 히스토리 관리 상태
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // 새로 추가 : 히스토리 새로고침 트리거
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   
   // UI 상태
   const [isRerolling] = useState(false);
@@ -84,9 +88,42 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
 
   // 카드 재추천 (리롤) 처리
   const handleRerollCards = useCallback(async () => {
-    if (isRerolling) return;
-    await loadInitialCards();
-  }, [isRerolling, loadInitialCards]);
+    if (isRerolling || !user?.userId || !contextData?.contextId) return;
+
+    setIsRerolling(true);
+    setError('');
+
+    try {
+      const response = await cardService.getRecommendations(user.userId, contextData.contextId);
+      
+      if (response.success && response.data) {
+        const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
+        setCards(normalizedCards);
+        
+        // 리롤 시 페이지 정보 업데이트
+        const pagination = response.data.pagination || {};
+        const newCurrentPage = pagination.currentPage || 1;
+        const newTotalPages = pagination.totalPages || 1;
+        
+        setCurrentPage(newCurrentPage);
+        setTotalPages(newTotalPages);
+
+        // 새로 추가
+        setHistoryRefreshTrigger(prev => prev +1);
+        
+        // 히스토리가 업데이트되었음을 표시
+        setHistoryLoaded(false);
+        setTimeout(() => setHistoryLoaded(true), 100);
+      } else {
+        setError(response.error || '카드 재추천에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('카드 재추천 에러:', error);
+      setError(error.message || '카드 재추천 중 오류가 발생했습니다.');
+    } finally {
+      setIsRerolling(false);
+    }
+  }, [isRerolling, user?.userId, contextData?.contextId]);
 
   // 카드 선택/해제 처리
   const handleCardSelection = useCallback((card) => {
@@ -232,13 +269,16 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         {/* 메인 영역 - 카드 그리드 및 히스토리 */}
         <div className="selection-main">
           {/* 히스토리 네비게이션 */}
-          <CardHistoryNavigation 
-            contextId={contextData.contextId}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            disabled={loading}
-          />
+          {historyLoaded && (
+            <CardHistoryNavigation 
+              contextId={contextData.contextId}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              disabled={loading}
+              refreshTrigger={historyRefreshTrigger} // 새로 추가
+            />
+          )}
           
           {/* 카드 그리드 */}
           {cards.length > 0 ? (
