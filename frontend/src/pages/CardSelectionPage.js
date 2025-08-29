@@ -15,9 +15,13 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   // 페이지 히스토리 관리 상태
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // 새로 추가 : 히스토리 새로고침 트리거
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   
   // UI 상태
-  const [isRerolling] = useState(false);
+  const [isRerolling, setIsRerolling] = useState(false);
 
   // 초기 카드 추천 로드
   const loadInitialCards = useCallback(async () => {
