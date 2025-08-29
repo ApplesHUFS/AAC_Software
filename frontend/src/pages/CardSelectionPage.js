@@ -17,7 +17,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   const [totalPages, setTotalPages] = useState(1);
   
   // UI 상태
-  const [isRerolling, setIsRerolling] = useState(false);
+  const [isRerolling] = useState(false);
 
   // 초기 카드 추천 로드
   const loadInitialCards = useCallback(async () => {
