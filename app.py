@@ -637,6 +637,37 @@ def validate_cards():
         selected_cards = data.get('selectedCards', [])
         available_options = data.get('availableOptions', [])
 
+        # history 불러오기 (카드 추천 누적) - new
+        context_id = data.get('contextId')
+        if not context_id:
+            # contextId가 없으면 기존 방식 그대로 사용
+            all_available_cards = available_options
+        else:
+            # 히스토리에서 모든 카드 파일명들을 가져와서 누적
+            all_card_filenames = set()
+            
+            # 현재 전달받은 available_options의 파일명들 추가
+            for card in available_options:
+                if isinstance(card, dict) and 'filename' in card:
+                    all_card_filenames.add(card['filename'])
+                elif isinstance(card, str):
+                    all_card_filenames.add(card)
+
+            history_result = aac_service.get_card_recommendation_history_summary(context_id)
+            if history_result['status'] == 'success':
+                for page_info in history_result['history_summary']:
+                    page_result = aac_service.get_card_recommendation_history_page(
+                        context_id, page_info['page_number']
+                    )
+                    if page_result['status'] == 'success':
+                        for card_filename in page_result['cards']:
+                            all_card_filenames.add(card_filename)
+            
+            # 파일명을 리스트로 변환
+            all_available_cards = list(all_card_filenames)
+
+
+
         if not selected_cards:
             return api_response(
                 success=False,
@@ -644,7 +675,7 @@ def validate_cards():
                 status_code=400
             )
 
-        result = aac_service.validate_card_selection(selected_cards, available_options)
+        result = aac_service.validate_card_selection(selected_cards, all_available_cards)
 
         return api_response(
             data={
