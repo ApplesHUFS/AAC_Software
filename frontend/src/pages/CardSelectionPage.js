@@ -104,8 +104,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         setCurrentPage(newCurrentPage);
         setTotalPages(newTotalPages);
 
-        // 새로 추가
-        setHistoryRefreshTrigger(prev => prev +1);
         
         // 히스토리가 업데이트되었음을 표시
         setHistoryLoaded(false);
@@ -272,7 +270,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
               totalPages={totalPages}
               onPageChange={handlePageChange}
               disabled={loading}
-              refreshTrigger={historyRefreshTrigger} // 새로 추가
             />
           )}
           

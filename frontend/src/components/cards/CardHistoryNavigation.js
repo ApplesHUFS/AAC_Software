@@ -10,7 +10,6 @@ const CardHistoryNavigation = ({
   totalPages = 1, 
   onPageChange, 
   disabled = false,
-  refreshTrigger = 0 // 새로 추가 
 }) => {
   const [historyInfo, setHistoryInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +44,7 @@ const CardHistoryNavigation = ({
 
   useEffect(() => {
     fetchHistoryInfo();
-  }, [fetchHistoryInfo, refreshTrigger]); // refreshTrigger 추가
+  }, [fetchHistoryInfo]);
 
   // 페이지 변경 처리
   const handlePageNavigation = useCallback(async (pageNumber) => {
