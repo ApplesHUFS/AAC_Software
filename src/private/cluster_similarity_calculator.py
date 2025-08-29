@@ -74,7 +74,7 @@ class ClusterSimilarityCalculator:
             similarities = torch.mm(embeddings1, embeddings2.T)
             similarities = (similarities + 1) / 2  # -1~1을 0~1로 변환
 
-            return torch.clamp(similarities, 0.0, 1.0).cpu().numpy()
+            return similarities
 
         except Exception as e:
             print(f"배치 유사도 계산 오류: {e}")
