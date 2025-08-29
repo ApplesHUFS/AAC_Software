@@ -17,6 +17,9 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // 새로 추가 : 히스토리 새로고침 트리거
+  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   
   // UI 상태
   const [isRerolling, setIsRerolling] = useState(false);
@@ -111,6 +114,9 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         
         setCurrentPage(newCurrentPage);
         setTotalPages(newTotalPages);
+
+        // 새로 추가
+        setHistoryRefreshTrigger(prev => prev +1);
         
         // 히스토리가 업데이트되었음을 표시
         setHistoryLoaded(false);
@@ -293,6 +299,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
               totalPages={totalPages}
               onPageChange={handlePageChange}
               disabled={loading}
+              refreshTrigger={historyRefreshTrigger} // 새로 추가
             />
           )}
           
