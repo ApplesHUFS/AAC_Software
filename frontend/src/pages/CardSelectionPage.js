@@ -17,8 +17,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
-  // 새로 추가 : 히스토리 새로고침 트리거
-  const [historyRefreshTrigger, setHistoryRefreshTrigger] = useState(0);
   
   // UI 상태
   const [isRerolling, setIsRerolling] = useState(false);
