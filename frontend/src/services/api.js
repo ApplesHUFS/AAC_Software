@@ -14,7 +14,7 @@ const HTTP_STATUS = {
 };
 
 // 요청 타임아웃 및 재시도 설정
-const REQUEST_TIMEOUT = 30000;
+const REQUEST_TIMEOUT = 3000000;
 const RETRY_CONFIG = {
   maxRetries: 3,
   retryDelay: 1000,

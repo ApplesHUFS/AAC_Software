@@ -1,4 +1,4 @@
-// cardService.js - AAC 카드 관련 서비스 함수들
+// frontend/src/services/cardService.js
 import api from './api';
 
 export const cardService = {
@@ -24,9 +24,9 @@ export const cardService = {
     } catch (error) {
       console.error('카드 추천 요청 실패:', error);
       
-      if (error.message.includes('404')) {
+      if (error.status === 404) {
         throw new Error('사용자 또는 컨텍스트를 찾을 수 없습니다.');
-      } else if (error.message.includes('503')) {
+      } else if (error.status === 503) {
         throw new Error('카드 추천 시스템을 사용할 수 없습니다.');
       }
       
@@ -74,14 +74,14 @@ export const cardService = {
     }
   },
 
-  // 카드 선택 유효성 검증 - 백엔드 형식에 맞게 수정
+  // 카드 선택 유효성 검증
   async validateSelection(selectedCards, availableOptions = []) {
     try {
       if (!selectedCards || selectedCards.length === 0) {
         throw new Error('선택된 카드가 없습니다.');
       }
 
-      // 백엔드가 기대하는 형식으로 변환: 카드 파일명 배열
+      // 선택된 카드를 파일명 배열로 변환
       const selectedCardFilenames = selectedCards.map(card => {
         if (typeof card === 'string') {
           return card;
@@ -92,13 +92,15 @@ export const cardService = {
         }
       });
 
+      // 사용 가능한 카드를 파일명 배열로 변환
       const availableCardFilenames = availableOptions.map(card => {
         if (typeof card === 'string') {
           return card;
         } else if (card?.filename) {
           return card.filename;
         } else {
-          return card;
+          console.warn('알 수 없는 카드 형식:', card);
+          return String(card);
         }
       });
 
@@ -106,6 +108,11 @@ export const cardService = {
         selectedCards: selectedCardFilenames,
         availableOptions: availableCardFilenames
       };
+
+      console.log('카드 검증 요청:', {
+        selected: selectedCardFilenames.length,
+        available: availableCardFilenames.length
+      });
 
       const response = await api.post('/api/cards/validate', payload);
       
@@ -127,7 +134,7 @@ export const cardService = {
         throw new Error('사용자 ID와 선택된 카드가 필요합니다.');
       }
 
-      // 백엔드가 기대하는 형식으로 변환: 카드 파일명 배열
+      // 카드를 파일명 배열로 변환
       const cardFilenames = selectedCards.map(card => {
         if (typeof card === 'string') {
           return card;
@@ -144,6 +151,12 @@ export const cardService = {
         contextId: contextId?.trim() || null
       };
 
+      console.log('카드 해석 요청:', {
+        userId: payload.userId,
+        cardCount: cardFilenames.length,
+        contextId: payload.contextId
+      });
+
       const response = await api.post('/api/cards/interpret', payload);
 
       if (response.success && response.data?.interpretations) {
@@ -154,7 +167,7 @@ export const cardService = {
     } catch (error) {
       console.error('카드 해석 요청 실패:', error);
       
-      if (error.message.includes('503')) {
+      if (error.status === 503) {
         throw new Error('카드 해석 시스템을 사용할 수 없습니다.');
       }
       
@@ -170,7 +183,7 @@ export const cardService = {
     return `http://localhost:8000/api/images/${filename}`;
   },
 
-  // 카드 추천 결과 정규화
+  // 카드 데이터 정규화
   normalizeCardData(rawCards) {
     if (!Array.isArray(rawCards)) {
       console.warn('카드 데이터가 배열이 아닙니다:', rawCards);
@@ -205,5 +218,31 @@ export const cardService = {
         return null;
       }
     }).filter(Boolean);
+  },
+
+  // 카드 데이터 중복 제거
+  deduplicateCards(cards) {
+    if (!Array.isArray(cards)) return [];
+    
+    const seen = new Set();
+    return cards.filter(card => {
+      const key = card.filename || card.name || card.id;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  },
+
+  // 카드 선택 상태 확인
+  isCardSelected(card, selectedCards) {
+    if (!card || !Array.isArray(selectedCards)) return false;
+    
+    return selectedCards.some(selected => {
+      return (selected.filename === card.filename) || 
+             (selected.id === card.id) ||
+             (selected.name === card.name);
+    });
   }
 };

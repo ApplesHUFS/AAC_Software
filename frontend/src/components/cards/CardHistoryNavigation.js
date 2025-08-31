@@ -1,9 +1,8 @@
-
-// CardHistoryNavigation.js - 카드 히스토리 네비게이션 컴포넌트
+// frontend/src/components/cards/CardHistoryNavigation.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../../services/cardService';
 
-// 흐름명세서: 이전 추천 결과들을 탐색할 수 있는 기능
+// 이전 추천 결과들을 탐색할 수 있는 기능
 const CardHistoryNavigation = ({ 
   contextId, 
   currentPage = 1, 
@@ -32,7 +31,8 @@ const CardHistoryNavigation = ({
       if (response.success && response.data) {
         setHistoryInfo(response.data);
       } else {
-        setError(response.error || '히스토리 정보를 불러올 수 없습니다.');
+        // 히스토리가 없는 경우는 에러가 아님
+        setHistoryInfo(null);
       }
     } catch (error) {
       console.error('히스토리 조회 실패:', error);
@@ -83,7 +83,7 @@ const CardHistoryNavigation = ({
   }
 
   // 히스토리가 없거나 페이지가 1개뿐인 경우
-  if (!historyInfo || historyInfo.totalPages <= 1) {
+  if (!historyInfo || totalPages <= 1) {
     return (
       <div className="card-history-navigation single">
         <div className="navigation-info">
@@ -98,7 +98,7 @@ const CardHistoryNavigation = ({
       <div className="navigation-header">
         <h4>카드 추천 히스토리</h4>
         <span className="page-indicator">
-          {currentPage} / {historyInfo.totalPages} 페이지
+          {currentPage} / {totalPages} 페이지
         </span>
       </div>
 
@@ -115,12 +115,12 @@ const CardHistoryNavigation = ({
         <div className="page-info">
           <span className="current-page">{currentPage}</span>
           <span className="separator">/</span>
-          <span className="total-pages">{historyInfo.totalPages}</span>
+          <span className="total-pages">{totalPages}</span>
         </div>
         
         <button 
           onClick={() => handlePageNavigation(currentPage + 1)}
-          disabled={disabled || loading || currentPage >= historyInfo.totalPages}
+          disabled={disabled || loading || currentPage >= totalPages}
           className="nav-button next"
           title="다음 카드셋"
         >
