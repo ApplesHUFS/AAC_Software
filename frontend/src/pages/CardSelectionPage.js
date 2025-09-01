@@ -1,5 +1,5 @@
 // frontend/src/pages/CardSelectionPage.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { CardGrid, SelectedCardsDisplay } from '../components/cards/CardGrid';
 import CardHistoryNavigation from '../components/cards/CardHistoryNavigation';
@@ -70,9 +70,15 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     }
   }, [user?.userId, contextData?.contextId, addToRecommendedCards]);
 
+  // 중복 호출 방지용 ref 선언
+  const hasLoadedRef = useRef(false);
+
   // 컴포넌트 마운트 시 초기 카드 로드
   useEffect(() => {
-    loadInitialCards();
+    if (!hasLoadedRef.current) {
+      loadInitialCards();
+      hasLoadedRef.current = true;
+    }
   }, [loadInitialCards]);
 
   // 히스토리 페이지 변경 처리
