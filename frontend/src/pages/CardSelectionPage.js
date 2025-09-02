@@ -1,5 +1,5 @@
 // src/pages/CardSelectionPage.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { CardGrid, SelectedCardsDisplay } from '../components/cards/CardGrid';
 import CardHistoryNavigation from '../components/cards/CardHistoryNavigation';
@@ -18,6 +18,10 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   
   // UI 상태
   const [isRerolling, setIsRerolling] = useState(false);
+
+  // 중복 호출 방지를 위한 ref
+  const isInitialLoadDone = useRef(false);
+  const isComponentMounted = useRef(false);
 
   // 추천받은 카드를 전체 카드 풀에 추가
   const addToRecommendedCards = useCallback((newCards) => {
@@ -49,7 +53,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         setCards(normalizedCards);
         addToRecommendedCards(normalizedCards);
         
-        // 페이지 정보 업데이트
+        // 페이지 정보 업데이트 - 초기 로드 시에는 항상 1페이지부터 시작
         const pagination = response.data.pagination || {};
         const latestPage = pagination.totalPages || 1;
         setCurrentPage(latestPage);
@@ -64,9 +68,20 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     }
   }, [user?.userId, contextData?.contextId, addToRecommendedCards]);
 
-  // 컴포넌트 마운트 시 초기 카드 로드
+  // 컴포넌트 마운트 시 초기 카드 로드 (중복 호출 방지)
   useEffect(() => {
-    loadInitialCards();
+    isComponentMounted.current = true;
+
+    // React StrictMode에서 중복 실행 방지
+    if (!isInitialLoadDone.current && isComponentMounted.current) {
+      isInitialLoadDone.current = true;
+      loadInitialCards();
+    }
+
+    // cleanup 함수
+    return () => {
+      isComponentMounted.current = false;
+    };
   }, [loadInitialCards]);
 
   // 히스토리 페이지 변경 처리
