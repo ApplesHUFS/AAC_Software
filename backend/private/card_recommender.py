@@ -2,7 +2,7 @@ from typing import Dict, List, Optional, Any
 import json
 import random
 from pathlib import Path
-
+from .cluster_similarity_calculator import ClusterSimilarityCalculator
 
 class CardRecommender:
     """페르소나 기반 AAC 카드 추천 시스템.
@@ -27,7 +27,10 @@ class CardRecommender:
         self.clustered_files = {}
         self.all_cards = []
         self.recommendation_history = {}  # context_id별 추천 히스토리
-
+        self.cluster_calculator = ClusterSimilarityCalculator(
+                cluster_tags_path=self.config['cluster_tags_path'],
+                config=self.config
+            )
         # 클러스터링 결과 로드
         if Path(clustering_results_path).exists():
             with open(clustering_results_path, 'r', encoding='utf-8') as f:
@@ -46,6 +49,7 @@ class CardRecommender:
         Args:
             persona: 사용자 페르소나 정보 중 일부 (preferred_category_types)
             context: 현재 상황 정보
+            context_id: 현재 상황 정보 ID
 
         Returns:
             Dict containing:
@@ -59,19 +63,20 @@ class CardRecommender:
         num_random = total_cards - num_recommendations
 
         preferred_clusters = persona.get('preferred_category_types')
+        current_activity=context.get('current_activity')
 
         # 히스토리 초기화
         if context_id not in self.recommendation_history:
             self.recommendation_history[context_id] = []
 
-        # 선호 클러스터에서 추천 카드 선택
-        recommended_cards = self._select_from_preferred_clusters(preferred_clusters, num_recommendations)
+        # current_activity와 관련된 클러스터에서 추천 카드 선택
+        recommended_cards = self._select_from_context_clusters(current_activity, num_recommendations)
 
-        # 랜덤 카드 추가
-        random_cards = self._select_random_cards(exclude_cards=recommended_cards, num_cards=num_random)
+        # preferred_category_types에서 나머지 추천 카드 선택
+        prefer_cards = self._select_from_preferred_clusters(exclude_cards=recommended_cards, num_cards=num_random)
 
         # 전체 선택지 생성 (순서 섞기)
-        all_selection_cards = recommended_cards + random_cards
+        all_selection_cards = recommended_cards + prefer_cards
         random.shuffle(all_selection_cards)
 
         self._add_to_recommendation_history(context_id, all_selection_cards)
@@ -95,7 +100,7 @@ class CardRecommender:
         return {
             'status': 'success',
             'interface_data': interface_data,
-            'message': f'카드 선택 인터페이스 생성 완료 (추천: {len(recommended_cards)}, 랜덤: {len(random_cards)})'
+            'message': f'카드 선택 인터페이스 생성 완료 (상황 관련: {len(recommended_cards)}, 선호 관련: {len(prefer_cards)})'
         }
 
     def _select_from_preferred_clusters(self, preferred_clusters: List[int], num_cards: int) -> List[str]:
@@ -322,3 +327,37 @@ class CardRecommender:
             'history_summary': history_summary,
             'message': f'컨텍스트 {context_id}의 추천 히스토리 요약 (총 {total_pages}페이지)'
         }
+    
+    def _select_from_context_clusters(self, current_activity: str, num_cards: int) -> List[str]:
+        """
+        current_activity와 유사도가 높은 클러스터에서 카드 선택
+
+        Args:
+            current_activity: 현재 활동 정보
+            num_cards: 뽑을 카드 수
+        
+            Returns:
+                List[str]: 선택된 카드 파일명들
+        """
+        selected_cards=[]
+        if not current_activity:
+            return self._select_random_cards([], num_cards)
+        
+        try:
+            context_preferred_clusters = self.cluster_calculator.calculate_preferred_categories(
+                interesting_topics=[current_activity],
+                similarity_threshold=0.3,  
+                max_categories=6
+            )
+
+            # 해당 클러스터들에서 카드 선택
+            selected_cards = self._select_from_preferred_clusters(
+                context_preferred_clusters, 
+                num_cards, 
+                exclude_cards=[]
+            )
+        
+        except Exception as e:
+            print(f'context 기반 카드 선택 오류: {e}')
+        
+        return selected_cards
