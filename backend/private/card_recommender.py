@@ -347,7 +347,7 @@ class CardRecommender:
             context_preferred_clusters = self.cluster_calculator.calculate_preferred_categories(
                 interesting_topics=[current_activity],
                 similarity_threshold=0.3,  
-                max_categories=6
+                max_categories=3
             )
 
             # 해당 클러스터들에서 카드 선택
