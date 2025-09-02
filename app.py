@@ -17,14 +17,14 @@ CORS(app,
      supports_credentials=True
 )
 
-# AAC 서비스 인스턴스 생성
+# AAC 서비스 인스턴스 
 aac_service = AACInterpreterService()
 
-# ===== React 친화적 응답 형식 =====
+# ===== API 응답 형식 =====
 
 def api_response(success: bool = True, data: Any = None, message: str = "",
                 error: str = "", status_code: int = 200) -> tuple:
-    """React 친화적 API 응답 형식"""
+    """API 응답 형식"""
     response = {
         "success": success,
         "timestamp": datetime.now().isoformat(),
@@ -40,7 +40,7 @@ def api_response(success: bool = True, data: Any = None, message: str = "",
     return jsonify(response), status_code
 
 def validate_json_request() -> Optional[Dict[str, Any]]:
-    """JSON 요청 데이터 검증"""
+    """JSON 검증"""
     if not request.is_json:
         return None
     return request.get_json()

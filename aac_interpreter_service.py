@@ -1,17 +1,17 @@
 from typing import Dict, List, Optional, Any
 
 # Public
-from src.public import UserManager, ContextManager, FeedbackManager
+from backend.public import UserManager, ContextManager, FeedbackManager
 
 # Private
-from src.private import (
+from backend.private import (
     CardRecommender,
     CardInterpreter,
     ConversationSummaryMemory,
     ClusterSimilarityCalculator
 )
 
-from src.service_config import SERVICE_CONFIG
+from backend.service_config import SERVICE_CONFIG
 
 
 class AACInterpreterService:
