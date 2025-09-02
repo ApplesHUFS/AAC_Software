@@ -1,4 +1,4 @@
-// api.js - 중앙화된 API 클라이언트
+// frontend\src\services\api.js
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // HTTP 상태 코드 상수

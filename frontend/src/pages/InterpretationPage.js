@@ -1,4 +1,4 @@
-// frontend/src/pages/InterpretationPage.js
+// frontend\src\pages\InterpretationPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { feedbackService } from '../services/feedbackService';

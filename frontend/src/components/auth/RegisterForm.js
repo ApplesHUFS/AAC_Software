@@ -1,5 +1,4 @@
-
-// RegisterForm.js - 백엔드 검증에 의존하는 간소화된 회원가입 폼
+// frontend\src\components\auth\RegisterForm.js
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
 

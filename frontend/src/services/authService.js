@@ -1,5 +1,4 @@
-
-// authService.js - 인증 관련 서비스
+// frontend\src\services\authService.js
 import api from './api';
 
 export const authService = {

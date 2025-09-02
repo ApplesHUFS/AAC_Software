@@ -1,5 +1,4 @@
-
-// DashboardPage.js - 대시보드 페이지 컴포넌트
+// frontend\src\pages\DashboardPage.js
 import React, { useState } from 'react';
 import { ContextForm } from '../components/context/ContextForm';
 

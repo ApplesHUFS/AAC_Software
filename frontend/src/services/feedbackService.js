@@ -1,4 +1,4 @@
-// feedbackService.js - 피드백 관련 서비스
+// frontend\src\services\feedbackService.js
 import api from './api';
 
 export const feedbackService = {

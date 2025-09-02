@@ -1,3 +1,4 @@
+// frontend\src\components\cards\CardItem.js
 import React, { useState, useCallback } from 'react';
 
 // 개별 카드 아이템 컴포넌트

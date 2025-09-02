@@ -1,4 +1,4 @@
-// AuthPage.js - 인증 페이지 컴포넌트
+// frontend\src\pages\AuthPage.js
 import React, { useState } from 'react';
 import { LoginForm } from '../components/auth/LoginForm';
 import { RegisterForm } from '../components/auth/RegisterForm';

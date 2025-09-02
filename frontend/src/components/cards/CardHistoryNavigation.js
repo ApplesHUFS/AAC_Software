@@ -1,4 +1,4 @@
-// frontend/src/components/cards/CardHistoryNavigation.js
+// frontend\src\components\cards\CardHistoryNavigation.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../../services/cardService';
 

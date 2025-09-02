@@ -1,3 +1,4 @@
+// frontend\src\components\cards\SelectedCardsDisplay.js
 import React from 'react';
 
 // 선택된 카드 표시 컴포넌트

@@ -1,4 +1,4 @@
-// frontend/src/pages/CardSelectionPage.js
+// frontend\src\pages\CardSelectionPage.js
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { CardGrid, SelectedCardsDisplay } from '../components/cards/CardGrid';

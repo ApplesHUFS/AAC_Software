@@ -1,4 +1,4 @@
-// CardGrid.js - 정리된 카드 그리드 컴포넌트
+// frontend\src\components\cards\CardGrid.js
 import React, { useState, useCallback } from 'react';
 
 // 카드 그리드 컴포넌트 - 추천된 카드들을 격자 형태로 표시

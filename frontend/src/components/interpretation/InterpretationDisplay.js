@@ -1,4 +1,4 @@
-// InterpretationDisplay.js - 중복 컴포넌트 제거
+// frontend\src\components\interpretation\InterpretationDisplay.js
 import React from 'react';
 
 // 해석 결과 표시 컴포넌트

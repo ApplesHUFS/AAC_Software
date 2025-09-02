@@ -1,3 +1,4 @@
+// frontend\src\components\interpretation\InterpretationResult.js
 import React from 'react';
 
 // 해석 완료 결과 컴포넌트

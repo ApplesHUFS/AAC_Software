@@ -1,4 +1,4 @@
-// App.js - AAC 카드 해석 시스템 메인 앱 컴포넌트
+// frontend\src\App.js
 import React, { useState, useEffect } from 'react';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';

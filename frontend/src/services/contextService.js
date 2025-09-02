@@ -1,4 +1,4 @@
-// contextService.js - 컨텍스트 관련 서비스
+// frontend\src\services\contextService.js
 import api from './api';
 
 export const contextService = {
