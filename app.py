@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
-from aac_interpreter_service import AACInterpreterService
+from backend.aac_interpreter_service import AACInterpreterService
 
 app = Flask(__name__)
 
@@ -294,7 +294,7 @@ def update_profile(user_id):
                 status_code=400
             )
 
-        # camelCase를 snake_case로 변환
+        # camelCase snake_case 변환
         update_data = {}
         field_mapping = {
             'name': 'name',

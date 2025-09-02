@@ -6,7 +6,7 @@ from pprint import pprint
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from aac_interpreter_service import AACInterpreterService
+from backend.aac_interpreter_service import AACInterpreterService
 
 
 class AACServiceTester:
