@@ -353,8 +353,7 @@ class CardRecommender:
             # 해당 클러스터들에서 카드 선택
             selected_cards = self._select_from_preferred_clusters(
                 context_preferred_clusters, 
-                num_cards, 
-                exclude_cards=[]
+                num_cards
             )
         
         except Exception as e:
