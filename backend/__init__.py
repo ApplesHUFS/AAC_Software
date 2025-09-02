@@ -23,7 +23,7 @@ from backend.private import (
     LLMFactory
 )
 
-from aac_interpreter_service import AACInterpreterService
+from backend.aac_interpreter_service import AACInterpreterService
 
 __all__ = [
     # config
