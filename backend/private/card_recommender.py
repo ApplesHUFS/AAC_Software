@@ -73,7 +73,7 @@ class CardRecommender:
         recommended_cards = self._select_from_context_clusters(current_activity, num_recommendations)
 
         # preferred_category_types에서 나머지 추천 카드 선택
-        prefer_cards = self._select_from_preferred_clusters(exclude_cards=recommended_cards, num_cards=num_random)
+        prefer_cards = self._select_from_preferred_clusters(recommended_cards, num_cards=num_random)
 
         # 전체 선택지 생성 (순서 섞기)
         all_selection_cards = recommended_cards + prefer_cards
