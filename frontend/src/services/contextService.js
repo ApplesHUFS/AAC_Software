@@ -1,4 +1,4 @@
-// frontend\src\services\contextService.js
+// src/services/contextService.js
 import api from './api';
 
 export const contextService = {
@@ -8,7 +8,6 @@ export const contextService = {
       const response = await api.post('/api/context', contextData);
       return response;
     } catch (error) {
-      console.error('컨텍스트 생성 실패:', error);
       throw error;
     }
   },
@@ -19,7 +18,6 @@ export const contextService = {
       const response = await api.get(`/api/context/${contextId.trim()}`);
       return response;
     } catch (error) {
-      console.error('컨텍스트 조회 실패:', error);
       throw error;
     }
   },

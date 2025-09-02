@@ -1,7 +1,7 @@
-// frontend\src\services\api.js
+// src/services/api.js
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-// HTTP 상태 코드 상수
+// HTTP 상태 코드
 const HTTP_STATUS = {
   OK: 200,
   CREATED: 201,
@@ -13,17 +13,9 @@ const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503
 };
 
-// 요청 타임아웃 및 재시도 설정
-const REQUEST_TIMEOUT = 3000000;
-const RETRY_CONFIG = {
-  maxRetries: 3,
-  retryDelay: 1000,
-  retryCondition: (error) => {
-    return error.name === 'TypeError' || 
-           error.message.includes('fetch') ||
-           error.status >= 500;
-  }
-};
+// 요청 설정
+const REQUEST_TIMEOUT = 30000;
+const MAX_RETRIES = 3;
 
 // 에러 메시지 매핑
 const ERROR_MESSAGES = {
@@ -37,7 +29,7 @@ const ERROR_MESSAGES = {
   TIMEOUT_ERROR: '요청 시간이 초과되었습니다.'
 };
 
-// API 클라이언트 클래스
+// API 클라이언트
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
@@ -47,7 +39,7 @@ class ApiClient {
     };
   }
 
-  // 타임아웃이 적용된 fetch 래퍼
+  // 타임아웃이 적용된 fetch
   async fetchWithTimeout(url, options) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
@@ -70,21 +62,21 @@ class ApiClient {
   }
 
   // 지연 함수
-  async delay(ms) {
+  delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // 재시도 로직이 포함된 요청 실행
+  // 재시도 로직
   async executeWithRetry(requestFn, retryCount = 0) {
     try {
       return await requestFn();
     } catch (error) {
-      const shouldRetry = retryCount < RETRY_CONFIG.maxRetries && 
-                         RETRY_CONFIG.retryCondition(error);
+      const shouldRetry = retryCount < MAX_RETRIES && 
+                         (error.name === 'TypeError' || error.status >= 500);
       
       if (shouldRetry) {
-        console.warn(`API 요청 실패, ${retryCount + 1}번째 재시도 중:`, error.message);
-        await this.delay(RETRY_CONFIG.retryDelay * (retryCount + 1));
+        console.warn(`API 요청 실패, ${retryCount + 1}번째 재시도:`, error.message);
+        await this.delay(1000 * (retryCount + 1));
         return this.executeWithRetry(requestFn, retryCount + 1);
       }
       
@@ -92,13 +84,13 @@ class ApiClient {
     }
   }
 
-  // 응답 처리 (app.py 응답 구조에 맞춤)
+  // 응답 처리
   async processResponse(response) {
     let responseData;
 
     try {
       const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType?.includes('application/json')) {
         responseData = await response.json();
       } else {
         const text = await response.text();
@@ -108,7 +100,6 @@ class ApiClient {
         };
       }
     } catch (parseError) {
-      console.error('응답 파싱 오류:', parseError);
       throw new Error('서버 응답을 처리할 수 없습니다.');
     }
 
@@ -134,7 +125,7 @@ class ApiClient {
     return responseData;
   }
 
-  // 기본 HTTP 요청 메서드
+  // HTTP 요청 메서드
   async request(endpoint, options = {}) {
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
     
@@ -205,7 +196,7 @@ class ApiClient {
     return this.request(endpoint, { method: 'DELETE', ...options });
   }
 
-  // 헬스체크 요청
+  // 헬스체크
   async healthCheck() {
     try {
       const response = await this.get('/health');

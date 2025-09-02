@@ -1,6 +1,19 @@
-// frontend\src\components\context\ContextForm.js
+// src/components/context/ContextForm.js
 import React, { useState } from 'react';
 import { contextService } from '../../services/contextService';
+
+// 자주 사용되는 예시들
+const PLACE_EXAMPLES = [
+  '집', '학교', '병원', '카페', '식당', '공원', '마트', '도서관', '직장', '친구 집'
+];
+
+const PARTNER_EXAMPLES = [
+  '엄마', '아빠', '형/누나/언니/오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
+];
+
+const ACTIVITY_EXAMPLES = [
+  '식사', '공부', '놀이', '치료', '쇼핑', '산책', '운동', '독서', '영화 시청', '게임'
+];
 
 const ContextForm = ({ userId, onContextCreated }) => {
   const [formData, setFormData] = useState({
@@ -11,45 +24,36 @@ const ContextForm = ({ userId, onContextCreated }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 자주 사용되는 예시들
-  const PLACE_EXAMPLES = [
-    '집', '학교', '병원', '카페', '식당', '공원', '마트', '도서관', '직장', '친구 집'
-  ];
-
-  const PARTNER_EXAMPLES = [
-    '엄마', '아빠', '형/누나/언니/오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
-  ];
-
-  const ACTIVITY_EXAMPLES = [
-    '식사', '공부', '놀이', '치료', '쇼핑', '산책', '운동', '독서', '영화 시청', '게임'
-  ];
-
-  // 폼 입력 필드 변경 처리
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
-
-    if (error) {
-      setError('');
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (error) setError('');
   };
 
-  // 예시 텍스트 클릭으로 자동 입력
+  // 예시 클릭으로 자동 입력
   const handleExampleClick = (fieldName, value) => {
-    setFormData(prevData => ({
-      ...prevData,
-      [fieldName]: value
-    }));
+    setFormData(prev => ({ ...prev, [fieldName]: value }));
+    setError('');
   };
 
-  // 컨텍스트 생성 폼 제출 처리 (백엔드에서 모든 검증 수행)
+  // 유효성 검증
+  const validateForm = () => {
+    if (!formData.place.trim()) return '현재 장소를 입력해주세요.';
+    if (!formData.interactionPartner.trim()) return '대화 상대를 입력해주세요.';
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
+    setError('');
 
     try {
       const contextData = {
@@ -67,8 +71,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
         setError(response.error || '컨텍스트 생성에 실패했습니다.');
       }
     } catch (error) {
-      console.error('컨텍스트 생성 에러:', error);
-      setError(error.message || '컨텍스트 생성 중 오류가 발생했습니다.');
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -84,13 +87,10 @@ const ContextForm = ({ userId, onContextCreated }) => {
         </p>
       </div>
       
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit}>
         {/* 장소 입력 */}
         <div className="form-group">
-          <label htmlFor="place">
-            현재 장소 *
-            <span className="required-indicator">필수</span>
-          </label>
+          <label htmlFor="place">현재 장소 *</label>
           <input
             type="text"
             id="place"
@@ -98,11 +98,10 @@ const ContextForm = ({ userId, onContextCreated }) => {
             value={formData.place}
             onChange={handleChange}
             placeholder="예: 집, 학교, 병원, 카페 등"
-            required
             disabled={loading}
           />
           <div className="examples-section">
-            <span className="examples-label">자주 사용되는 장소:</span>
+            <span className="examples-label">자주 사용하는 장소:</span>
             <div className="examples-list">
               {PLACE_EXAMPLES.map((example, index) => (
                 <button
@@ -121,10 +120,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         {/* 대화 상대 입력 */}
         <div className="form-group">
-          <label htmlFor="interactionPartner">
-            대화 상대 *
-            <span className="required-indicator">필수</span>
-          </label>
+          <label htmlFor="interactionPartner">대화 상대 *</label>
           <input
             type="text"
             id="interactionPartner"
@@ -132,11 +128,10 @@ const ContextForm = ({ userId, onContextCreated }) => {
             value={formData.interactionPartner}
             onChange={handleChange}
             placeholder="예: 엄마, 친구, 선생님, 의사 등"
-            required
             disabled={loading}
           />
           <div className="examples-section">
-            <span className="examples-label">자주 사용되는 대화 상대:</span>
+            <span className="examples-label">자주 사용하는 대화 상대:</span>
             <div className="examples-list">
               {PARTNER_EXAMPLES.map((example, index) => (
                 <button
@@ -155,21 +150,18 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         {/* 현재 활동 입력 (선택사항) */}
         <div className="form-group">
-          <label htmlFor="currentActivity">
-            현재 활동
-            <span className="optional-indicator">선택사항</span>
-          </label>
+          <label htmlFor="currentActivity">현재 활동 (선택사항)</label>
           <input
             type="text"
             id="currentActivity"
             name="currentActivity"
             value={formData.currentActivity}
             onChange={handleChange}
-            placeholder="예: 식사 중, 수업 중, 놀이 중 등 (비워두어도 됩니다)"
+            placeholder="예: 식사 중, 수업 중, 놀이 중 등"
             disabled={loading}
           />
           <div className="examples-section">
-            <span className="examples-label">자주 사용되는 활동:</span>
+            <span className="examples-label">자주 사용하는 활동:</span>
             <div className="examples-list">
               {ACTIVITY_EXAMPLES.map((example, index) => (
                 <button
@@ -190,19 +182,10 @@ const ContextForm = ({ userId, onContextCreated }) => {
           </small>
         </div>
 
-        {error && (
-          <div className="error-message">
-            <span className="error-icon">⚠</span>
-            {error}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
         
         <div className="form-actions">
-          <button 
-            type="submit" 
-            className="primary-button large"
-            disabled={loading}
-          >
+          <button type="submit" className="primary-button large" disabled={loading}>
             {loading ? '컨텍스트 생성 중...' : 'AAC 카드 추천받기'}
           </button>
         </div>

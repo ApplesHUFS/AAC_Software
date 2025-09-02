@@ -1,136 +1,230 @@
-# AAC 카드 해석 시스템 - Frontend
+# AAC 카드 해석 시스템 - 프론트엔드
 
-React를 사용한 AAC 카드 해석 시스템의 프론트엔드 애플리케이션입니다.
+개인화된 AAC (Augmentative and Alternative Communication) 카드 추천 및 해석 시스템의 React 기반 프론트엔드 애플리케이션입니다.
 
 ## 주요 기능
 
-### 1. 사용자 관리
-- **회원가입**: 사용자 페르소나 정보 입력 및 계정 생성
-- **로그인**: 사용자 인증 (최대 5회 시도 제한)
-- **프로필 관리**: 페르소나 정보 수정
+### 사용자 관리
+- 회원가입: 개인 페르소나 정보 입력 (나이, 성별, 장애 유형, 의사소통 특성, 관심 주제)
+- 로그인 및 인증
+- 프로필 편집 및 업데이트
 
-### 2. 대화 세션 관리
-- **컨텍스트 입력**: 대화 상황 정보 설정
-  - 장소 (필수)
-  - 대화 상대 (필수)
-  - 현재 활동 (선택사항)
+### 대화 상황 관리
+- 현재 상황 입력 (장소, 대화 상대, 현재 활동)
+- 상황별 맞춤 카드 추천
 
-### 3. 카드 추천 및 선택
-- **개인화된 추천**: 사용자의 관심사를 기반으로 한 카드 추천 (70%)
-- **랜덤 카드**: 다양성을 위한 랜덤 카드 (30%)
-- **히스토리 관리**: 이전 추천 내역 조회 가능
-- **재추천**: 마음에 들지 않을 경우 새로운 카드 세트 요청
-- **카드 선택**: 1-4개 카드 선택 (실시간 검증)
+### 카드 추천 및 선택
+- 개인 관심사 기반 카드 추천 (70% 관련 카드 + 30% 랜덤)
+- 히스토리 기반 페이지 네비게이션
+- 카드 재추천 (리롤) 기능
+- 최대 4개 카드 선택
 
-### 4. 카드 해석
-- **AI 해석**: OpenAI API를 통한 3가지 해석 생성
-- **컨텍스트 고려**: 현재 상황과 사용자 페르소나를 반영한 해석
-- **과거 이력 반영**: 이전 대화 메모리를 활용한 개선된 해석
+### AI 해석 및 피드백
+- OpenAI API 기반 3가지 해석 생성
+- Partner 피드백 수집
+- 해석 결과 저장 및 학습
 
-### 5. Partner 피드백
-- **해석 선택**: 3가지 해석 중 올바른 것 선택
-- **직접 피드백**: 적절한 해석이 없을 경우 직접 입력
-- **메모리 저장**: 피드백을 통한 학습 데이터 누적
+## 기술 스택
+
+- **Frontend**: React 18.2.0
+- **HTTP Client**: Native Fetch API with custom wrapper
+- **Styling**: CSS3 with CSS Grid and Flexbox
+- **State Management**: React Hooks (useState, useEffect)
+- **Storage**: localStorage for session management
 
 ## 프로젝트 구조
 
 ```
 src/
-├── components/           # 재사용 가능한 컴포넌트들
-│   ├── auth/            # 인증 관련 컴포넌트
-│   ├── cards/           # 카드 관련 컴포넌트
-│   ├── context/         # 컨텍스트 입력 컴포넌트
-│   └── interpretation/  # 해석 및 피드백 컴포넌트
-├── pages/               # 메인 페이지 컴포넌트들
-├── services/            # API 통신 서비스들
-├── styles/              # CSS 스타일 파일들
-├── App.js              # 메인 앱 컴포넌트
-└── index.js            # 앱 진입점
+├── App.js                          # 메인 애플리케이션 컴포넌트
+├── index.js                        # 앱 진입점
+│
+├── pages/                          # 페이지 컴포넌트
+│   ├── AuthPage.js                 # 로그인/회원가입 페이지
+│   ├── DashboardPage.js            # 메인 대시보드
+│   ├── CardSelectionPage.js        # 카드 선택 페이지
+│   └── InterpretationPage.js       # 해석 및 피드백 페이지
+│
+├── components/                     # 재사용 컴포넌트
+│   ├── auth/                       # 인증 관련 컴포넌트
+│   │   ├── LoginForm.js
+│   │   └── RegisterForm.js
+│   ├── cards/                      # 카드 관련 컴포넌트
+│   │   ├── CardGrid.js
+│   │   └── CardHistoryNavigation.js
+│   ├── context/                    # 상황 입력 컴포넌트
+│   │   └── ContextForm.js
+│   ├── interpretation/             # 해석 관련 컴포넌트
+│   │   ├── InterpretationDisplay.js
+│   │   └── FeedbackForm.js
+│   └── profile/                    # 프로필 관련 컴포넌트
+│       └── ProfileEditForm.js
+│
+├── services/                       # API 서비스
+│   ├── api.js                      # 기본 API 클라이언트
+│   ├── authService.js              # 인증 서비스
+│   ├── cardService.js              # 카드 관리 서비스
+│   ├── contextService.js           # 상황 관리 서비스
+│   └── feedbackService.js          # 피드백 관리 서비스
+│
+└── styles/                         # 스타일시트
+    └── App.css                     # 메인 스타일시트
 ```
 
 ## 설치 및 실행
 
-### 1. 의존성 설치
+### 사전 요구사항
+- Node.js 16.0.0 이상
+- npm 8.0.0 이상
+- 백엔드 서버 (localhost:8000)
+
+### 설치
 ```bash
 npm install
 ```
 
-### 2. 개발 서버 실행
+### 개발 서버 실행
+```bash
+npm start
+```
+브라우저에서 http://localhost:3000 접속
+
+### 프로덕션 빌드
+```bash
+npm run build
+```
+
+### 코드 품질 관리
+```bash
+# ESLint 검사
+npm run lint
+
+# 자동 수정
+npm run lint:fix
+
+# Prettier 포맷팅
+npm run format
+```
+
+## 환경 설정
+
+`.env` 파일을 생성하여 환경 변수 설정:
+
+```bash
+REACT_APP_API_URL=http://localhost:8000
+NODE_ENV=development
+```
+
+## API 엔드포인트
+
+### 인증 (Authentication)
+- `POST /api/auth/register` - 회원가입
+- `POST /api/auth/login` - 로그인
+- `GET /api/auth/profile/{userId}` - 프로필 조회
+- `PUT /api/auth/profile/{userId}` - 프로필 업데이트
+
+### 상황 관리 (Context)
+- `POST /api/context` - 대화 상황 생성
+- `GET /api/context/{contextId}` - 상황 조회
+
+### 카드 관리 (Cards)
+- `POST /api/cards/recommend` - 카드 추천
+- `POST /api/cards/validate` - 선택 검증
+- `POST /api/cards/interpret` - 카드 해석
+- `GET /api/cards/history/{contextId}` - 히스토리 요약
+- `GET /api/cards/history/{contextId}/page/{pageNumber}` - 히스토리 페이지
+
+### 피드백 (Feedback)
+- `POST /api/feedback/request` - 피드백 요청
+- `POST /api/feedback/submit` - 피드백 제출
+
+### 이미지 서빙
+- `GET /api/images/{filename}` - 카드 이미지
+
+## 주요 특징
+
+### 사용자 친화적 디자인
+- 직관적인 사용자 인터페이스
+- 반응형 디자인 (모바일/태블릿/데스크톱 지원)
+- 접근성 고려 (키보드 네비게이션, 스크린 리더 지원)
+
+### 상태 관리
+- localStorage 기반 세션 유지
+- 페이지 새로고침 시 진행상태 복원
+- 에러 상황에서 적절한 fallback 제공
+
+### 성능 최적화
+- 이미지 지연 로딩 (lazy loading)
+- API 요청 재시도 로직
+- 컴포넌트 메모이제이션
+
+### 에러 처리
+- 네트워크 오류 자동 재시도
+- 사용자 친화적 에러 메시지
+- 폴백 UI 제공
+
+## 개발 가이드라인
+
+### 컴포넌트 작성 원칙
+1. 단일 책임 원칙 준수
+2. PropTypes 또는 TypeScript 사용 권장
+3. 재사용 가능한 컴포넌트 작성
+4. 접근성 속성 (ARIA) 포함
+
+### 상태 관리
+- 로컬 상태는 useState 사용
+- 전역 상태는 localStorage 활용
+- 상태 변경 시 적절한 검증 수행
+
+### API 호출
+- 서비스 레이어 패턴 사용
+- 에러 처리 필수
+- 로딩 상태 관리
+
+### 스타일링
+- BEM 방법론 기반 클래스 명명
+- CSS 변수 활용
+- 반응형 디자인 적용
+
+## 배포
+
+### 개발 환경
 ```bash
 npm start
 ```
 
-앱이 [http://localhost:3000](http://localhost:3000)에서 실행됩니다.
+### 프로덕션 환경
+```bash
+npm run build
+npx serve -s build
+```
 
-### 3. 백엔드 서버 실행 필요
-이 프론트엔드 앱은 Python Flask 백엔드와 연동됩니다.
-백엔드 서버가 [http://localhost:8000](http://localhost:8000)에서 실행되어야 합니다.
+### Docker 배포 (선택사항)
+```dockerfile
+FROM node:16-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npx", "serve", "-s", "build"]
+```
 
-## API 연동
+## 라이센스
 
-### 백엔드 엔드포인트
-- **인증**: `/api/auth/*`
-  - POST `/api/auth/register` - 회원가입
-  - POST `/api/auth/login` - 로그인
-  - GET `/api/auth/profile/{userId}` - 프로필 조회
-  - PUT `/api/auth/profile/{userId}` - 프로필 업데이트
+이 프로젝트는 MIT 라이센스 하에 배포됩니다.
 
-- **컨텍스트**: `/api/context/*`
-  - POST `/api/context` - 컨텍스트 생성
-  - GET `/api/context/{contextId}` - 컨텍스트 조회
+## 기여
 
-- **카드**: `/api/cards/*`
-  - POST `/api/cards/recommend` - 카드 추천
-  - POST `/api/cards/validate` - 카드 선택 검증
-  - POST `/api/cards/interpret` - 카드 해석
-  - GET `/api/cards/history/{contextId}` - 히스토리 조회
+프로젝트 개선을 위한 기여를 환영합니다. 다음 절차를 따라주세요:
 
-- **피드백**: `/api/feedback/*`
-  - POST `/api/feedback/request` - 파트너 피드백 요청
-  - POST `/api/feedback/submit` - 파트너 피드백 제출
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-- **이미지**: `/api/images/{filename}` - AAC 카드 이미지 서빙
+## 지원
 
-## 사용 흐름
-
-1. **계정 생성/로그인**
-   - 새 사용자: 페르소나 정보와 함께 회원가입
-   - 기존 사용자: 아이디/비밀번호로 로그인
-
-2. **대화 세션 시작**
-   - 대시보드에서 "대화 시작하기" 클릭
-   - 현재 상황 정보 입력 (장소, 대화상대, 활동)
-
-3. **카드 선택**
-   - 개인화된 20개 카드 세트 제공
-   - 1-4개 카드 선택 (최대 4개까지)
-   - 필요시 재추천 요청 가능
-
-4. **해석 및 피드백**
-   - AI가 생성한 3가지 해석 확인
-   - Partner가 올바른 해석 선택 또는 직접 입력
-   - 시스템이 학습을 위해 피드백 저장
-
-5. **세션 완료**
-   - 최종 해석 결과 확인
-   - 새로운 대화 세션 시작 가능
-
-## 기술 스택
-
-- **Frontend**: React 18, JavaScript ES6+
-- **HTTP 클라이언트**: Fetch API
-- **상태 관리**: React Hooks (useState, useEffect)
-- **스타일링**: CSS3 (Flexbox, Grid)
-- **빌드 도구**: Create React App
-
-## 브라우저 지원
-
-- Chrome (최신)
-- Firefox (최신)
-- Safari (최신)
-- Edge (최신)
-
-## 개발자 정보
-
-이 프론트엔드는 백엔드 API와 완벽하게 동기화되어 설계되었으며, 
-모든 API 엔드포인트와 데이터 형식이 백엔드 명세와 일치합니다.
+문제가 발생하거나 문의사항이 있으면 이슈를 생성해주세요.

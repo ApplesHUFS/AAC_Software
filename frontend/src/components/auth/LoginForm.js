@@ -1,4 +1,4 @@
-// frontend\src\components\auth\LoginForm.js
+// src/components/auth/LoginForm.js
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
 
@@ -10,22 +10,21 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // 폼 입력 필드 변경 처리
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
     
-    if (error) {
-      setError('');
-    }
+    if (error) setError('');
   };
 
-  // 로그인 폼 제출 처리
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.userId.trim() || !formData.password) {
+      setError('사용자 ID와 비밀번호를 모두 입력해주세요.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -35,11 +34,10 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
       if (response.success && response.data.authenticated) {
         onLoginSuccess(response.data);
       } else {
-        setError('로그인에 실패했습니다.');
+        setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
       }
     } catch (error) {
-      console.error('로그인 에러:', error);
-      setError(error.message || '로그인 중 오류가 발생했습니다.');
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -49,7 +47,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
     <div className="auth-form">
       <h2>로그인</h2>
       
-      <form onSubmit={handleSubmit} noValidate>
+      <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="userId">사용자 ID</label>
           <input
@@ -59,9 +57,8 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
             value={formData.userId}
             onChange={handleChange}
             placeholder="사용자 ID를 입력하세요"
-            required
-            autoComplete="username"
             disabled={loading}
+            autoComplete="username"
           />
         </div>
         
@@ -74,24 +71,16 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
             value={formData.password}
             onChange={handleChange}
             placeholder="비밀번호를 입력하세요"
-            required
-            autoComplete="current-password"
             disabled={loading}
+            autoComplete="current-password"
           />
         </div>
 
         {error && (
-          <div className="error-message">
-            <span className="error-icon">⚠</span>
-            {error}
-          </div>
+          <div className="error-message">{error}</div>
         )}
         
-        <button 
-          type="submit" 
-          className="primary-button"
-          disabled={loading}
-        >
+        <button type="submit" className="primary-button" disabled={loading}>
           {loading ? '로그인 중...' : '로그인'}
         </button>
       </form>

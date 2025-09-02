@@ -1,20 +1,18 @@
-// frontend\src\components\cards\CardGrid.js
+// src/components/cards/CardGrid.js
 import React, { useState, useCallback } from 'react';
 
-// 카드 그리드 컴포넌트 - 추천된 카드들을 격자 형태로 표시
+// 카드 그리드 컴포넌트
 const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabled = false }) => {
-  // 카드가 선택되었는지 확인
   const isCardSelected = useCallback((card) => {
     return selectedCards.some(selected => selected.filename === card.filename);
   }, [selectedCards]);
 
-  // 카드 선택/해제 처리
   const handleCardClick = useCallback((card) => {
     if (disabled) return;
     onCardSelect(card);
   }, [disabled, onCardSelect]);
 
-  if (!cards || cards.length === 0) {
+  if (!cards?.length) {
     return (
       <div className="card-grid empty">
         <div className="no-cards-message">
@@ -52,14 +50,12 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // 카드 클릭 처리
   const handleClick = useCallback(() => {
     if (!disabled && !imageError) {
       onSelect(card);
     }
   }, [disabled, imageError, onSelect, card]);
 
-  // 키보드 접근성 처리
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -67,13 +63,11 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
     }
   }, [handleClick]);
 
-  // 이미지 로드 완료 처리
   const handleImageLoad = useCallback(() => {
     setImageLoaded(true);
     setImageError(false);
   }, []);
 
-  // 이미지 로드 에러 처리
   const handleImageError = useCallback(() => {
     setImageError(true);
     setImageLoaded(false);
@@ -87,7 +81,6 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
       tabIndex={disabled ? -1 : 0}
       role="button"
       aria-label={`${card.name} 카드 ${isSelected ? '선택됨' : '선택하기'}`}
-      aria-pressed={isSelected}
     >
       <div className="card-image-container">
         {!imageLoaded && !imageError && (
@@ -112,7 +105,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
           />
         )}
         
-        {/* 흐름명세서: 선택된 카드들은 카드 위에 체크 표시가 뜸 */}
+        {/* 선택 표시 */}
         {isSelected && !imageError && (
           <div className="selection-indicator">
             <span className="checkmark">✓</span>
@@ -147,9 +140,7 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
 
   return (
     <div className="selected-cards-display">
-      <h3>
-        선택된 카드 ({selectedCards.length}/{maxCards})
-      </h3>
+      <h3>선택된 카드 ({selectedCards.length}/{maxCards})</h3>
       
       <div className="selected-cards-list">
         {selectedCards.map((card, index) => (
@@ -171,7 +162,6 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
               className="remove-card-btn"
               onClick={() => onRemoveCard(card)}
               title={`${card.name} 카드 제거`}
-              aria-label={`${card.name} 카드 제거`}
             >
               ×
             </button>

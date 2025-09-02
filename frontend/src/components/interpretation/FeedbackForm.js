@@ -1,9 +1,8 @@
-// frontend\src\components\interpretation\FeedbackForm.js
+// src/components/interpretation/FeedbackForm.js
 import React, { useState } from 'react';
 import { feedbackService } from '../../services/feedbackService';
 
 // Partner 피드백 폼 컴포넌트
-// 흐름명세서: partner는 0~2 인덱스 중에 올바른 해석이라고 생각이 드는 해석을 고름. 어떠한 것도 맞지 않으면 직접 피드백 입력
 const FeedbackForm = ({ 
   interpretations, 
   selectedCards, 
@@ -23,7 +22,6 @@ const FeedbackForm = ({
     setFeedbackType(type);
     setError('');
     
-    // 타입 변경 시 선택 상태 초기화
     if (type === 'interpretation') {
       setDirectFeedback('');
     } else {
@@ -66,12 +64,10 @@ const FeedbackForm = ({
   };
 
   // 피드백 제출 처리
-  // app.py의 /api/feedback/submit 호출
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
     setError('');
     
-    // 입력 검증
     const validationError = validateFeedback();
     if (validationError) {
       setError(validationError);
@@ -81,7 +77,6 @@ const FeedbackForm = ({
     setLoading(true);
 
     try {
-      // 피드백 데이터 준비
       const feedbackData = {};
       
       if (feedbackType === 'interpretation' && selectedInterpretationIndex !== null) {
@@ -90,7 +85,6 @@ const FeedbackForm = ({
         feedbackData.directFeedback = directFeedback.trim();
       }
 
-      // app.py의 /api/feedback/submit 호출
       const response = await feedbackService.submitPartnerFeedback(confirmationId, feedbackData);
       
       if (response.success) {
@@ -99,8 +93,6 @@ const FeedbackForm = ({
         setError(response.error || '피드백 제출에 실패했습니다.');
       }
     } catch (error) {
-      console.error('피드백 제출 에러:', error);
-      
       if (error.message.includes('fetch')) {
         setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
       } else {
@@ -121,7 +113,7 @@ const FeedbackForm = ({
         </p>
       </div>
 
-      <form onSubmit={handleSubmitFeedback} noValidate>
+      <form onSubmit={handleSubmitFeedback}>
         {/* 피드백 타입 선택 */}
         <div className="feedback-type-selection">
           <div className="feedback-option">
@@ -196,12 +188,7 @@ const FeedbackForm = ({
         )}
 
         {/* 에러 메시지 */}
-        {error && (
-          <div className="error-message">
-            <span className="error-icon">⚠</span>
-            {error}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
 
         {/* 제출 버튼 */}
         <div className="feedback-actions">

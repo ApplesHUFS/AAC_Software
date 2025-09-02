@@ -1,18 +1,17 @@
-// frontend\src\pages\InterpretationPage.js
+// src/pages/InterpretationPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { feedbackService } from '../services/feedbackService';
 import { InterpretationDisplay, InterpretationResult } from '../components/interpretation/InterpretationDisplay';
 import FeedbackForm from '../components/interpretation/FeedbackForm';
 
-// 해석 진행 단계 상수
+// 해석 진행 단계
 const INTERPRETATION_STEPS = {
-  INTERPRETING: 'interpreting',    // AI가 카드 해석 중
-  FEEDBACK: 'feedback',           // Partner 피드백 대기 중
-  COMPLETED: 'completed'          // 해석 완료
+  INTERPRETING: 'interpreting',
+  FEEDBACK: 'feedback',
+  COMPLETED: 'completed'
 };
 
-// 카드 해석 → Partner 피드백 요청 → 피드백 수집 → 완료
 const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplete }) => {
   // 해석 관련 상태
   const [interpretations, setInterpretations] = useState([]);
@@ -23,8 +22,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(INTERPRETATION_STEPS.INTERPRETING);
-  
-  // 해석 방법
   const [interpretationMethod, setInterpretationMethod] = useState('');
 
   // Partner 피드백 확인 요청
@@ -52,7 +49,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
         throw new Error(response.error || 'Partner 확인 요청에 실패했습니다.');
       }
     } catch (error) {
-      console.error('Partner 확인 요청 실패:', error);
       throw error;
     }
   }, [user.userId, selectedCards, contextData]);
@@ -67,7 +63,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       setLoading(true);
       setError('');
 
-      // cardService를 통한 해석 요청
       const response = await cardService.interpretCards(
         user.userId,
         selectedCards,
@@ -88,7 +83,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
         throw new Error(response.error || '서버에서 해석 생성을 거부했습니다.');
       }
     } catch (error) {
-      console.error('해석 생성 에러:', error);
       throw error;
     }
   }, [user, selectedCards, contextData, requestPartnerConfirmation]);
@@ -150,7 +144,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     });
   }, [generateInterpretations]);
 
-  // 로딩 상태 렌더링
+  // 로딩 상태
   if (loading && currentStep === INTERPRETATION_STEPS.INTERPRETING) {
     return (
       <div className="interpretation-page loading">
@@ -175,28 +169,19 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     );
   }
 
-  // 에러 상태 렌더링
+  // 에러 상태
   if (error) {
     return (
       <div className="interpretation-page error">
         <div className="error-content">
           <h2>해석 생성 실패</h2>
-          <div className="error-message">
-            <span className="error-icon">⚠</span>
-            <p>{error}</p>
-          </div>
+          <div className="error-message">{error}</div>
           
           <div className="error-actions">
-            <button 
-              className="primary-button"
-              onClick={handleRetry}
-            >
+            <button className="primary-button" onClick={handleRetry}>
               다시 시도
             </button>
-            <button 
-              className="secondary-button"
-              onClick={handleStartNewSession}
-            >
+            <button className="secondary-button" onClick={handleStartNewSession}>
               새로운 대화 시작
             </button>
           </div>
@@ -205,7 +190,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     );
   }
 
-  // 단계별 컴포넌트 렌더링
   return (
     <div className="interpretation-page">
       {/* Partner 피드백 대기 단계 */}

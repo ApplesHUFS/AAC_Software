@@ -1,4 +1,5 @@
-// frontend\src\services\authService.js
+
+// src/services/authService.js
 import api from './api';
 
 export const authService = {
@@ -8,7 +9,6 @@ export const authService = {
       const response = await api.post('/api/auth/register', userData);
       return response;
     } catch (error) {
-      console.error('회원가입 요청 실패:', error);
       throw error;
     }
   },
@@ -24,7 +24,6 @@ export const authService = {
       const response = await api.post('/api/auth/login', payload);
       return response;
     } catch (error) {
-      console.error('로그인 요청 실패:', error);
       throw error;
     }
   },
@@ -35,7 +34,6 @@ export const authService = {
       const response = await api.get(`/api/auth/profile/${userId.trim()}`);
       return response;
     } catch (error) {
-      console.error('프로필 조회 실패:', error);
       throw error;
     }
   },
@@ -46,7 +44,6 @@ export const authService = {
       const response = await api.put(`/api/auth/profile/${userId.trim()}`, updateData);
       return response;
     } catch (error) {
-      console.error('프로필 업데이트 실패:', error);
       throw error;
     }
   },

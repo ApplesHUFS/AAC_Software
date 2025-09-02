@@ -1,8 +1,9 @@
-// frontend\src\components\cards\CardHistoryNavigation.js
+
+// src/components/cards/CardHistoryNavigation.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../../services/cardService';
 
-// 이전 추천 결과들을 탐색할 수 있는 기능
+// 이전 추천 결과들을 탐색하는 히스토리 네비게이션
 const CardHistoryNavigation = ({ 
   contextId, 
   currentPage = 1, 
@@ -31,7 +32,6 @@ const CardHistoryNavigation = ({
       if (response.success && response.data) {
         setHistoryInfo(response.data);
       } else {
-        // 히스토리가 없는 경우는 에러가 아님
         setHistoryInfo(null);
       }
     } catch (error) {
@@ -107,7 +107,6 @@ const CardHistoryNavigation = ({
           onClick={() => handlePageNavigation(currentPage - 1)}
           disabled={disabled || loading || currentPage <= 1}
           className="nav-button prev"
-          title="이전 카드셋"
         >
           ← 이전
         </button>
@@ -122,13 +121,12 @@ const CardHistoryNavigation = ({
           onClick={() => handlePageNavigation(currentPage + 1)}
           disabled={disabled || loading || currentPage >= totalPages}
           className="nav-button next"
-          title="다음 카드셋"
         >
           다음 →
         </button>
       </div>
 
-      {historyInfo.historySummary && historyInfo.historySummary.length > 0 && (
+      {historyInfo.historySummary?.length > 0 && (
         <div className="page-list">
           <h5>추천 기록</h5>
           <div className="page-buttons">

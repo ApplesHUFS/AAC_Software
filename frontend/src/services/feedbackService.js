@@ -1,4 +1,5 @@
-// frontend\src\services\feedbackService.js
+
+// src/services/feedbackService.js
 import api from './api';
 
 export const feedbackService = {
@@ -8,7 +9,6 @@ export const feedbackService = {
       const response = await api.post('/api/feedback/request', requestData);
       return response;
     } catch (error) {
-      console.error('Partner 확인 요청 실패:', error);
       throw error;
     }
   },
@@ -24,7 +24,6 @@ export const feedbackService = {
       const response = await api.post('/api/feedback/submit', payload);
       return response;
     } catch (error) {
-      console.error('피드백 제출 실패:', error);
       throw error;
     }
   },

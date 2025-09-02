@@ -1,4 +1,4 @@
-// frontend\src\services\cardService.js
+// src/services/cardService.js
 import api from './api';
 
 export const cardService = {
@@ -22,8 +22,6 @@ export const cardService = {
         throw new Error(response.error || '카드 추천을 받을 수 없습니다.');
       }
     } catch (error) {
-      console.error('카드 추천 요청 실패:', error);
-      
       if (error.status === 404) {
         throw new Error('사용자 또는 컨텍스트를 찾을 수 없습니다.');
       } else if (error.status === 503) {
@@ -49,7 +47,6 @@ export const cardService = {
         throw new Error(response.error || '히스토리 정보를 불러올 수 없습니다.');
       }
     } catch (error) {
-      console.error('히스토리 요약 조회 실패:', error);
       throw error;
     }
   },
@@ -69,7 +66,6 @@ export const cardService = {
         throw new Error(response.error || '히스토리 페이지를 불러올 수 없습니다.');
       }
     } catch (error) {
-      console.error('히스토리 페이지 조회 실패:', error);
       throw error;
     }
   },
@@ -99,7 +95,6 @@ export const cardService = {
         } else if (card?.filename) {
           return card.filename;
         } else {
-          console.warn('알 수 없는 카드 형식:', card);
           return String(card);
         }
       });
@@ -109,11 +104,6 @@ export const cardService = {
         availableOptions: availableCardFilenames
       };
 
-      console.log('카드 검증 요청:', {
-        selected: selectedCardFilenames.length,
-        available: availableCardFilenames.length
-      });
-
       const response = await api.post('/api/cards/validate', payload);
       
       if (response.success) {
@@ -122,7 +112,6 @@ export const cardService = {
         throw new Error(response.error || '카드 선택 검증에 실패했습니다.');
       }
     } catch (error) {
-      console.error('카드 선택 검증 실패:', error);
       throw error;
     }
   },
@@ -151,12 +140,6 @@ export const cardService = {
         contextId: contextId?.trim() || null
       };
 
-      console.log('카드 해석 요청:', {
-        userId: payload.userId,
-        cardCount: cardFilenames.length,
-        contextId: payload.contextId
-      });
-
       const response = await api.post('/api/cards/interpret', payload);
 
       if (response.success && response.data?.interpretations) {
@@ -165,8 +148,6 @@ export const cardService = {
         throw new Error(response.error || '카드 해석에 실패했습니다.');
       }
     } catch (error) {
-      console.error('카드 해석 요청 실패:', error);
-      
       if (error.status === 503) {
         throw new Error('카드 해석 시스템을 사용할 수 없습니다.');
       }
@@ -192,7 +173,6 @@ export const cardService = {
 
     return rawCards.map((card, index) => {
       if (typeof card === 'string') {
-        // 파일명만 있는 경우
         const filename = card;
         const name = filename.replace('.png', '').replace(/_/g, ' ');
         return {
@@ -204,7 +184,6 @@ export const cardService = {
           selected: false
         };
       } else if (card && typeof card === 'object') {
-        // 객체 형태인 경우
         return {
           id: card.id || card.filename?.split('_')[0] || index.toString(),
           name: card.name || card.filename?.replace('.png', '').replace(/_/g, ' ') || `Card ${index + 1}`,
@@ -218,31 +197,5 @@ export const cardService = {
         return null;
       }
     }).filter(Boolean);
-  },
-
-  // 카드 데이터 중복 제거
-  deduplicateCards(cards) {
-    if (!Array.isArray(cards)) return [];
-    
-    const seen = new Set();
-    return cards.filter(card => {
-      const key = card.filename || card.name || card.id;
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
-  },
-
-  // 카드 선택 상태 확인
-  isCardSelected(card, selectedCards) {
-    if (!card || !Array.isArray(selectedCards)) return false;
-    
-    return selectedCards.some(selected => {
-      return (selected.filename === card.filename) || 
-             (selected.id === card.id) ||
-             (selected.name === card.name);
-    });
   }
 };

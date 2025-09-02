@@ -1,4 +1,4 @@
-// src/components/auth/RegisterForm.js
+// src/components/profile/ProfileEditForm.js
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
 
@@ -6,25 +6,25 @@ import { authService } from '../../services/authService';
 const GENDER_OPTIONS = ['남성', '여성'];
 const DISABILITY_OPTIONS = ['지적장애', '자폐스펙트럼장애', '의사소통장애'];
 
-const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
+const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
   const [formData, setFormData] = useState({
-    userId: '',
-    name: '',
-    age: '',
-    gender: '',
-    disabilityType: '',
-    communicationCharacteristics: '',
-    interestingTopics: [],
-    password: ''
+    name: user.name || '',
+    age: user.age || '',
+    gender: user.gender || '',
+    disabilityType: user.disabilityType || '',
+    communicationCharacteristics: user.communicationCharacteristics || '',
+    interestingTopics: [...(user.interestingTopics || [])]
   });
   const [topicInput, setTopicInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError('');
+    if (success) setSuccess('');
   };
 
   // 관심 주제 추가
@@ -43,6 +43,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       interestingTopics: [...prev.interestingTopics, topic]
     }));
     setTopicInput('');
+    setError('');
   };
 
   // 관심 주제 제거
@@ -60,42 +61,28 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
   };
 
-  // 클라이언트 사이드 유효성 검증
-  const validateForm = () => {
-    const required = ['userId', 'name', 'age', 'gender', 'disabilityType', 'communicationCharacteristics', 'password'];
-    
-    for (const field of required) {
-      if (!formData[field]?.toString().trim()) {
-        return `${getFieldName(field)}을(를) 입력해주세요.`;
-      }
-    }
-
-    if (formData.interestingTopics.length === 0) {
-      return '관심 주제를 최소 1개 이상 입력해주세요.';
-    }
-
-    if (formData.age < 1 || formData.age > 100) {
-      return '나이는 1~100세 사이로 입력해주세요.';
-    }
-
-    if (formData.password.length < 4) {
-      return '비밀번호는 4자 이상 입력해주세요.';
-    }
-
-    return null;
+  // 변경사항 확인
+  const hasChanges = () => {
+    return (
+      formData.name !== user.name ||
+      formData.age !== user.age ||
+      formData.gender !== user.gender ||
+      formData.disabilityType !== user.disabilityType ||
+      formData.communicationCharacteristics !== user.communicationCharacteristics ||
+      JSON.stringify(formData.interestingTopics.sort()) !== JSON.stringify((user.interestingTopics || []).sort())
+    );
   };
 
-  const getFieldName = (field) => {
-    const names = {
-      userId: '사용자 ID',
-      name: '이름',
-      age: '나이',
-      gender: '성별',
-      disabilityType: '장애 유형',
-      communicationCharacteristics: '의사소통 특징',
-      password: '비밀번호'
-    };
-    return names[field] || field;
+  // 유효성 검증
+  const validateForm = () => {
+    if (!formData.name.trim()) return '이름을 입력해주세요.';
+    if (!formData.age || formData.age < 1 || formData.age > 100) return '나이는 1~100세 사이로 입력해주세요.';
+    if (!formData.gender) return '성별을 선택해주세요.';
+    if (!formData.disabilityType) return '장애 유형을 선택해주세요.';
+    if (!formData.communicationCharacteristics.trim()) return '의사소통 특징을 입력해주세요.';
+    if (formData.interestingTopics.length === 0) return '관심 주제를 최소 1개 이상 입력해주세요.';
+    
+    return null;
   };
 
   const handleSubmit = async (e) => {
@@ -107,27 +94,41 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       return;
     }
 
+    if (!hasChanges()) {
+      setError('변경된 내용이 없습니다.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const registrationData = {
-        userId: formData.userId.trim(),
+      const updateData = {
         name: formData.name.trim(),
         age: parseInt(formData.age),
         gender: formData.gender,
         disabilityType: formData.disabilityType,
         communicationCharacteristics: formData.communicationCharacteristics.trim(),
-        interestingTopics: formData.interestingTopics,
-        password: formData.password
+        interestingTopics: formData.interestingTopics
       };
 
-      const response = await authService.register(registrationData);
+      const response = await authService.updateProfile(user.userId, updateData);
       
       if (response.success) {
-        onRegisterSuccess(response.data);
+        setSuccess('프로필이 성공적으로 업데이트되었습니다.');
+        
+        // 업데이트된 사용자 정보 생성
+        const updatedUser = {
+          ...user,
+          ...updateData
+        };
+        
+        setTimeout(() => {
+          onProfileUpdated(updatedUser);
+        }, 1500);
       } else {
-        setError(response.error || '회원가입에 실패했습니다.');
+        setError(response.error || '프로필 업데이트에 실패했습니다.');
       }
     } catch (error) {
       setError(error.message);
@@ -137,29 +138,17 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   };
 
   return (
-    <div className="auth-form">
-      <h2>회원가입</h2>
-      <p>개인화된 AAC 서비스를 위한 정보를 입력해주세요.</p>
+    <div className="profile-edit-form">
+      <div className="form-header">
+        <h2>프로필 편집</h2>
+        <p>개인화된 서비스 제공을 위한 정보를 수정할 수 있습니다.</p>
+      </div>
       
       <form onSubmit={handleSubmit}>
         {/* 기본 정보 */}
         <div className="form-section">
           <h4>기본 정보</h4>
           
-          <div className="form-group">
-            <label htmlFor="userId">사용자 ID *</label>
-            <input
-              type="text"
-              id="userId"
-              name="userId"
-              value={formData.userId}
-              onChange={handleChange}
-              placeholder="사용자 ID를 입력하세요"
-              disabled={loading}
-              autoComplete="username"
-            />
-          </div>
-
           <div className="form-group">
             <label htmlFor="name">이름 *</label>
             <input
@@ -170,7 +159,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               onChange={handleChange}
               placeholder="이름을 입력해주세요"
               disabled={loading}
-              autoComplete="name"
             />
           </div>
 
@@ -286,47 +274,38 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           </div>
         </div>
 
-        {/* 비밀번호 */}
-        <div className="form-section">
-          <div className="form-group">
-            <label htmlFor="password">비밀번호 *</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="비밀번호를 입력하세요 (4자 이상)"
-              disabled={loading}
-              autoComplete="new-password"
-            />
-          </div>
-        </div>
-
-        {error && (
-          <div className="error-message">{error}</div>
-        )}
+        {/* 메시지 */}
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
         
-        <button type="submit" className="primary-button" disabled={loading}>
-          {loading ? '가입 중...' : '회원가입'}
-        </button>
-      </form>
-      
-      <div className="auth-switch">
-        <p>
-          이미 계정이 있으신가요? 
+        {/* 액션 버튼 */}
+        <div className="form-actions">
           <button 
             type="button" 
-            className="link-button" 
-            onClick={switchToLogin}
+            className="secondary-button" 
+            onClick={onCancel}
             disabled={loading}
           >
-            로그인
+            취소
           </button>
-        </p>
-      </div>
+          <button 
+            type="submit" 
+            className="primary-button" 
+            disabled={loading || !hasChanges()}
+          >
+            {loading ? '저장 중...' : '변경사항 저장'}
+          </button>
+        </div>
+
+        {/* 변경 사항 알림 */}
+        {hasChanges() && !loading && (
+          <div className="changes-notice">
+            변경된 내용이 있습니다. 저장하시겠습니까?
+          </div>
+        )}
+      </form>
     </div>
   );
 };
 
-export { RegisterForm };
+export default ProfileEditForm;
