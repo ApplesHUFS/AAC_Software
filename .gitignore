@@ -18,7 +18,6 @@ venv.bak/
 *.pt
 *.bin
 *.safetensors
-models/
 checkpoints/
 
 # Data files
