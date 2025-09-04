@@ -21,16 +21,13 @@ const AuthPage = ({ onAuthSuccess }) => {
       <div className="auth-container">
         <div className="auth-header">
           <div className="service-logo">
-            <span className="logo-icon">💬</span>
+            <img src="/images/logo_red.png" alt="로고" width="32" height="32" />
             <h1>소통 도우미</h1>
           </div>
           <p className="service-description">
             AAC 사용자의 의사소통을 지원하는 <strong>도움이</strong> 전용 서비스
           </p>
-          <div className="role-indicator partner-role">
-            <span className="role-icon">👥</span>
-            <span>도움이 (보호자/케어러) 로그인</span>
-          </div>
+          <hr width = "100%" color = "black" size = "1"></hr>
         </div>
         
         <div className="auth-content">

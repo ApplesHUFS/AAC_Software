@@ -139,7 +139,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   return (
     <div className="auth-form partner-form register-form">
       <h2>
-        <span className="form-icon">👥</span>
+        <img src="/images/logo_red.png" alt="로고" width="32" height="32" />
         소통이 계정 만들기
       </h2>
       <p className="form-description">
@@ -151,7 +151,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 기본 정보 */}
         <div className="form-section">
           <h4>
-            <span className="section-icon">📋</span>
+            <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
             기본 정보
           </h4>
           
@@ -220,7 +220,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 장애 및 의사소통 정보 */}
         <div className="form-section">
           <h4>
-            <span className="section-icon">💬</span>
+            <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
             의사소통 정보
           </h4>
           
@@ -257,7 +257,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 관심 주제 */}
         <div className="form-section">
           <h4>
-            <span className="section-icon">❤️</span>
+            <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
             소통이의 관심 주제 *
           </h4>
           
@@ -268,7 +268,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
                 onKeyPress={handleTopicKeyPress}
-                placeholder="소통이가 좋아하는 것들을 입력해주세요 (예: 동물, 음식, 게임 등)"
+                placeholder="소통이가 좋아하는 것들을 입력해주세요."
                 disabled={loading}
               />
               <button 
@@ -305,7 +305,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         <div className="form-section">
           <div className="form-group">
             <label htmlFor="password">
-              <span className="label-icon">🔒</span>
+              <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
               비밀번호 *
             </label>
             <input

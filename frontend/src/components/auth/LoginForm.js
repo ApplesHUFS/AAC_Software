@@ -46,7 +46,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   return (
     <div className="auth-form partner-form">
       <h2>
-        <span className="form-icon">🔑</span>
+        <img src="/images/logo_black.png" alt="로고" width="32" height="32" />
         도움이 로그인
       </h2>
       <p className="form-description">소통이와 함께하는 AAC 서비스에 접속하세요</p>
@@ -54,7 +54,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="userId">
-            <span className="label-icon">👤</span>
+            <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
             사용자 ID
           </label>
           <input
@@ -71,7 +71,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
         
         <div className="form-group">
           <label htmlFor="password">
-            <span className="label-icon">🔒</span>
+            <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
             비밀번호
           </label>
           <input
