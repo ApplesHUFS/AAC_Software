@@ -8,7 +8,7 @@ const PLACE_EXAMPLES = [
 ];
 
 const PARTNER_EXAMPLES = [
-  '엄마', '아빠', '형/누나/언니/오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
+  '엄마', '아빠', '형, 누나, 언니, 오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
 ];
 
 const ACTIVITY_EXAMPLES = [
@@ -78,36 +78,47 @@ const ContextForm = ({ userId, onContextCreated }) => {
   };
 
   return (
-    <div className="context-form">
+    <div className="context-form partner-theme">
       <div className="context-header">
-        <h2>대화 상황 입력</h2>
+        <div className="role-indicator partner-role">
+          <span className="role-icon">👥</span>
+          <span>도움이 상황 입력</span>
+        </div>
+        <h2>
+          <span className="form-icon">📍</span>
+          지금 어떤 상황인가요?
+        </h2>
         <p>
-          현재 상황을 입력해주세요. 이 정보는 당신의 관심사와 함께 
-          가장 적절한 AAC 카드를 추천하는데 사용됩니다.
+          현재 상황을 입력해주시면 소통이에게 딱 맞는 AAC 카드를 추천해드려요. 
+          상황에 맞는 카드를 통해 더 원활한 소통이 가능해집니다.
         </p>
       </div>
       
       <form onSubmit={handleSubmit}>
         {/* 장소 입력 */}
         <div className="form-group">
-          <label htmlFor="place">현재 장소 *</label>
+          <label htmlFor="place">
+            <span className="label-icon">📍</span>
+            현재 장소 *
+          </label>
           <input
             type="text"
             id="place"
             name="place"
             value={formData.place}
             onChange={handleChange}
-            placeholder="예: 집, 학교, 병원, 카페 등"
+            placeholder="지금 어디에 있나요? (예: 집, 학교, 병원, 카페 등)"
             disabled={loading}
+            className="context-input"
           />
           <div className="examples-section">
-            <span className="examples-label">자주 사용하는 장소:</span>
+            <span className="examples-label">자주 입력하는 장소:</span>
             <div className="examples-list">
               {PLACE_EXAMPLES.map((example, index) => (
                 <button
                   key={index}
                   type="button"
-                  className="example-button"
+                  className="example-button partner-example"
                   onClick={() => handleExampleClick('place', example)}
                   disabled={loading}
                 >
@@ -120,24 +131,28 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         {/* 대화 상대 입력 */}
         <div className="form-group">
-          <label htmlFor="interactionPartner">대화 상대 *</label>
+          <label htmlFor="interactionPartner">
+            <span className="label-icon">👥</span>
+            대화 상대 *
+          </label>
           <input
             type="text"
             id="interactionPartner"
             name="interactionPartner"
             value={formData.interactionPartner}
             onChange={handleChange}
-            placeholder="예: 엄마, 친구, 선생님, 의사 등"
+            placeholder="누구와 대화하나요? (예: 엄마, 친구, 선생님, 의사 등)"
             disabled={loading}
+            className="context-input"
           />
           <div className="examples-section">
-            <span className="examples-label">자주 사용하는 대화 상대:</span>
+            <span className="examples-label">자주 입력하는 대화 상대:</span>
             <div className="examples-list">
               {PARTNER_EXAMPLES.map((example, index) => (
                 <button
                   key={index}
                   type="button"
-                  className="example-button"
+                  className="example-button partner-example"
                   onClick={() => handleExampleClick('interactionPartner', example)}
                   disabled={loading}
                 >
@@ -150,24 +165,28 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         {/* 현재 활동 입력 (선택사항) */}
         <div className="form-group">
-          <label htmlFor="currentActivity">현재 활동 (선택사항)</label>
+          <label htmlFor="currentActivity">
+            <span className="label-icon">🎯</span>
+            현재 활동 (선택사항)
+          </label>
           <input
             type="text"
             id="currentActivity"
             name="currentActivity"
             value={formData.currentActivity}
             onChange={handleChange}
-            placeholder="예: 식사 중, 수업 중, 놀이 중 등"
+            placeholder="지금 무엇을 하고 있나요? (예: 식사 중, 수업 중, 놀이 중 등)"
             disabled={loading}
+            className="context-input"
           />
           <div className="examples-section">
-            <span className="examples-label">자주 사용하는 활동:</span>
+            <span className="examples-label">자주 입력하는 활동:</span>
             <div className="examples-list">
               {ACTIVITY_EXAMPLES.map((example, index) => (
                 <button
                   key={index}
                   type="button"
-                  className="example-button"
+                  className="example-button partner-example"
                   onClick={() => handleExampleClick('currentActivity', example)}
                   disabled={loading}
                 >
@@ -177,26 +196,53 @@ const ContextForm = ({ userId, onContextCreated }) => {
             </div>
           </div>
           <small className="form-hint">
-            현재 하고 있는 구체적인 활동이 있다면 입력해주세요. 
-            더 정확한 카드 추천에 도움이 됩니다.
+            현재 하고 있는 구체적인 활동을 입력하시면 
+            더 정확한 카드 추천을 받을 수 있어요.
           </small>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message partner-error">
+            <span className="error-icon">⚠️</span>
+            {error}
+          </div>
+        )}
         
         <div className="form-actions">
-          <button type="submit" className="primary-button large" disabled={loading}>
-            {loading ? '컨텍스트 생성 중...' : 'AAC 카드 추천받기'}
+          <button type="submit" className="primary-button partner-button large" disabled={loading}>
+            {loading ? (
+              <>
+                <span className="button-spinner"></span>
+                카드 추천 준비 중...
+              </>
+            ) : (
+              <>
+                <span className="button-icon">🎨</span>
+                소통이에게 맞춤 카드 추천하기
+              </>
+            )}
           </button>
         </div>
 
         <div className="context-help">
-          <h4>입력 가이드</h4>
-          <ul>
-            <li><strong>장소:</strong> 구체적인 위치를 입력하면 상황에 맞는 카드를 추천받을 수 있어요</li>
-            <li><strong>대화 상대:</strong> 관계에 따라 적절한 표현 방식이 달라져요</li>
-            <li><strong>현재 활동:</strong> 하고 있는 일이 명확하면 더 정확한 추천이 가능해요</li>
-          </ul>
+          <h4>
+            <span className="help-icon">💡</span>
+            입력 도움말
+          </h4>
+          <div className="help-grid">
+            <div className="help-item">
+              <strong>📍 장소</strong>
+              <p>구체적인 위치를 입력하면 상황에 딱 맞는 카드를 추천받아요</p>
+            </div>
+            <div className="help-item">
+              <strong>👥 대화 상대</strong>
+              <p>관계에 따라 적절한 표현 방식과 카드가 달라져요</p>
+            </div>
+            <div className="help-item">
+              <strong>🎯 현재 활동</strong>
+              <p>하고 있는 일이 명확하면 더 정확한 카드 추천이 가능해요</p>
+            </div>
+          </div>
         </div>
       </form>
     </div>

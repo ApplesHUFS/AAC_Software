@@ -1,4 +1,3 @@
-
 // src/components/cards/CardHistoryNavigation.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../../services/cardService';
@@ -60,9 +59,10 @@ const CardHistoryNavigation = ({
   // 로딩 상태
   if (loading) {
     return (
-      <div className="card-history-navigation loading">
+      <div className="card-history-navigation loading communicator-navigation">
         <div className="navigation-loading">
-          <span>히스토리 로딩 중...</span>
+          <span className="loading-icon">⏳</span>
+          <span>이전 카드들 찾는 중...</span>
         </div>
       </div>
     );
@@ -71,10 +71,11 @@ const CardHistoryNavigation = ({
   // 에러 상태
   if (error) {
     return (
-      <div className="card-history-navigation error">
+      <div className="card-history-navigation error communicator-navigation">
         <div className="navigation-error">
-          <span>히스토리를 불러올 수 없습니다</span>
-          <button onClick={fetchHistoryInfo} className="retry-btn">
+          <span className="error-icon">😅</span>
+          <span>이전 카드를 불러올 수 없어요</span>
+          <button onClick={fetchHistoryInfo} className="retry-btn secondary-button">
             다시 시도
           </button>
         </div>
@@ -85,20 +86,24 @@ const CardHistoryNavigation = ({
   // 히스토리가 없거나 페이지가 1개뿐인 경우
   if (!historyInfo || totalPages <= 1) {
     return (
-      <div className="card-history-navigation single">
+      <div className="card-history-navigation single communicator-navigation">
         <div className="navigation-info">
-          <span>첫 번째 카드 추천</span>
+          <span className="info-icon">🆕</span>
+          <span>첫 번째 카드 추천이에요!</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="card-history-navigation">
+    <div className="card-history-navigation communicator-navigation">
       <div className="navigation-header">
-        <h4>카드 추천 히스토리</h4>
+        <h4>
+          <span className="nav-icon">📚</span>
+          이전에 본 카드들
+        </h4>
         <span className="page-indicator">
-          {currentPage} / {totalPages} 페이지
+          {currentPage} / {totalPages} 묶음
         </span>
       </div>
 
@@ -106,9 +111,9 @@ const CardHistoryNavigation = ({
         <button 
           onClick={() => handlePageNavigation(currentPage - 1)}
           disabled={disabled || loading || currentPage <= 1}
-          className="nav-button prev"
+          className="nav-button prev communicator-nav-btn"
         >
-          ← 이전
+          ← 이전 카드
         </button>
         
         <div className="page-info">
@@ -120,15 +125,18 @@ const CardHistoryNavigation = ({
         <button 
           onClick={() => handlePageNavigation(currentPage + 1)}
           disabled={disabled || loading || currentPage >= totalPages}
-          className="nav-button next"
+          className="nav-button next communicator-nav-btn"
         >
-          다음 →
+          다른 카드 →
         </button>
       </div>
 
       {historyInfo.historySummary?.length > 0 && (
         <div className="page-list">
-          <h5>추천 기록</h5>
+          <h5>
+            <span className="list-icon">📝</span>
+            카드 묶음 목록
+          </h5>
           <div className="page-buttons">
             {historyInfo.historySummary.map((summary) => (
               <button
@@ -138,7 +146,7 @@ const CardHistoryNavigation = ({
                 disabled={disabled || loading}
                 title={`${summary.cardCount}개 카드 - ${summary.timestamp}`}
               >
-                <span className="page-number">{summary.pageNumber}</span>
+                <span className="page-number">{summary.pageNumber}번째</span>
                 <small className="card-count">({summary.cardCount}개)</small>
               </button>
             ))}
@@ -148,8 +156,9 @@ const CardHistoryNavigation = ({
 
       <div className="navigation-help">
         <small>
-          이전에 추천받은 카드들을 다시 볼 수 있습니다. 
-          마음에 드는 카드가 있었다면 이전 추천에서 찾아보세요.
+          <span className="help-icon">💡</span>
+          이전에 추천받은 카드들을 다시 볼 수 있어요. 
+          마음에 드는 카드가 있었다면 찾아보세요!
         </small>
       </div>
     </div>

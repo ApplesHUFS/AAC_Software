@@ -1,7 +1,7 @@
 // src/components/cards/CardGrid.js
 import React, { useState, useCallback } from 'react';
 
-// 카드 그리드 컴포넌트
+// 카드 그리드 컴포넌트 (소통이가 카드 선택하는 메인 영역)
 const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabled = false }) => {
   const isCardSelected = useCallback((card) => {
     return selectedCards.some(selected => selected.filename === card.filename);
@@ -14,17 +14,18 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
 
   if (!cards?.length) {
     return (
-      <div className="card-grid empty">
+      <div className="card-grid empty communicator-message">
         <div className="no-cards-message">
-          <h3>표시할 카드가 없습니다</h3>
-          <p>카드를 다시 추천받아 주세요.</p>
+          <span className="message-icon">😊</span>
+          <h3>아직 카드가 없어요</h3>
+          <p>도움이가 카드를 준비해드릴게요!</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="card-grid">
+    <div className="card-grid communicator-grid">
       {cards.map((card) => (
         <CardItem
           key={card.filename || card.id}
@@ -35,10 +36,11 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
         />
       ))}
       
-      <div className="grid-info">
+      <div className="grid-info communicator-info">
         <p>
-          {cards.length}개의 카드 중 {selectedCards.length}개 선택됨 
-          (최대 {maxSelection}개)
+          <span className="info-icon">🎨</span>
+          {cards.length}개의 카드 중 <strong>{selectedCards.length}개</strong> 선택됨 
+          (최대 {maxSelection}개까지)
         </p>
       </div>
     </div>
@@ -75,7 +77,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
 
   return (
     <div 
-      className={`card-item ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''} ${imageError ? 'error' : ''}`}
+      className={`card-item communicator-card ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''} ${imageError ? 'error' : ''}`}
       onClick={handleClick}
       onKeyPress={handleKeyPress}
       tabIndex={disabled ? -1 : 0}
@@ -84,14 +86,16 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
     >
       <div className="card-image-container">
         {!imageLoaded && !imageError && (
-          <div className="image-loading">
+          <div className="image-loading communicator-loading">
             <div className="loading-spinner small"></div>
+            <small>이미지 로딩 중...</small>
           </div>
         )}
         
         {imageError ? (
-          <div className="image-error">
-            <span>이미지를 불러올 수 없습니다</span>
+          <div className="image-error communicator-error">
+            <span className="error-icon">📷</span>
+            <span>이미지를 불러올 수 없어요</span>
             <small>{card.name}</small>
           </div>
         ) : (
@@ -107,14 +111,15 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
         
         {/* 선택 표시 */}
         {isSelected && !imageError && (
-          <div className="selection-indicator">
+          <div className="selection-indicator communicator-selected">
             <span className="checkmark">✓</span>
           </div>
         )}
         
+        {/* 선택 불가 상태 표시 */}
         {disabled && !isSelected && (
           <div className="disabled-overlay">
-            <span>최대 선택 수 초과</span>
+            <span>선택 완료</span>
           </div>
         )}
       </div>
@@ -124,42 +129,50 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
   );
 };
 
-// 선택된 카드 표시 컴포넌트
+// 선택된 카드 표시 컴포넌트 (소통이 확인용)
 const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => {
   if (selectedCards.length === 0) {
     return (
-      <div className="selected-cards-display empty">
-        <h3>선택된 카드</h3>
+      <div className="selected-cards-display empty communicator-sidebar">
+        <h3>
+          <span className="title-icon">🎯</span>
+          선택한 카드
+        </h3>
         <div className="empty-state">
-          <p>카드를 선택해주세요</p>
-          <small>(1-{maxCards}개 선택 가능)</small>
+          <div className="empty-icon">📝</div>
+          <p>원하는 카드를 선택해보세요</p>
+          <small>1~{maxCards}개까지 선택할 수 있어요</small>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="selected-cards-display">
-      <h3>선택된 카드 ({selectedCards.length}/{maxCards})</h3>
+    <div className="selected-cards-display communicator-sidebar">
+      <h3>
+        <span className="title-icon">✨</span>
+        선택한 카드 ({selectedCards.length}/{maxCards})
+      </h3>
       
       <div className="selected-cards-list">
         {selectedCards.map((card, index) => (
-          <div key={card.filename} className="selected-card-item">
+          <div key={card.filename} className="selected-card-item communicator-selected-item">
             <div className="card-preview">
               <img 
                 src={`http://localhost:8000${card.imagePath}`}
                 alt={card.name}
                 loading="lazy"
               />
-              <div className="card-order">{index + 1}</div>
+              <div className="card-order communicator-order">{index + 1}</div>
             </div>
             
             <div className="card-details">
               <span className="card-name">{card.name}</span>
+              <small className="card-position">{index + 1}번째 카드</small>
             </div>
             
             <button 
-              className="remove-card-btn"
+              className="remove-card-btn communicator-remove"
               onClick={() => onRemoveCard(card)}
               title={`${card.name} 카드 제거`}
             >
@@ -169,21 +182,31 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
         ))}
       </div>
       
-      <div className="selection-summary">
+      <div className="selection-summary communicator-summary">
         <p>
-          {maxCards - selectedCards.length > 0 
-            ? `${maxCards - selectedCards.length}개 더 선택할 수 있습니다` 
-            : '최대 선택 수에 도달했습니다'
-          }
+          {maxCards - selectedCards.length > 0 ? (
+            <>
+              <span className="summary-icon">👍</span>
+              <strong>{maxCards - selectedCards.length}개</strong> 더 선택할 수 있어요!
+            </>
+          ) : (
+            <>
+              <span className="summary-icon">🎉</span>
+              모든 카드를 선택했어요!
+            </>
+          )}
         </p>
       </div>
 
-      <div className="selection-guide">
-        <h5>선택 안내</h5>
+      <div className="selection-guide communicator-guide">
+        <h5>
+          <span className="guide-icon">💡</span>
+          카드 선택 안내
+        </h5>
         <ul>
-          <li>최소 1개, 최대 {maxCards}개까지 선택 가능</li>
-          <li>카드 순서는 의미 전달에 영향을 줄 수 있습니다</li>
-          <li>× 버튼으로 개별 카드를 제거할 수 있습니다</li>
+          <li>최소 1개, 최대 {maxCards}개까지 고를 수 있어요</li>
+          <li>카드 순서가 의미 전달에 중요해요</li>
+          <li>× 버튼으로 카드를 뺄 수 있어요</li>
         </ul>
       </div>
     </div>

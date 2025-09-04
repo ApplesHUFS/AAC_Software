@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { feedbackService } from '../../services/feedbackService';
 
-// Partner 피드백 폼 컴포넌트
+// Partner 피드백 폼 컴포넌트 (도움이가 올바른 해석 선택)
 const FeedbackForm = ({ 
   interpretations, 
   selectedCards, 
@@ -104,18 +104,26 @@ const FeedbackForm = ({
   };
 
   return (
-    <div className="feedback-form">
+    <div className="feedback-form partner-theme">
       <div className="feedback-header">
-        <h3>Partner 피드백</h3>
+        <div className="role-indicator partner-role">
+          <span className="role-icon">👥</span>
+          <span>도움이 해석 확인</span>
+        </div>
+        <h3>
+          <span className="form-icon">✅</span>
+          어떤 의미가 맞나요?
+        </h3>
         <p>
-          <strong>{contextInfo.interactionPartner}</strong>님, 
-          위의 해석 중 가장 적절한 것을 선택하거나 직접 입력해주세요.
+          <strong>{contextInfo.interactionPartner}</strong>님께서 
+          AI가 제안한 해석 중 가장 적절한 것을 선택하거나, 
+          직접 올바른 의미를 입력해주세요.
         </p>
       </div>
 
       <form onSubmit={handleSubmitFeedback}>
         {/* 피드백 타입 선택 */}
-        <div className="feedback-type-selection">
+        <div className="feedback-type-selection partner-selection">
           <div className="feedback-option">
             <input
               type="radio"
@@ -126,7 +134,10 @@ const FeedbackForm = ({
               onChange={() => handleFeedbackTypeChange('interpretation')}
               disabled={loading}
             />
-            <label htmlFor="interpretation-feedback">제시된 해석 중 선택</label>
+            <label htmlFor="interpretation-feedback" className="option-label">
+              <span className="option-icon">🎯</span>
+              제시된 해석 중 선택
+            </label>
           </div>
 
           <div className="feedback-option">
@@ -139,14 +150,23 @@ const FeedbackForm = ({
               onChange={() => handleFeedbackTypeChange('direct')}
               disabled={loading}
             />
-            <label htmlFor="direct-feedback">직접 입력</label>
+            <label htmlFor="direct-feedback" className="option-label">
+              <span className="option-icon">✍️</span>
+              직접 입력
+            </label>
           </div>
         </div>
 
         {/* 해석 선택 옵션 */}
         {feedbackType === 'interpretation' && (
           <div className="interpretation-selection">
-            <h4>해석 선택</h4>
+            <h4>
+              <span className="section-icon">🎯</span>
+              올바른 해석 선택
+            </h4>
+            <p className="selection-instruction">
+              소통이가 선택한 카드가 실제로 표현하고자 한 의미와 가장 가까운 해석을 선택해주세요.
+            </p>
             {interpretations.map((interpretation, index) => (
               <div key={index} className="interpretation-option">
                 <input
@@ -158,10 +178,12 @@ const FeedbackForm = ({
                   onChange={() => handleInterpretationSelect(index)}
                   disabled={loading}
                 />
-                <label htmlFor={`interpretation-${index}`}>
+                <label htmlFor={`interpretation-${index}`} className="interpretation-label">
                   <div className="interpretation-preview">
-                    <strong>{index + 1}번:</strong>
-                    <span>{interpretation.text || interpretation}</span>
+                    <div className="interpretation-number">{index + 1}</div>
+                    <div className="interpretation-content">
+                      <span>{interpretation.text || interpretation}</span>
+                    </div>
                   </div>
                 </label>
               </div>
@@ -172,14 +194,21 @@ const FeedbackForm = ({
         {/* 직접 입력 옵션 */}
         {feedbackType === 'direct' && (
           <div className="direct-feedback-section">
-            <h4>직접 입력</h4>
+            <h4>
+              <span className="section-icon">✍️</span>
+              올바른 의미 직접 입력
+            </h4>
+            <p className="input-instruction">
+              소통이가 선택한 카드들이 실제로 표현하고자 한 의미를 직접 입력해주세요.
+            </p>
             <textarea
               value={directFeedback}
               onChange={handleDirectFeedbackChange}
-              placeholder="올바른 해석을 직접 입력해주세요. 선택된 카드들이 실제로 표현하고자 하는 의미를 구체적으로 적어주세요."
+              placeholder="소통이가 카드로 표현하고 싶었던 정확한 의미를 구체적으로 써주세요. 예: '배가 고파서 밥을 먹고 싶어요', '친구와 같이 놀고 싶어요' 등"
               rows="4"
               disabled={loading}
               maxLength="500"
+              className="feedback-textarea"
             />
             <div className="character-count">
               {directFeedback.length}/500자
@@ -188,31 +217,56 @@ const FeedbackForm = ({
         )}
 
         {/* 에러 메시지 */}
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message partner-error">
+            <span className="error-icon">⚠️</span>
+            {error}
+          </div>
+        )}
 
         {/* 제출 버튼 */}
         <div className="feedback-actions">
           <button 
             type="submit"
-            className="primary-button"
+            className="primary-button partner-button large"
             disabled={loading}
           >
-            {loading ? '제출 중...' : '피드백 제출'}
+            {loading ? (
+              <>
+                <span className="button-spinner"></span>
+                확인 중...
+              </>
+            ) : (
+              <>
+                <span className="button-icon">✅</span>
+                이 의미가 맞습니다
+              </>
+            )}
           </button>
         </div>
 
         {/* 도움말 */}
-        <div className="feedback-help">
-          <h5>피드백 가이드</h5>
-          <ul>
-            <li>가장 적절한 해석이 있다면 해당 번호를 선택해주세요</li>
-            <li>모든 해석이 부정확하다면 '직접 입력'을 선택하여 올바른 해석을 입력해주세요</li>
-            <li>구체적이고 명확한 피드백이 AI 학습에 도움이 됩니다</li>
-          </ul>
+        <div className="feedback-help partner-help">
+          <h5>
+            <span className="help-icon">💡</span>
+            피드백 작성 도움말
+          </h5>
+          <div className="help-grid">
+            <div className="help-item">
+              <strong>🎯 해석 선택 시</strong>
+              <p>AI가 제안한 3가지 중 가장 정확한 의미를 선택해주세요</p>
+            </div>
+            <div className="help-item">
+              <strong>✍️ 직접 입력 시</strong>
+              <p>모든 해석이 부정확하다면 올바른 의미를 직접 써주세요</p>
+            </div>
+            <div className="help-item">
+              <strong>📝 작성 팁</strong>
+              <p>구체적이고 명확한 피드백이 AI 학습에 도움이 됩니다</p>
+            </div>
+          </div>
         </div>
       </form>
     </div>
   );
 };
-
-export default FeedbackForm;

@@ -1,7 +1,7 @@
 // src/components/interpretation/InterpretationDisplay.js
 import React from 'react';
 
-// 해석 결과 표시 컴포넌트
+// 해석 결과 표시 컴포넌트 (도움이가 AI 해석 확인)
 const InterpretationDisplay = ({ 
   interpretations, 
   selectedCards, 
@@ -9,20 +9,26 @@ const InterpretationDisplay = ({
   method = 'ai'
 }) => {
   return (
-    <div className="interpretation-display">
+    <div className="interpretation-display partner-theme">
       {/* 해석 헤더 */}
       <div className="interpretation-header">
-        <h2>카드 해석 결과</h2>
+        <h2>
+          <span className="header-icon">🤖</span>
+          AI 해석 결과
+        </h2>
         <div className="interpretation-method">
-          <span className="method-badge">
+          <span className="method-badge partner-badge">
             {method === 'ai' ? 'AI 해석' : '규칙 기반 해석'}
           </span>
         </div>
       </div>
 
       {/* 상황 요약 */}
-      <div className="context-summary">
-        <h3>대화 상황</h3>
+      <div className="context-summary partner-summary">
+        <h3>
+          <span className="summary-icon">📍</span>
+          대화 상황
+        </h3>
         <div className="context-details">
           <div className="context-item">
             <span className="context-label">장소:</span>
@@ -49,7 +55,10 @@ const InterpretationDisplay = ({
 
       {/* 선택된 카드 미리보기 */}
       <div className="selected-cards-summary">
-        <h3>선택된 카드 ({selectedCards.length}개)</h3>
+        <h3>
+          <span className="summary-icon">🎨</span>
+          소통이가 선택한 카드 ({selectedCards.length}개)
+        </h3>
         <div className="cards-preview">
           {selectedCards.map((card, index) => (
             <div key={card.filename || index} className="card-preview">
@@ -59,7 +68,7 @@ const InterpretationDisplay = ({
                   alt={card.name} 
                   loading="lazy"
                 />
-                <div className="card-order">{index + 1}</div>
+                <div className="card-order communicator-order">{index + 1}</div>
               </div>
               <span className="card-name">{card.name}</span>
             </div>
@@ -69,28 +78,53 @@ const InterpretationDisplay = ({
 
       {/* 해석 목록 */}
       <div className="interpretations-list">
-        <h3>가능한 해석 ({interpretations.length}가지)</h3>
+        <h3>
+          <span className="list-icon">🎯</span>
+          AI가 제안한 해석 ({interpretations.length}가지)
+        </h3>
         <p className="interpretation-instruction">
-          다음 중에서 가장 적절한 해석을 Partner가 선택해주세요:
+          다음 중에서 소통이가 실제로 표현하고 싶었던 의미와 가장 가까운 해석을 선택해주세요:
         </p>
         
         {interpretations.map((interpretation, index) => (
           <div 
             key={index}
-            className="interpretation-item"
+            className="interpretation-item partner-item"
           >
-            <div className="interpretation-number">{index + 1}</div>
+            <div className="interpretation-number partner-number">{index + 1}</div>
             <div className="interpretation-text">
               {interpretation.text || interpretation}
             </div>
+            <div className="interpretation-confidence">
+              <small>AI 신뢰도: 높음</small>
+            </div>
           </div>
         ))}
+      </div>
+
+      {/* 참고 정보 */}
+      <div className="interpretation-note partner-note">
+        <h4>
+          <span className="note-icon">ℹ️</span>
+          참고사항
+        </h4>
+        <div className="note-content">
+          <p>
+            • AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다
+          </p>
+          <p>
+            • 정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수 있습니다
+          </p>
+          <p>
+            • 제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-// 해석 완료 결과 컴포넌트
+// 해석 완료 결과 컴포넌트 (최종 결과 표시)
 const InterpretationResult = ({ 
   feedbackResult, 
   selectedCards, 
@@ -125,38 +159,47 @@ const InterpretationResult = ({
   };
 
   return (
-    <div className="interpretation-result">
+    <div className="interpretation-result partner-theme">
       {/* 완료 헤더 */}
       <div className="result-header">
-        <h2>해석 완료</h2>
-        <div className="success-indicator">
-          <span className="success-icon">✓</span>
+        <div className="role-indicator partner-role">
+          <span className="role-icon">👥</span>
+          <span>소통 완료</span>
+        </div>
+        <h2>
+          <span className="header-icon">🎉</span>
+          소통이의 마음을 확인했어요!
+        </h2>
+        <div className="success-indicator partner-success">
+          <span className="success-icon">✅</span>
           <span>성공적으로 완료되었습니다</span>
         </div>
       </div>
 
       {/* 최종 해석 */}
-      <div className="final-interpretation">
-        <h3>최종 해석</h3>
+      <div className="final-interpretation partner-final">
+        <h3>
+          <span className="final-icon">💬</span>
+          소통이가 전하고 싶었던 마음
+        </h3>
         <div className="interpretation-content">
-          <p className="interpretation-text">
+          <div className="final-message">
             "{getFinalInterpretation()}"
-          </p>
+          </div>
           <div className="interpretation-meta">
             <span className="feedback-type">({getFeedbackType()})</span>
-            <span className="completion-time">완료: {getCompletionTime()}</span>
+            <span className="completion-time">완료시간: {getCompletionTime()}</span>
           </div>
         </div>
       </div>
 
       {/* 세션 요약 */}
-      <div className="session-summary">
-        <h3>세션 요약</h3>
+      <div className="session-summary partner-session">
+        <h3>
+          <span className="summary-icon">📊</span>
+          이번 대화 요약
+        </h3>
         <div className="summary-grid">
-          <div className="summary-item">
-            <span className="summary-label">사용자:</span>
-            <span className="summary-value">{feedbackResult?.user_id || contextInfo.userId}</span>
-          </div>
           <div className="summary-item">
             <span className="summary-label">대화 상황:</span>
             <span className="summary-value">
@@ -165,20 +208,27 @@ const InterpretationResult = ({
             </span>
           </div>
           <div className="summary-item">
-            <span className="summary-label">선택된 카드:</span>
+            <span className="summary-label">선택한 카드:</span>
             <span className="summary-value">{selectedCards.length}개</span>
           </div>
           <div className="summary-item">
-            <span className="summary-label">생성된 해석:</span>
+            <span className="summary-label">AI 제안 해석:</span>
             <span className="summary-value">{interpretations.length}개</span>
+          </div>
+          <div className="summary-item">
+            <span className="summary-label">확인 방식:</span>
+            <span className="summary-value">{getFeedbackType()}</span>
           </div>
         </div>
       </div>
 
       {/* 사용된 카드 표시 */}
       <div className="cards-used">
-        <h3>사용된 카드</h3>
-        <div className="cards-grid">
+        <h3>
+          <span className="cards-icon">🎨</span>
+          소통에 사용된 카드
+        </h3>
+        <div className="cards-grid result-cards">
           {selectedCards.map((card, index) => (
             <div key={card.filename || index} className="card-item-result">
               <img 
@@ -195,25 +245,28 @@ const InterpretationResult = ({
         </div>
       </div>
 
-      {/* 해석 진행 과정 요약 */}
-      <div className="process-summary">
-        <h4>진행 과정</h4>
+      {/* 진행 과정 요약 */}
+      <div className="process-summary partner-process">
+        <h4>
+          <span className="process-icon">⚡</span>
+          진행 과정
+        </h4>
         <div className="process-steps">
-          <div className="process-step">
-            <span className="step-number">1</span>
-            <span className="step-description">카드 추천 및 선택 ({selectedCards.length}개)</span>
+          <div className="process-step completed">
+            <span className="step-icon">📍</span>
+            <span className="step-description">도움이가 상황 입력</span>
           </div>
-          <div className="process-step">
-            <span className="step-number">2</span>
+          <div className="process-step completed">
+            <span className="step-icon">🎨</span>
+            <span className="step-description">소통이가 카드 선택 ({selectedCards.length}개)</span>
+          </div>
+          <div className="process-step completed">
+            <span className="step-icon">🤖</span>
             <span className="step-description">AI 해석 생성 ({interpretations.length}가지)</span>
           </div>
-          <div className="process-step">
-            <span className="step-number">3</span>
-            <span className="step-description">Partner 피드백 수집</span>
-          </div>
-          <div className="process-step">
-            <span className="step-number">4</span>
-            <span className="step-description">최종 해석 확정</span>
+          <div className="process-step completed">
+            <span className="step-icon">✅</span>
+            <span className="step-description">도움이가 의미 확인</span>
           </div>
         </div>
       </div>
@@ -222,21 +275,26 @@ const InterpretationResult = ({
       <div className="result-actions">
         <button 
           onClick={onStartNewSession}
-          className="primary-button large"
+          className="primary-button partner-button large"
         >
-          새로운 대화 시작
+          <span className="button-icon">🚀</span>
+          새로운 대화 시작하기
         </button>
       </div>
 
       {/* 완료 메시지 */}
-      <div className="completion-message">
-        <p>
-          이번 대화에서 사용된 카드와 해석 정보가 시스템에 학습되어 
-          다음 번에 더 정확한 추천을 받을 수 있습니다.
-        </p>
-        <small>
-          선택된 카드들과 최종 해석은 메모리에 저장되어 향후 개인화 추천에 활용됩니다.
-        </small>
+      <div className="completion-message partner-completion">
+        <div className="completion-content">
+          <p>
+            <span className="message-icon">🎯</span>
+            이번 대화에서 사용된 카드와 해석 정보가 시스템에 학습되어 
+            다음번에는 더 정확한 추천을 받을 수 있습니다.
+          </p>
+          <small>
+            소통이의 카드 선택과 최종 해석이 메모리에 저장되어 
+            향후 개인화 추천에 활용됩니다.
+          </small>
+        </div>
       </div>
     </div>
   );

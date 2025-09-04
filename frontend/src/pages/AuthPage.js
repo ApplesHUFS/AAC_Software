@@ -17,11 +17,20 @@ const AuthPage = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page partner-theme">
       <div className="auth-container">
         <div className="auth-header">
-          <h1>AAC 카드 해석 시스템</h1>
-          <p>개인화된 의사소통 지원 서비스</p>
+          <div className="service-logo">
+            <span className="logo-icon">💬</span>
+            <h1>소통 도우미</h1>
+          </div>
+          <p className="service-description">
+            AAC 사용자의 의사소통을 지원하는 <strong>도움이</strong> 전용 서비스
+          </p>
+          <div className="role-indicator partner-role">
+            <span className="role-icon">👥</span>
+            <span>도움이 (보호자/케어러) 로그인</span>
+          </div>
         </div>
         
         <div className="auth-content">

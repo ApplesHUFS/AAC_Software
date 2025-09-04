@@ -116,7 +116,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
       const response = await authService.updateProfile(user.userId, updateData);
       
       if (response.success) {
-        setSuccess('프로필이 성공적으로 업데이트되었습니다.');
+        setSuccess('소통이 정보가 성공적으로 업데이트되었습니다.');
         
         // 업데이트된 사용자 정보 생성
         const updatedUser = {
@@ -128,7 +128,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
           onProfileUpdated(updatedUser);
         }, 1500);
       } else {
-        setError(response.error || '프로필 업데이트에 실패했습니다.');
+        setError(response.error || '정보 업데이트에 실패했습니다.');
       }
     } catch (error) {
       setError(error.message);
@@ -138,26 +138,36 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
   };
 
   return (
-    <div className="profile-edit-form">
+    <div className="profile-edit-form partner-theme">
       <div className="form-header">
-        <h2>프로필 편집</h2>
-        <p>개인화된 서비스 제공을 위한 정보를 수정할 수 있습니다.</p>
+        <div className="role-indicator partner-role">
+          <span className="role-icon">👥</span>
+          <span>도움이 설정</span>
+        </div>
+        <h2>
+          <span className="form-icon">👤</span>
+          소통이 정보 수정
+        </h2>
+        <p>소통이에게 더 나은 개인화된 서비스를 제공하기 위해 정보를 업데이트하세요.</p>
       </div>
       
       <form onSubmit={handleSubmit}>
         {/* 기본 정보 */}
         <div className="form-section">
-          <h4>기본 정보</h4>
+          <h4>
+            <span className="section-icon">📋</span>
+            기본 정보
+          </h4>
           
           <div className="form-group">
-            <label htmlFor="name">이름 *</label>
+            <label htmlFor="name">이름 (닉네임 가능) *</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="이름을 입력해주세요"
+              placeholder="소통이의 이름이나 닉네임을 입력해주세요"
               disabled={loading}
             />
           </div>
@@ -198,7 +208,10 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
 
         {/* 장애 및 의사소통 정보 */}
         <div className="form-section">
-          <h4>의사소통 정보</h4>
+          <h4>
+            <span className="section-icon">💬</span>
+            의사소통 정보
+          </h4>
           
           <div className="form-group">
             <label htmlFor="disabilityType">장애 유형 *</label>
@@ -223,7 +236,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
               name="communicationCharacteristics"
               value={formData.communicationCharacteristics}
               onChange={handleChange}
-              placeholder="AAC 카드 사용이 아닌 일반적인 의사소통 시의 특징을 입력해주세요"
+              placeholder="AAC 카드 사용이 아닌 평소 의사소통 방식의 특징을 간단히 적어주세요"
               rows="3"
               disabled={loading}
             />
@@ -232,7 +245,10 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
 
         {/* 관심 주제 */}
         <div className="form-section">
-          <h4>관심 주제 *</h4>
+          <h4>
+            <span className="section-icon">❤️</span>
+            소통이의 관심 주제 *
+          </h4>
           
           <div className="form-group">
             <div className="topic-input-section">
@@ -241,14 +257,14 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
                 onKeyPress={handleTopicKeyPress}
-                placeholder="관심 주제를 입력하세요"
+                placeholder="소통이가 좋아하는 것들을 입력해주세요"
                 disabled={loading}
               />
               <button 
                 type="button" 
                 onClick={handleAddTopic}
                 disabled={loading || !topicInput.trim()}
-                className="secondary-button"
+                className="secondary-button add-topic-btn"
               >
                 추가
               </button>
@@ -257,7 +273,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
             {formData.interestingTopics.length > 0 && (
               <div className="topic-list">
                 {formData.interestingTopics.map((topic, index) => (
-                  <span key={index} className="topic-tag">
+                  <span key={index} className="topic-tag partner-topic">
                     {topic}
                     <button 
                       type="button" 
@@ -275,8 +291,19 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         </div>
 
         {/* 메시지 */}
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
+        {error && (
+          <div className="error-message partner-error">
+            <span className="error-icon">⚠️</span>
+            {error}
+          </div>
+        )}
+        
+        {success && (
+          <div className="success-message partner-success">
+            <span className="success-icon">✅</span>
+            {success}
+          </div>
+        )}
         
         {/* 액션 버튼 */}
         <div className="form-actions">
@@ -290,7 +317,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
           </button>
           <button 
             type="submit" 
-            className="primary-button" 
+            className="primary-button partner-button" 
             disabled={loading || !hasChanges()}
           >
             {loading ? '저장 중...' : '변경사항 저장'}
@@ -299,7 +326,8 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
 
         {/* 변경 사항 알림 */}
         {hasChanges() && !loading && (
-          <div className="changes-notice">
+          <div className="changes-notice partner-notice">
+            <span className="notice-icon">💡</span>
             변경된 내용이 있습니다. 저장하시겠습니까?
           </div>
         )}

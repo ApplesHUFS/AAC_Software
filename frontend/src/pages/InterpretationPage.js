@@ -144,26 +144,34 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     });
   }, [generateInterpretations]);
 
-  // 로딩 상태
+  // 로딩 상태 (AI 해석 생성 중)
   if (loading && currentStep === INTERPRETATION_STEPS.INTERPRETING) {
     return (
-      <div className="interpretation-page loading">
-        <div className="loading-content">
-          <h2>AI가 카드를 해석하고 있습니다...</h2>
+      <div className="interpretation-page partner-theme loading">
+        <div className="loading-content partner-loading">
+          <div className="loading-header">
+            <span className="loading-icon">🤖</span>
+            <h2>AI가 소통이의 카드를 분석하고 있어요</h2>
+          </div>
           <div className="loading-details">
-            <p>선택하신 <strong>{selectedCards.length}개</strong>의 카드를 분석 중입니다.</p>
-            <ul>
+            <p>선택하신 <strong>{selectedCards.length}개</strong>의 카드를 꼼꼼히 살펴보고 있어요.</p>
+            <div className="selected-cards-preview">
               {selectedCards.slice(0, 3).map((card, index) => (
-                <li key={index}>{card.name}</li>
+                <span key={index} className="card-preview-item">{card.name}</span>
               ))}
-              {selectedCards.length > 3 && <li>외 {selectedCards.length - 3}개...</li>}
-            </ul>
+              {selectedCards.length > 3 && <span>외 {selectedCards.length - 3}개...</span>}
+            </div>
             <p>
-              <strong>{contextData.place}</strong>에서 <strong>{contextData.interactionPartner}</strong>와의 
-              대화 상황을 고려하여 최적의 해석을 생성하고 있습니다.
+              <strong>{contextData.place}</strong>에서 <strong>{contextData.interactionPartner}</strong>과의 
+              대화 상황을 고려해서 가장 적절한 해석 3가지를 만들어드릴게요.
             </p>
           </div>
           <div className="loading-spinner"></div>
+          <div className="loading-progress">
+            <div className="progress-step active">카드 분석</div>
+            <div className="progress-step">상황 고려</div>
+            <div className="progress-step">해석 생성</div>
+          </div>
         </div>
       </div>
     );
@@ -172,14 +180,17 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   // 에러 상태
   if (error) {
     return (
-      <div className="interpretation-page error">
-        <div className="error-content">
-          <h2>해석 생성 실패</h2>
+      <div className="interpretation-page partner-theme error">
+        <div className="error-content partner-error">
+          <div className="error-header">
+            <span className="error-icon">⚠️</span>
+            <h2>해석 생성에 문제가 발생했어요</h2>
+          </div>
           <div className="error-message">{error}</div>
           
           <div className="error-actions">
             <button className="primary-button" onClick={handleRetry}>
-              다시 시도
+              다시 시도하기
             </button>
             <button className="secondary-button" onClick={handleStartNewSession}>
               새로운 대화 시작
@@ -191,10 +202,15 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   }
 
   return (
-    <div className="interpretation-page">
+    <div className="interpretation-page partner-theme">
       {/* Partner 피드백 대기 단계 */}
       {currentStep === INTERPRETATION_STEPS.FEEDBACK && interpretations.length > 0 && (
         <>
+          <div className="role-indicator partner-role">
+            <span className="role-icon">👥</span>
+            <span>도움이 해석 확인</span>
+          </div>
+          
           <InterpretationDisplay 
             interpretations={interpretations}
             selectedCards={selectedCards}
@@ -225,16 +241,19 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       )}
 
       {/* 진행 상태 표시 */}
-      <div className="interpretation-progress">
+      <div className="interpretation-progress partner-progress">
         <div className="progress-steps">
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.INTERPRETING ? 'active' : 'completed'}`}>
-            AI 해석 생성
+            <span className="step-icon">🤖</span>
+            <span>AI 해석 생성</span>
           </div>
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.FEEDBACK ? 'active' : currentStep === INTERPRETATION_STEPS.COMPLETED ? 'completed' : ''}`}>
-            Partner 피드백
+            <span className="step-icon">👥</span>
+            <span>도움이 확인</span>
           </div>
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.COMPLETED ? 'active' : ''}`}>
-            해석 완료
+            <span className="step-icon">✅</span>
+            <span>소통 완료</span>
           </div>
         </div>
       </div>

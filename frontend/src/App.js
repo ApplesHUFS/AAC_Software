@@ -28,7 +28,7 @@ const App = () => {
   const [contextData, setContextData] = useState(null);
   const [selectedCards, setSelectedCards] = useState([]);
 
-  // 세션 저장/불러오기
+  // 세션 저장/불러오기 유틸리티
   const saveSession = (key, data) => {
     try {
       localStorage.setItem(key, JSON.stringify(data));
@@ -80,7 +80,7 @@ const App = () => {
     }
   }, []);
 
-  // 인증 성공 처리
+  // 인증 성공 처리 (도움이가 회원가입/로그인)
   const handleAuthSuccess = (loginResponse) => {
     const userData = {
       userId: loginResponse.userId,
@@ -93,7 +93,7 @@ const App = () => {
     saveSession(SESSION_KEYS.USER, userData);
   };
 
-  // 로그아웃
+  // 로그아웃 (도움이 기능)
   const handleLogout = () => {
     setCurrentUser(null);
     setContextData(null);
@@ -102,13 +102,13 @@ const App = () => {
     clearSession();
   };
 
-  // 사용자 정보 업데이트
+  // 사용자 정보 업데이트 (도움이 기능)
   const handleUserUpdate = (updatedUser) => {
     setCurrentUser(updatedUser);
     saveSession(SESSION_KEYS.USER, updatedUser);
   };
 
-  // 컨텍스트 생성 완료
+  // 컨텍스트 생성 완료 (도움이가 상황 입력)
   const handleContextCreated = (context) => {
     setContextData(context);
     setCurrentStep(APP_STEPS.CARDS);
@@ -116,7 +116,7 @@ const App = () => {
     saveSession(SESSION_KEYS.CURRENT_STEP, APP_STEPS.CARDS);
   };
 
-  // 카드 선택 완료
+  // 카드 선택 완료 (소통이가 카드 선택)
   const handleCardSelectionComplete = (cards) => {
     setSelectedCards(cards);
     setCurrentStep(APP_STEPS.INTERPRETATION);
@@ -124,7 +124,7 @@ const App = () => {
     saveSession(SESSION_KEYS.CURRENT_STEP, APP_STEPS.INTERPRETATION);
   };
 
-  // 대화 세션 완료
+  // 대화 세션 완료 (도움이가 피드백 완료)
   const handleSessionComplete = () => {
     setContextData(null);
     setSelectedCards([]);

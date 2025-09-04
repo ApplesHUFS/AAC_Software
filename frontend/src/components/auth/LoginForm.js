@@ -44,26 +44,36 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   };
 
   return (
-    <div className="auth-form">
-      <h2>로그인</h2>
+    <div className="auth-form partner-form">
+      <h2>
+        <span className="form-icon">🔑</span>
+        도움이 로그인
+      </h2>
+      <p className="form-description">소통이와 함께하는 AAC 서비스에 접속하세요</p>
       
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="userId">사용자 ID</label>
+          <label htmlFor="userId">
+            <span className="label-icon">👤</span>
+            사용자 ID
+          </label>
           <input
             type="text"
             id="userId"
             name="userId"
             value={formData.userId}
             onChange={handleChange}
-            placeholder="사용자 ID를 입력하세요"
+            placeholder="등록한 사용자 ID를 입력하세요"
             disabled={loading}
             autoComplete="username"
           />
         </div>
         
         <div className="form-group">
-          <label htmlFor="password">비밀번호</label>
+          <label htmlFor="password">
+            <span className="label-icon">🔒</span>
+            비밀번호
+          </label>
           <input
             type="password"
             id="password"
@@ -77,29 +87,30 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
         </div>
 
         {error && (
-          <div className="error-message">{error}</div>
+          <div className="error-message partner-error">
+            <span className="error-icon">⚠️</span>
+            {error}
+          </div>
         )}
         
-        <button type="submit" className="primary-button" disabled={loading}>
+        <button type="submit" className="primary-button partner-button" disabled={loading}>
           {loading ? '로그인 중...' : '로그인'}
         </button>
       </form>
       
       <div className="auth-switch">
         <p>
-          계정이 없으신가요? 
+          아직 계정이 없으신가요? 
           <button 
             type="button" 
-            className="link-button" 
+            className="link-button partner-link" 
             onClick={switchToRegister}
             disabled={loading}
           >
-            회원가입
+            회원가입하기
           </button>
         </p>
       </div>
     </div>
   );
 };
-
-export { LoginForm };

@@ -1,7 +1,4 @@
 // src/components/auth/RegisterForm.js
-import React, { useState } from 'react';
-import { authService } from '../../services/authService';
-
 // 선택지 옵션들
 const GENDER_OPTIONS = ['남성', '여성'];
 const DISABILITY_OPTIONS = ['지적장애', '자폐스펙트럼장애', '의사소통장애'];
@@ -137,14 +134,23 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   };
 
   return (
-    <div className="auth-form">
-      <h2>회원가입</h2>
-      <p>개인화된 AAC 서비스를 위한 정보를 입력해주세요.</p>
+    <div className="auth-form partner-form register-form">
+      <h2>
+        <span className="form-icon">👥</span>
+        소통이 계정 만들기
+      </h2>
+      <p className="form-description">
+        소통이의 개인 맞춤 AAC 서비스를 위한 정보를 입력해주세요. 
+        <br />이름은 닉네임도 사용할 수 있어요.
+      </p>
       
       <form onSubmit={handleSubmit}>
         {/* 기본 정보 */}
         <div className="form-section">
-          <h4>기본 정보</h4>
+          <h4>
+            <span className="section-icon">📋</span>
+            기본 정보
+          </h4>
           
           <div className="form-group">
             <label htmlFor="userId">사용자 ID *</label>
@@ -154,21 +160,21 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               name="userId"
               value={formData.userId}
               onChange={handleChange}
-              placeholder="사용자 ID를 입력하세요"
+              placeholder="로그인에 사용할 ID를 입력하세요"
               disabled={loading}
               autoComplete="username"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="name">이름 *</label>
+            <label htmlFor="name">이름 (닉네임 가능) *</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="이름을 입력해주세요"
+              placeholder="소통이의 이름이나 원하는 닉네임을 입력해주세요"
               disabled={loading}
               autoComplete="name"
             />
@@ -210,7 +216,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
         {/* 장애 및 의사소통 정보 */}
         <div className="form-section">
-          <h4>의사소통 정보</h4>
+          <h4>
+            <span className="section-icon">💬</span>
+            의사소통 정보
+          </h4>
           
           <div className="form-group">
             <label htmlFor="disabilityType">장애 유형 *</label>
@@ -235,7 +244,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               name="communicationCharacteristics"
               value={formData.communicationCharacteristics}
               onChange={handleChange}
-              placeholder="AAC 카드 사용이 아닌 일반적인 의사소통 시의 특징을 입력해주세요"
+              placeholder="AAC 카드 사용이 아닌 평소 의사소통 방식의 특징을 간단히 적어주세요 (예: 짧은 단어로 말함, 제스처 자주 사용 등)"
               rows="3"
               disabled={loading}
             />
@@ -244,7 +253,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
         {/* 관심 주제 */}
         <div className="form-section">
-          <h4>관심 주제 *</h4>
+          <h4>
+            <span className="section-icon">❤️</span>
+            소통이의 관심 주제 *
+          </h4>
           
           <div className="form-group">
             <div className="topic-input-section">
@@ -253,14 +265,14 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
                 onKeyPress={handleTopicKeyPress}
-                placeholder="관심 주제를 입력하세요"
+                placeholder="소통이가 좋아하는 것들을 입력해주세요 (예: 동물, 음식, 게임 등)"
                 disabled={loading}
               />
               <button 
                 type="button" 
                 onClick={handleAddTopic}
                 disabled={loading || !topicInput.trim()}
-                className="secondary-button"
+                className="secondary-button add-topic-btn"
               >
                 추가
               </button>
@@ -269,7 +281,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             {formData.interestingTopics.length > 0 && (
               <div className="topic-list">
                 {formData.interestingTopics.map((topic, index) => (
-                  <span key={index} className="topic-tag">
+                  <span key={index} className="topic-tag partner-topic">
                     {topic}
                     <button 
                       type="button" 
@@ -289,14 +301,17 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 비밀번호 */}
         <div className="form-section">
           <div className="form-group">
-            <label htmlFor="password">비밀번호 *</label>
+            <label htmlFor="password">
+              <span className="label-icon">🔒</span>
+              비밀번호 *
+            </label>
             <input
               type="password"
               id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="비밀번호를 입력하세요 (4자 이상)"
+              placeholder="4자 이상의 비밀번호를 입력하세요"
               disabled={loading}
               autoComplete="new-password"
             />
@@ -304,11 +319,14 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         </div>
 
         {error && (
-          <div className="error-message">{error}</div>
+          <div className="error-message partner-error">
+            <span className="error-icon">⚠️</span>
+            {error}
+          </div>
         )}
         
-        <button type="submit" className="primary-button" disabled={loading}>
-          {loading ? '가입 중...' : '회원가입'}
+        <button type="submit" className="primary-button partner-button large" disabled={loading}>
+          {loading ? '계정 만드는 중...' : '소통이 계정 만들기'}
         </button>
       </form>
       
@@ -317,11 +335,11 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           이미 계정이 있으신가요? 
           <button 
             type="button" 
-            className="link-button" 
+            className="link-button partner-link" 
             onClick={switchToLogin}
             disabled={loading}
           >
-            로그인
+            로그인하기
           </button>
         </p>
       </div>
@@ -329,4 +347,4 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   );
 };
 
-export { RegisterForm };
+export { LoginForm, RegisterForm };
