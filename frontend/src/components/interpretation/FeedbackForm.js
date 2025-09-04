@@ -270,3 +270,5 @@ const FeedbackForm = ({
     </div>
   );
 };
+
+export default FeedbackForm;

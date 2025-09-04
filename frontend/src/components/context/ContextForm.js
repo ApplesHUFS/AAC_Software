@@ -8,7 +8,7 @@ const PLACE_EXAMPLES = [
 ];
 
 const PARTNER_EXAMPLES = [
-  '엄마', '아빠', '형, 누나, 언니, 오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
+  '엄마', '아빠', '형' , '누나', '언니', '오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
 ];
 
 const ACTIVITY_EXAMPLES = [
@@ -249,4 +249,4 @@ const ContextForm = ({ userId, onContextCreated }) => {
   );
 };
 
-export { ContextForm };
+export default ContextForm;

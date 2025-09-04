@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { feedbackService } from '../services/feedbackService';
-import { InterpretationDisplay, InterpretationResult } from '../components/interpretation/InterpretationDisplay';
 import FeedbackForm from '../components/interpretation/FeedbackForm';
+import InterpretationDisplay, { InterpretationResult } from '../components/interpretation/InterpretationDisplay';
 
 // 해석 진행 단계
 const INTERPRETATION_STEPS = {

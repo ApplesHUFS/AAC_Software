@@ -1,4 +1,7 @@
 // src/components/auth/RegisterForm.js
+import React, { useState } from 'react';
+import { authService } from '../../services/authService';
+
 // 선택지 옵션들
 const GENDER_OPTIONS = ['남성', '여성'];
 const DISABILITY_OPTIONS = ['지적장애', '자폐스펙트럼장애', '의사소통장애'];
@@ -347,4 +350,4 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   );
 };
 
-export { LoginForm, RegisterForm };
+export default RegisterForm;

@@ -214,4 +214,4 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
 };
 
 export default CardGrid;
-export { CardGrid, CardItem, SelectedCardsDisplay };
+export { CardItem, SelectedCardsDisplay };

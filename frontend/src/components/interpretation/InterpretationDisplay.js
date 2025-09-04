@@ -301,4 +301,4 @@ const InterpretationResult = ({
 };
 
 export default InterpretationDisplay;
-export { InterpretationDisplay, InterpretationResult };
+export { InterpretationResult };

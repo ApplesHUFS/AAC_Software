@@ -1,6 +1,6 @@
 // src/pages/DashboardPage.js
 import React, { useState } from 'react';
-import { ContextForm } from '../components/context/ContextForm';
+import ContextForm from '../components/context/ContextForm';
 import ProfileEditForm from '../components/profile/ProfileEditForm';
 
 const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
