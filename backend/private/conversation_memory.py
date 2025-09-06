@@ -38,19 +38,20 @@ class ConversationSummaryMemory:
             "user_memories": {}
         }
 
-        # LangChain ChatOpenAI 모델 초기화
+        # LangChain ChatOpenAI 모델 설정
         self.model = self.config.get('openai_model')
         self.temperature = self.config.get('openai_temperature')
         self.max_tokens = self.config.get('summary_max_tokens')
 
         try:
+            # LangChain ChatOpenAI 모델 초기화
             self.llm = ChatOpenAI(
                 model=self.model,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens
             )
 
-            # LLMFactory 초기화 (이미지 분석용)
+            # LLM 팩토리 초기화 (이미지 분석용)
             llm_config = {
                 'openai_model': self.model,
                 'openai_temperature': 0.3,
@@ -63,21 +64,33 @@ class ConversationSummaryMemory:
         except Exception as e:
             raise RuntimeError(f"OpenAI 클라이언트 초기화 실패: {str(e)}. 환경변수 OPENAI_API_KEY를 확인하세요.")
 
+        # 메모리 데이터 로드
         self._load_memory()
 
     def _load_memory(self):
         """메모리 파일에서 데이터 로드."""
-        if not os.path.exists('user_data/conversation_memory.json'):
-            with open('user_data/conversation_memory.json', 'w', encoding='utf-8') as f:
-                json.dump({"user_memories": {}}, f)
-        with open(self.memory_file_path, 'r', encoding='utf-8') as f:
-            self.memory_data = json.load(f)
+        try:
+            # 파일이 없으면 기본 구조로 생성
+            if not os.path.exists('user_data/conversation_memory.json'):
+                with open('user_data/conversation_memory.json', 'w', encoding='utf-8') as f:
+                    json.dump({"user_memories": {}}, f)
+                    
+            # 메모리 데이터 로드
+            with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                self.memory_data = json.load(f)
+                
+        except Exception as e:
+            print(f"메모리 파일 로드 실패: {e}")
+            self.memory_data = {"user_memories": {}}
 
     def _save_memory(self):
         """메모리 데이터를 파일에 저장."""
-        os.makedirs(os.path.dirname(self.memory_file_path), exist_ok=True)
-        with open(self.memory_file_path, 'w', encoding='utf-8') as f:
-            json.dump(self.memory_data, f, ensure_ascii=False, indent=2)
+        try:
+            os.makedirs(os.path.dirname(self.memory_file_path), exist_ok=True)
+            with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.memory_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"메모리 파일 저장 실패: {e}")
 
     def add_conversation_memory(self,
                               user_id: str,
@@ -106,51 +119,60 @@ class ConversationSummaryMemory:
                 - memory_updated (bool): 메모리 업데이트 여부
                 - message (str): 결과 메시지
         """
-        # 사용자별 메모리 초기화
-        if user_id not in self.memory_data["user_memories"]:
-            self.memory_data["user_memories"][user_id] = {
-                "conversation_history": [],
-                "summary": ""
+        try:
+            # 사용자별 메모리 초기화
+            if user_id not in self.memory_data["user_memories"]:
+                self.memory_data["user_memories"][user_id] = {
+                    "conversation_history": [],
+                    "summary": ""
+                }
+
+            # 최종 해석 결정 (Partner가 제공)
+            final_interpretation = selected_interpretation or user_correction
+            if not final_interpretation:
+                return {
+                    'status': 'error',
+                    'summary': '',
+                    'memory_updated': False,
+                    'message': 'Partner가 제공한 최종 해석이 없습니다.'
+                }
+
+            # 대화 기록 추가
+            conversation_entry = {
+                "timestamp": datetime.now().isoformat(),
+                "cards": cards,
+                "context": context,
+                "interpretations": interpretations,
+                "final_interpretation": final_interpretation
             }
 
-        # 최종 해석 결정 (Partner가 제공)
-        final_interpretation = selected_interpretation or user_correction
-        if not final_interpretation:
+            self.memory_data["user_memories"][user_id]["conversation_history"].append(conversation_entry)
+
+            # 카드-해석 연결성 분석
+            connection_analysis = self.llm_factory.analyze_card_interpretation_connection(
+                cards, context, final_interpretation
+            )
+
+            # LangChain ConversationSummaryMemory를 사용한 요약 생성
+            summary_result = self._update_summary_with_langchain(user_id, connection_analysis)
+
+            # 메모리 저장
+            self._save_memory()
+
+            return {
+                'status': 'success',
+                'summary': summary_result,
+                'memory_updated': True,
+                'message': f'사용자 {user_id}의 대화 메모리가 업데이트되었습니다.'
+            }
+            
+        except Exception as e:
             return {
                 'status': 'error',
                 'summary': '',
                 'memory_updated': False,
-                'message': 'Partner가 제공한 최종 해석이 없습니다.'
+                'message': f'대화 메모리 업데이트 중 오류 발생: {str(e)}'
             }
-
-        # 대화 기록 추가
-        conversation_entry = {
-            "timestamp": datetime.now().isoformat(),
-            "cards": cards,
-            "context": context,
-            "interpretations": interpretations,
-            "final_interpretation": final_interpretation
-        }
-
-        self.memory_data["user_memories"][user_id]["conversation_history"].append(conversation_entry)
-
-        # 카드-해석 연결성 분석
-        connection_analysis = self.llm_factory.analyze_card_interpretation_connection(
-            cards, context, final_interpretation
-        )
-
-        # LangChain ConversationSummaryMemory를 사용한 요약 생성
-        summary_result = self._update_summary_with_langchain(user_id, connection_analysis)
-
-        # 메모리 저장
-        self._save_memory()
-
-        return {
-            'status': 'success',
-            'summary': summary_result,
-            'memory_updated': True,
-            'message': f'사용자 {user_id}의 대화 메모리가 업데이트되었습니다.'
-        }
 
     def _update_summary_with_langchain(self, user_id: str, connection_analysis: str) -> str:
         """LangChain ConversationSummaryMemory를 사용하여 요약 업데이트.
@@ -161,11 +183,14 @@ class ConversationSummaryMemory:
 
         Returns:
             str: 업데이트된 요약
-        """
-        user_memory = self.memory_data["user_memories"][user_id]
-        conversation_history = user_memory["conversation_history"]
 
+        Raises:
+            RuntimeError: 요약 생성 실패시
+        """
         try:
+            user_memory = self.memory_data["user_memories"][user_id]
+            conversation_history = user_memory["conversation_history"]
+
             # LangChain ConversationSummaryMemory 생성
             langchain_memory = LangChainConversationSummaryMemory(
                 llm=self.llm,
@@ -217,19 +242,32 @@ class ConversationSummaryMemory:
                 - status (str): 'success'
                 - summary (str): 대화 패턴 요약
                 - conversation_count (int): 대화 횟수
+                - message (str): 결과 메시지
         """
+        try:
+            if user_id not in self.memory_data["user_memories"]:
+                return {
+                    'status': "success",
+                    'summary': "",
+                    'conversation_count': 0,
+                    'message': "새로운 사용자입니다. 대화 이력이 없습니다."
+                }
 
-        if user_id not in self.memory_data["user_memories"]:
+            user_memory = self.memory_data["user_memories"][user_id]
+            conversation_count = len(user_memory["conversation_history"])
+            summary = user_memory.get("summary", "")
+
             return {
-                'status': "success",
-                'summary': "",
-                'conversation_count': 0
+                'status': 'success',
+                'summary': summary,
+                'conversation_count': conversation_count,
+                'message': f'사용자 {user_id}의 대화 메모리 요약을 조회했습니다. (총 {conversation_count}회 대화)'
             }
-
-        user_memory = self.memory_data["user_memories"][user_id]
-
-        return {
-            'status': 'success',
-            'summary': user_memory.get("summary", ""),
-            'conversation_count': len(user_memory["conversation_history"])
-        }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'summary': "",
+                'conversation_count': 0,
+                'message': f'메모리 요약 조회 중 오류 발생: {str(e)}'
+            }

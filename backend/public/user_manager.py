@@ -34,19 +34,29 @@ class UserManager:
 
     def _load_users(self):
         """사용자 데이터 파일 로드."""
-        if not os.path.exists('user_data/users.json'):
-            with open('user_data/users.json', 'w', encoding='utf-8') as f:
-                json.dump({}, f)
+        try:
+            # 파일이 없으면 기본 구조로 생성
+            if not os.path.exists('user_data/users.json'):
+                with open('user_data/users.json', 'w', encoding='utf-8') as f:
+                    json.dump({}, f)
 
-        with open(self.users_file_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            self.users = {k: v for k, v in data.items()}
+            # 사용자 데이터 로드
+            with open(self.users_file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                self.users = {k: v for k, v in data.items()}
+                
+        except Exception as e:
+            print(f"사용자 데이터 로드 실패: {e}")
+            self.users = {}
 
     def _save_users(self):
         """사용자 데이터 저장."""
-        os.makedirs(os.path.dirname(self.users_file_path), exist_ok=True)
-        with open(self.users_file_path, 'w', encoding='utf-8') as f:
-            json.dump({k: v for k, v in self.users.items()}, f, ensure_ascii=False, indent=2)
+        try:
+            os.makedirs(os.path.dirname(self.users_file_path), exist_ok=True)
+            with open(self.users_file_path, 'w', encoding='utf-8') as f:
+                json.dump({k: v for k, v in self.users.items()}, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"사용자 데이터 저장 실패: {e}")
 
     def create_user(self, user_id: str, persona: Dict[str, Any]) -> Dict[str, Any]:
         """새 사용자 생성 및 페르소나 등록.
@@ -91,6 +101,7 @@ class UserManager:
             }
 
         try:
+            # 사용자 데이터 구성
             user_data = {
                 'name': persona.get('name'),
                 'age': int(persona['age']),
@@ -105,9 +116,8 @@ class UserManager:
                 'updated_at': __import__('datetime').datetime.now().isoformat()
             }
 
+            # 사용자 데이터 저장
             self.users[user_id] = user_data
-
-            # 저장
             self._save_users()
 
             return {
@@ -117,11 +127,13 @@ class UserManager:
             }
 
         except Exception as e:
+            # 오류 발생시 롤백
             if user_id in self.users:
                 del self.users[user_id]
 
             return {
                 'status': 'error',
+                'user_id': user_id,
                 'message': f'사용자 생성 중 오류 발생: {str(e)}'
             }
 
@@ -162,7 +174,7 @@ class UserManager:
             updated_fields = []
             needs_category_recalculation = False
 
-            # 업데이트 가능한 필드들과 검증 규칙
+            # 업데이트 가능한 필드들과 검증 규칙 정의
             updatable_fields = {
                 'name': lambda x: isinstance(x, str) and len(x.strip()) > 0,
                 'age': lambda x: self._validate_age(x)['valid'],
@@ -172,7 +184,7 @@ class UserManager:
                 'interesting_topics': lambda x: self._validate_interesting_topics(x)['valid']
             }
 
-            # 각 필드 업데이트
+            # 각 필드 업데이트 처리
             for field, new_value in persona_updates.items():
                 if field in updatable_fields:
                     validator = updatable_fields[field]
@@ -180,11 +192,11 @@ class UserManager:
                         user_data[field] = new_value
                         updated_fields.append(field)
 
-                        # interesting_topics가 업데이트된 경우 재계산 플래그 설정
+                        # 관심 주제 업데이트시 재계산 플래그 설정
                         if field == 'interesting_topics':
                             needs_category_recalculation = True
                     else:
-                        # 검증 오류 메시지
+                        # 검증 실패시 에러 메시지 생성
                         if field == 'age':
                             error_msg = self._validate_age(new_value)['message']
                         elif field == 'gender':
@@ -193,7 +205,7 @@ class UserManager:
                             error_msg = self._validate_disability_type(new_value)['message']
                         elif field == 'interesting_topics':
                             error_msg = self._validate_interesting_topics(new_value)['message']
-                        else: # communication_characteristics
+                        else:
                             error_msg = f'필드 {field}의 값이 유효하지 않습니다: {new_value}'
 
                         return {
@@ -203,10 +215,8 @@ class UserManager:
                             'message': error_msg
                         }
 
-            # 업데이트 시간 갱신
+            # 업데이트 시간 갱신 및 저장
             user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
-
-            # 저장
             self._save_users()
 
             return {
@@ -237,11 +247,13 @@ class UserManager:
                 - message (str): 결과 메시지
         """
         try:
+            # 사용자 데이터 업데이트
             user_data = self.users[user_id]
             user_data['preferred_category_types'] = preferred_category_types
             user_data['needs_category_recalculation'] = False
             user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
 
+            # 변경사항 저장
             self._save_users()
 
             return {
@@ -435,16 +447,24 @@ class UserManager:
                 'message': user_validation['message']
             }
 
-        # 보안을 위해 비밀번호 제외하고 반환
-        user_data = self.users[user_id].copy()
-        user_data.pop('password', None)
-        user_data.pop('remaining_authenticate_limit', None)
+        try:
+            # 보안을 위해 비밀번호 제외하고 반환
+            user_data = self.users[user_id].copy()
+            user_data.pop('password', None)
+            user_data.pop('remaining_authenticate_limit', None)
 
-        return {
-            'status': 'success',
-            'user': user_data,
-            'message': '사용자 정보를 성공적으로 조회했습니다.'
-        }
+            return {
+                'status': 'success',
+                'user': user_data,
+                'message': '사용자 정보를 성공적으로 조회했습니다.'
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'user': None,
+                'message': f'사용자 정보 조회 중 오류 발생: {str(e)}'
+            }
 
     def authenticate_user(self, user_id: str, password: str) -> Dict[str, Any]:
         """사용자 인증.
@@ -458,7 +478,6 @@ class UserManager:
                 - status (str): 'success' 또는 'error'
                 - authenticated (bool): 인증 성공 여부
                 - message (str): 결과 메시지
-
         """
         # 사용자 존재 검증
         user_validation = self._validate_user_exists(user_id)
@@ -469,32 +488,58 @@ class UserManager:
                 'message': user_validation['message']
             }
 
-        user_attempts = self.users[user_id]['remaining_authenticate_limit']
+        try:
+            user_data = self.users[user_id]
+            user_attempts = user_data['remaining_authenticate_limit']
 
-        if user_attempts <= 0:
+            # 계정 잠금 확인
+            if user_attempts <= 0:
+                return {
+                    'status': 'error',
+                    'authenticated': False,
+                    'message': '계정이 잠겼습니다.'
+                }
+
+            # 비밀번호 검증
+            user_password = user_data['password']
+            hashed_input_password = self.hash_password(password)
+            
+            if user_password == hashed_input_password:
+                # 인증 성공시 시도 횟수 초기화
+                user_data['remaining_authenticate_limit'] = self.authenticate_limit
+                self._save_users()
+                
+                return {
+                    'status': 'success',
+                    'authenticated': True,
+                    'message': '인증이 성공했습니다.'
+                }
+            else:
+                # 인증 실패시 시도 횟수 감소
+                user_data['remaining_authenticate_limit'] -= 1
+                remaining = user_data['remaining_authenticate_limit']
+                self._save_users()
+                
+                return {
+                    'status': 'error',
+                    'authenticated': False,
+                    'message': f'비밀번호가 일치하지 않습니다. 남은 시도: {remaining}회'
+                }
+                
+        except Exception as e:
             return {
                 'status': 'error',
                 'authenticated': False,
-                'message': '계정이 잠겼습니다.' #아직 미구현
+                'message': f'인증 처리 중 오류 발생: {str(e)}'
             }
 
-        user_password = self.users[user_id]['password']
-        password = self.hash_password(password)
-        if user_password == password:
-            self.users[user_id]['remaining_authenticate_limit'] = self.authenticate_limit
-            return {
-                'status': 'success',
-                'authenticated': True,
-                'message': '인증이 성공했습니다.'
-            }
-        else:
-            self.users[user_id]['remaining_authenticate_limit'] -= 1
-            remaining = self.users[user_id]['remaining_authenticate_limit']
-            return {
-                'status': 'error',
-                'authenticated': False,
-                'message': f'비밀번호가 일치하지 않습니다. 남은 시도: {remaining}회'
-            }
+    def hash_password(self, password: str) -> str:
+        """비밀번호 해시 처리.
 
-    def hash_password(self, password: str):
+        Args:
+            password: 원본 비밀번호
+
+        Returns:
+            str: 해시된 비밀번호
+        """
         return hashlib.sha256(password.encode()).hexdigest()
