@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { cardService } from '../services/cardService';
 import { feedbackService } from '../services/feedbackService';
-import FeedbackForm from '../components/interpretation/FeedbackForm';
 import InterpretationDisplay, { InterpretationResult } from '../components/interpretation/InterpretationDisplay';
 
 // 해석 진행 단계
@@ -233,30 +232,17 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
 
   return (
     <div className="interpretation-page partner-theme">
-      {/* Partner 피드백 대기 단계 */}
+      {/* 통합된 해석 표시 및 피드백 단계 */}
       {currentStep === INTERPRETATION_STEPS.FEEDBACK && interpretations.length > 0 && (
-        <>
-          <div className="role-indicator partner-role">
-            <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
-            <span>도움이 해석 확인</span>
-          </div>
-          
-          <InterpretationDisplay 
-            interpretations={interpretations}
-            selectedCards={selectedCards}
-            contextInfo={contextData}
-            method={interpretationMethod}
-          />
-          
-          <FeedbackForm 
-            interpretations={interpretations}
-            selectedCards={selectedCards}
-            contextInfo={contextData}
-            userId={user.userId}
-            confirmationId={confirmationId}
-            onFeedbackSubmit={handleFeedbackSubmit}
-          />
-        </>
+        <InterpretationDisplay 
+          interpretations={interpretations}
+          selectedCards={selectedCards}
+          contextInfo={contextData}
+          method={interpretationMethod}
+          userId={user.userId}
+          confirmationId={confirmationId}
+          onFeedbackSubmit={handleFeedbackSubmit}
+        />
       )}
 
       {/* 해석 완료 단계 */}

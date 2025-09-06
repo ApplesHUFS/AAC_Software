@@ -2800,3 +2800,58 @@ body {
   align-items: center;
   gap: 0.25rem;
 }
+
+/* 통합된 해석 폼 스타일 */
+.integrated-feedback-form {
+  margin-top: 2rem;
+}
+
+.interpretations-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  border: 2px solid #ddd6fe;
+}
+
+.interpretation-option {
+  margin-bottom: 1rem;
+}
+
+.interpretation-option input[type="radio"] {
+  display: none;
+}
+
+.interpretation-label {
+  cursor: pointer;
+  display: block;
+  padding: 1.5rem;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.interpretation-label:hover {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.interpretation-option input:checked + .interpretation-label {
+  border-color: #8b5cf6;
+  background: #faf5ff;
+}
+
+.interpretation-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.interpretation-content {
+  flex: 1;
+}
+
+.interpretation-content span {
+  color: #1e293b;
+  line-height: 1.6;
+  font-size: 1rem;
+}

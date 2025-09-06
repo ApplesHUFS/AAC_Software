@@ -1,20 +1,120 @@
 // src/components/interpretation/InterpretationDisplay.js
-import React from 'react';
+import React, { useState } from 'react';
+import { feedbackService } from '../../services/feedbackService';
 
-// 해석 결과 표시 컴포넌트 (도움이가 AI 해석 확인)
+// 통합된 해석 표시 및 선택 컴포넌트
 const InterpretationDisplay = ({ 
   interpretations, 
   selectedCards, 
   contextInfo, 
-  method = 'ai'
+  method = 'ai',
+  userId,
+  confirmationId,
+  onFeedbackSubmit
 }) => {
+  const [selectedInterpretationIndex, setSelectedInterpretationIndex] = useState(null);
+  const [directFeedback, setDirectFeedback] = useState('');
+  const [feedbackType, setFeedbackType] = useState('interpretation');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // 피드백 타입 변경 처리
+  const handleFeedbackTypeChange = (type) => {
+    setFeedbackType(type);
+    setError('');
+    
+    if (type === 'interpretation') {
+      setDirectFeedback('');
+    } else {
+      setSelectedInterpretationIndex(null);
+    }
+  };
+
+  // 해석 선택 처리
+  const handleInterpretationSelect = (index) => {
+    setSelectedInterpretationIndex(index);
+    setError('');
+  };
+
+  // 직접 피드백 입력 변경 처리
+  const handleDirectFeedbackChange = (e) => {
+    setDirectFeedback(e.target.value);
+    setError('');
+  };
+
+  // 피드백 제출 검증
+  const validateFeedback = () => {
+    if (!confirmationId) {
+      return '피드백 요청 정보가 없습니다. 페이지를 새로고침해주세요.';
+    }
+
+    if (feedbackType === 'interpretation') {
+      if (selectedInterpretationIndex === null) {
+        return '해석을 선택해주세요.';
+      }
+    } else if (feedbackType === 'direct') {
+      if (!directFeedback.trim()) {
+        return '피드백 내용을 입력해주세요.';
+      }
+      if (directFeedback.trim().length < 5) {
+        return '피드백은 5글자 이상 입력해주세요.';
+      }
+    }
+
+    return null;
+  };
+
+  // 피드백 제출 처리
+  const handleSubmitFeedback = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    const validationError = validateFeedback();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const feedbackData = {};
+      
+      if (feedbackType === 'interpretation' && selectedInterpretationIndex !== null) {
+        feedbackData.selectedInterpretationIndex = selectedInterpretationIndex;
+      } else if (feedbackType === 'direct' && directFeedback.trim()) {
+        feedbackData.directFeedback = directFeedback.trim();
+      }
+
+      const response = await feedbackService.submitPartnerFeedback(confirmationId, feedbackData);
+      
+      if (response.success) {
+        onFeedbackSubmit(response);
+      } else {
+        setError(response.error || '피드백 제출에 실패했습니다.');
+      }
+    } catch (error) {
+      if (error.message.includes('fetch')) {
+        setError('서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.');
+      } else {
+        setError(error.message || '피드백 제출 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="interpretation-display partner-theme">
-      {/* 해석 헤더 */}
+      {/* 통합된 헤더 */}
       <div className="interpretation-header">
+        <div className="role-indicator partner-role">
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
+          <span>도움이 해석 확인</span>
+        </div>
         <h2>
           <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="header-icon" />
-          AI 해석 결과 - 어떤 의미가 맞나요?
+          AI가 제안한 해석 - 어떤 의미가 맞나요?
         </h2>
         <div className="interpretation-method">
           <span className="method-badge partner-badge">
@@ -76,40 +176,143 @@ const InterpretationDisplay = ({
         </div>
       </div>
 
-      {/* 해석 목록과 선택 안내 통합 */}
-      <div className="interpretations-list">
-        <h3>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="list-icon" />
-          AI가 제안한 해석 ({interpretations.length}가지) - 올바른 해석을 선택해주세요
-        </h3>
-        <p className="interpretation-instruction">
-          다음 중에서 소통이가 실제로 표현하고 싶었던 의미와 가장 가까운 해석을 선택하거나, 
-          모든 해석이 부정확하다면 아래에서 '직접 입력'을 선택해주세요:
-        </p>
-        
-        <div className="interpretations-preview">
-          {interpretations.map((interpretation, index) => (
-            <div 
-              key={index}
-              className="interpretation-item partner-item"
-            >
-              <div className="interpretation-number partner-number">{index + 1}</div>
-              <div className="interpretation-text">
-                {interpretation.text || interpretation}
-              </div>
-              <div className="interpretation-confidence">
-                <small>AI 신뢰도: 높음</small>
+      {/* 통합된 해석 선택 폼 */}
+      <form onSubmit={handleSubmitFeedback} className="integrated-feedback-form">
+        <div className="interpretations-section">
+          <h3>
+            <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="list-icon" />
+            AI가 제안한 해석 ({interpretations.length}가지)
+          </h3>
+          <p className="interpretation-instruction">
+            다음 중에서 소통이가 실제로 표현하고 싶었던 의미와 가장 가까운 해석을 선택해주세요:
+          </p>
+          
+          {/* 피드백 타입 선택 */}
+          <div className="feedback-type-selection partner-selection">
+            <div className="feedback-option">
+              <input
+                type="radio"
+                id="interpretation-feedback"
+                name="feedbackType"
+                value="interpretation"
+                checked={feedbackType === 'interpretation'}
+                onChange={() => handleFeedbackTypeChange('interpretation')}
+                disabled={loading}
+              />
+              <label htmlFor="interpretation-feedback" className="option-label">
+                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="option-icon" />
+                제시된 해석 중 선택
+              </label>
+            </div>
+
+            <div className="feedback-option">
+              <input
+                type="radio"
+                id="direct-feedback"
+                name="feedbackType"
+                value="direct"
+                checked={feedbackType === 'direct'}
+                onChange={() => handleFeedbackTypeChange('direct')}
+                disabled={loading}
+              />
+              <label htmlFor="direct-feedback" className="option-label">
+                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="option-icon" />
+                직접 입력
+              </label>
+            </div>
+          </div>
+
+          {/* 해석 선택 옵션 */}
+          {feedbackType === 'interpretation' && (
+            <div className="interpretation-selection">
+              {interpretations.map((interpretation, index) => (
+                <div key={index} className="interpretation-option">
+                  <input
+                    type="radio"
+                    id={`interpretation-${index}`}
+                    name="selectedInterpretation"
+                    value={index}
+                    checked={selectedInterpretationIndex === index}
+                    onChange={() => handleInterpretationSelect(index)}
+                    disabled={loading}
+                  />
+                  <label htmlFor={`interpretation-${index}`} className="interpretation-label">
+                    <div className="interpretation-preview">
+                      <div className="interpretation-number partner-number">{index + 1}</div>
+                      <div className="interpretation-content">
+                        <span>{interpretation.text || interpretation}</span>
+                      </div>
+                      <div className="interpretation-confidence">
+                        <small>AI 신뢰도: 높음</small>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 직접 입력 옵션 */}
+          {feedbackType === 'direct' && (
+            <div className="direct-feedback-section">
+              <h4>
+                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+                올바른 의미 직접 입력
+              </h4>
+              <p className="input-instruction">
+                소통이가 선택한 카드들이 실제로 표현하고자 한 의미를 직접 입력해주세요.
+              </p>
+              <textarea
+                value={directFeedback}
+                onChange={handleDirectFeedbackChange}
+                placeholder="소통이가 카드로 표현하고 싶었던 정확한 의미를 구체적으로 써주세요. 예: '배가 고파서 밥을 먹고 싶어요', '친구와 같이 놀고 싶어요' 등"
+                rows="4"
+                disabled={loading}
+                maxLength="500"
+                className="feedback-textarea"
+              />
+              <div className="character-count">
+                {directFeedback.length}/500자
               </div>
             </div>
-          ))}
+          )}
+
+          {/* 에러 메시지 */}
+          {error && (
+            <div className="error-message partner-error">
+              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
+              {error}
+            </div>
+          )}
+
+          {/* 제출 버튼 */}
+          <div className="feedback-actions">
+            <button 
+              type="submit"
+              className="primary-button partner-button large"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="button-spinner"></span>
+                  확인 중...
+                </>
+              ) : (
+                <>
+                  <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="button-icon" />
+                  이 의미가 맞습니다
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
 
       {/* 참고 정보 */}
       <div className="interpretation-note partner-note">
         <h4>
           <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="note-icon" />
-          참고사항
+          피드백 작성 도움말
         </h4>
         <div className="note-content">
           <p>
