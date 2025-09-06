@@ -271,23 +271,6 @@ class AACInterpreterService:
                 - category_recalculated (bool): 카테고리 재계산 수행 여부
                 - message (str): 결과 메시지
         """
-        # 입력 검증
-        if not user_id or not user_id.strip():
-            return {
-                'status': 'error',
-                'updated_fields': [],
-                'category_recalculated': False,
-                'message': '사용자 ID가 제공되지 않았습니다.'
-            }
-
-        if not persona_updates or not isinstance(persona_updates, dict):
-            return {
-                'status': 'error',
-                'updated_fields': [],
-                'category_recalculated': False,
-                'message': '업데이트할 페르소나 정보가 제공되지 않았습니다.'
-            }
-
         try:
             # 기본 페르소나 업데이트 수행
             update_result = self.user_manager.update_user_persona(user_id, persona_updates)
@@ -302,7 +285,7 @@ class AACInterpreterService:
 
             category_recalculated = False
 
-            # 관심 주제 업데이트시 카테고리 재계산 수행
+            # 관심 주제 업데이트시 카테고리 재계산 수행 (비즈니스 로직)
             if update_result.get('needs_category_recalculation') and self.cluster_calculator:
                 try:
                     # 업데이트된 사용자 정보 조회

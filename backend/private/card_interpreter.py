@@ -69,45 +69,7 @@ class CardInterpreter:
         """
         timestamp = datetime.now().isoformat()
 
-        # 입력 검증
-        if not persona or not isinstance(persona, dict):
-            return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': '페르소나 정보가 제공되지 않았습니다. 사용자 페르소나 데이터가 필요합니다.'
-            }
-
-        if not context or not isinstance(context, dict):
-            return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': '컨텍스트 정보가 제공되지 않았습니다. 대화 상황 정보가 필요합니다.'
-            }
-
-        if not cards or len(cards) == 0:
-            return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': '해석할 카드가 선택되지 않았습니다. 최소 1개 이상의 카드를 선택해주세요.'
-            }
-
-        max_cards = self.config.get('max_card_selection', 4)
-        if len(cards) > max_cards:
-            return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': f'선택된 카드가 너무 많습니다. 최대 {max_cards}개까지만 선택 가능합니다. (현재: {len(cards)}개)'
-            }
-
-        # LLM 팩토리 사용 가능 여부 확인
+        # LLM 팩토리 사용 가능 여부 확인 (비즈니스 로직)
         if self.llm_factory is None:
             return {
                 'status': 'error',
@@ -144,7 +106,6 @@ class CardInterpreter:
             }
 
         except ValueError as e:
-            # 해석 개수 오류 등 예상 가능한 오류
             return {
                 'status': 'error',
                 'interpretations': [],
@@ -154,7 +115,6 @@ class CardInterpreter:
             }
 
         except Exception as e:
-            # 예상치 못한 시스템 오류
             return {
                 'status': 'error',
                 'interpretations': [],

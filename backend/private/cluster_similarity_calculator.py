@@ -126,23 +126,9 @@ class ClusterSimilarityCalculator:
             List[int]: 선호 클러스터 ID 리스트 (유사도 높은 순)
 
         Raises:
-            ValueError: 입력 파라미터가 잘못된 경우
             RuntimeError: 계산 과정에서 오류 발생시
         """
         try:
-            # 입력 검증
-            if not interesting_topics:
-                raise ValueError("관심 주제 리스트가 비어있습니다.")
-            
-            if not (0.0 <= similarity_threshold <= 1.0):
-                raise ValueError("similarity_threshold는 0.0과 1.0 사이여야 합니다.")
-                
-            if max_categories <= 0:
-                raise ValueError("max_categories는 양수여야 합니다.")
-
-            if not self.cluster_tags:
-                raise RuntimeError("클러스터 태그 데이터가 로드되지 않았습니다.")
-
             # 모든 클러스터 태그를 하나의 리스트로 만들고 클러스터 매핑 정보 생성
             all_cluster_topics = []
             cluster_topic_mapping = []
@@ -151,9 +137,6 @@ class ClusterSimilarityCalculator:
                 for topic in cluster_topics:
                     all_cluster_topics.append(topic)
                     cluster_topic_mapping.append(cluster_id)
-
-            if not all_cluster_topics:
-                raise RuntimeError("클러스터 태그 데이터가 비어있습니다.")
 
             # 토픽들과 태그들 유사도 계산
             similarities = self.compute_topic_similarities_batch(interesting_topics, all_cluster_topics)
@@ -184,7 +167,5 @@ class ClusterSimilarityCalculator:
 
             return preferred_categories[:max_categories]
 
-        except (ValueError, RuntimeError):
-            raise
         except Exception as e:
             raise RuntimeError(f"선호 카테고리 계산 중 오류 발생: {str(e)}")

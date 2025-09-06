@@ -273,14 +273,6 @@ class ConversationSummaryMemory:
                 - conversation_count (int): 대화 횟수
                 - message (str): 결과 메시지
         """
-        if not user_id or not user_id.strip():
-            return {
-                'status': 'success',
-                'summary': "",
-                'conversation_count': 0,
-                'message': "사용자 ID가 제공되지 않았습니다."
-            }
-
         try:
             if user_id not in self.memory_data["user_memories"]:
                 return {

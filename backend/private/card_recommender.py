@@ -358,15 +358,7 @@ class CardRecommender:
                 - history_summary (List[Dict]): 페이지별 요약 정보
                 - message (str): 결과 메시지
         """
-        if not context_id or not context_id.strip():
-            return {
-                'status': 'error',
-                'total_pages': 0,
-                'latest_page': 0,
-                'history_summary': [],
-                'message': '컨텍스트 ID가 제공되지 않았습니다.'
-            }
-
+        # 히스토리 존재 여부 확인 (비즈니스 로직)
         if context_id not in self.recommendation_history:
             return {
                 'status': 'error',
