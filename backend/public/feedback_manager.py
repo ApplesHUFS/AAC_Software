@@ -88,13 +88,30 @@ class FeedbackManager:
                 - confirmation_request (dict): 생성된 확인 요청 데이터
                 - message (str): 결과 메시지
         """
+        # 입력 검증
+        if not user_id or not user_id.strip():
+            return {
+                'status': 'error',
+                'confirmation_id': '',
+                'confirmation_request': {},
+                'message': '사용자 ID가 제공되지 않았습니다.'
+            }
+
+        if not cards or len(cards) == 0:
+            return {
+                'status': 'error',
+                'confirmation_id': '',
+                'confirmation_request': {},
+                'message': '확인 요청할 카드 정보가 없습니다.'
+            }
+
         # 해석 개수 검증
         if not isinstance(interpretations, list) or len(interpretations) != 3:
             return {
                 'status': 'error',
                 'confirmation_id': '',
                 'confirmation_request': {},
-                'message': '정확히 3개의 해석이 필요합니다.'
+                'message': '정확히 3개의 해석이 필요합니다. Partner 확인 요청을 위해서는 3개의 해석 옵션이 제공되어야 합니다.'
             }
 
         try:
@@ -117,6 +134,10 @@ class FeedbackManager:
             # 대기 중인 확인 요청에 저장
             self.pending_confirmations[confirmation_id] = confirmation_request
 
+            place = context.get('place', '알 수 없는 장소')
+            activity = context.get('current_activity', '')
+            activity_info = f" ({activity} 중)" if activity else ""
+
             return {
                 'status': 'success',
                 'confirmation_id': confirmation_id,
@@ -124,8 +145,8 @@ class FeedbackManager:
                     'confirmation_id': confirmation_id,
                     'user_context': {
                         'time': context.get('time'),
-                        'place': context.get('place'),
-                        'current_activity': context.get('current_activity')
+                        'place': place,
+                        'current_activity': activity
                     },
                     'selected_cards': cards,
                     'interpretation_options': [
@@ -134,7 +155,7 @@ class FeedbackManager:
                     ],
                     'partner': partner_info,
                 },
-                'message': f'Partner 해석 확인 요청이 생성되었습니다. (ID: {confirmation_id})'
+                'message': f'{place}에서의 대화 상황{activity_info}에 대한 Partner 확인 요청이 생성되었습니다. (요청 ID: {confirmation_id})'
             }
             
         except Exception as e:
@@ -142,7 +163,7 @@ class FeedbackManager:
                 'status': 'error',
                 'confirmation_id': '',
                 'confirmation_request': {},
-                'message': f'확인 요청 생성 중 오류 발생: {str(e)}'
+                'message': f'Partner 확인 요청 생성 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def submit_partner_confirmation(self,
@@ -163,11 +184,11 @@ class FeedbackManager:
                 - message (str): 결과 메시지
         """
         # 확인 요청 존재 여부 검증
-        if confirmation_id not in self.pending_confirmations:
+        if not confirmation_id or confirmation_id not in self.pending_confirmations:
             return {
                 'status': 'error',
                 'feedback_result': {},
-                'message': f'확인 요청 ID {confirmation_id}를 찾을 수 없습니다.'
+                'message': f'확인 요청 ID {confirmation_id}에 해당하는 요청을 찾을 수 없습니다.'
             }
 
         confirmation_request = self.pending_confirmations[confirmation_id]
@@ -177,7 +198,7 @@ class FeedbackManager:
             return {
                 'status': 'error',
                 'feedback_result': {},
-                'message': f'확인 요청 {confirmation_id}는 이미 처리되었습니다.'
+                'message': f'확인 요청 {confirmation_id}는 이미 처리되었습니다. 중복 처리는 허용되지 않습니다.'
             }
 
         try:
@@ -188,7 +209,7 @@ class FeedbackManager:
                     return {
                         'status': 'error',
                         'feedback_result': {},
-                        'message': '해석 인덱스는 0, 1, 2 중 하나여야 합니다.'
+                        'message': '해석 선택 인덱스는 0, 1, 2 중 하나여야 합니다. 유효한 해석 번호를 선택해주세요.'
                     }
 
                 feedback_result = {
@@ -198,6 +219,7 @@ class FeedbackManager:
                     'direct_feedback': None
                 }
                 confirmation_request['status'] = 'confirmed'
+                feedback_message = f"Partner가 {selected_interpretation_index + 1}번째 해석을 선택했습니다"
 
             elif direct_feedback and direct_feedback.strip():
                 # 직접 피드백 처리
@@ -208,12 +230,13 @@ class FeedbackManager:
                     'direct_feedback': direct_feedback.strip()
                 }
                 confirmation_request['status'] = 'direct_feedback'
+                feedback_message = "Partner가 직접 올바른 해석을 제공했습니다"
 
             else:
                 return {
                     'status': 'error',
                     'feedback_result': {},
-                    'message': '해석 선택 또는 직접 피드백 중 하나는 필수입니다.'
+                    'message': '해석 선택 또는 직접 피드백 중 하나는 필수입니다. 올바른 해석을 선택하거나 직접 입력해주세요.'
                 }
 
             # 피드백 결과 데이터 완성
@@ -232,14 +255,14 @@ class FeedbackManager:
             return {
                 'status': 'success',
                 'feedback_result': feedback_result,
-                'message': f'Partner 피드백이 처리되었습니다. (유형: {feedback_result["feedback_type"]})'
+                'message': f'{feedback_message}. 피드백이 성공적으로 처리되었습니다.'
             }
             
         except Exception as e:
             return {
                 'status': 'error',
                 'feedback_result': {},
-                'message': f'피드백 제출 처리 중 오류 발생: {str(e)}'
+                'message': f'Partner 피드백 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def record_interpretation_attempt(
@@ -280,6 +303,7 @@ class FeedbackManager:
                 "persona": persona,
                 "context": context,
                 "interpretations": interpretations,
+                "method": method,
                 "timestamp": datetime.now().isoformat()
             }
 
@@ -287,15 +311,19 @@ class FeedbackManager:
             self._data["interpretations"].append(attempt_record)
             self._save_to_file()
 
+            place = context.get('place', '알 수 없는 장소') if context else '알 수 없는 장소'
+            card_count = len(cards)
+            interpretation_count = len(interpretations)
+
             return {
                 "status": "success",
                 "feedback_id": feedback_id,
-                "message": "해석 시도가 기록되었습니다."
+                "message": f'{place}에서 {card_count}개 카드로 생성된 {interpretation_count}개 해석이 기록되었습니다. (기록 ID: {feedback_id})'
             }
             
         except Exception as e:
             return {
                 "status": "error",
                 "feedback_id": -1,
-                "message": f"해석 시도 기록 중 오류 발생: {str(e)}"
+                "message": f"해석 시도 기록 중 시스템 오류가 발생했습니다: {str(e)}"
             }

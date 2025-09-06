@@ -98,21 +98,58 @@ class AACInterpreterService:
                 - user_id (str): 생성된 사용자 ID
                 - message (str): 결과 메시지
         """
+        # 입력 검증
+        if not user_id or not user_id.strip():
+            return {
+                'status': 'error',
+                'user_id': None,
+                'message': '사용자 ID가 제공되지 않았습니다.'
+            }
+
+        if not persona or not isinstance(persona, dict):
+            return {
+                'status': 'error',
+                'user_id': user_id,
+                'message': '페르소나 정보가 제공되지 않았습니다.'
+            }
+
         # 관심 주제 필드 검증
         if 'interesting_topics' not in persona:
             return {
                 'status': 'error',
-                'user_id': None,
-                'message': 'interesting_topics가 필요합니다.'
+                'user_id': user_id,
+                'message': '관심 주제(interesting_topics) 정보가 필요합니다.'
             }
 
-        # 선호 카테고리 계산 및 페르소나 업데이트
-        persona.update({
-            'preferred_category_types': self._calculate_preferred_categories(persona['interesting_topics'])
-        })
+        try:
+            # 선호 카테고리 계산 및 페르소나 업데이트
+            preferred_categories = self._calculate_preferred_categories(persona['interesting_topics'])
+            persona.update({
+                'preferred_category_types': preferred_categories
+            })
 
-        # 사용자 생성 처리
-        return self.user_manager.create_user(user_id, persona)
+            # 사용자 생성 처리
+            create_result = self.user_manager.create_user(user_id, persona)
+            
+            if create_result['status'] == 'success':
+                return {
+                    'status': 'success',
+                    'user_id': create_result['user_id'],
+                    'message': create_result['message']
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'user_id': user_id,
+                    'message': create_result['message']
+                }
+                
+        except Exception as e:
+            return {
+                'status': 'error',
+                'user_id': user_id,
+                'message': f'사용자 등록 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def authenticate_user(self, user_id: str, password: str) -> Dict[str, Any]:
         """사용자 인증 및 세션 정보 반환.
@@ -128,24 +165,58 @@ class AACInterpreterService:
                 - user_info (Dict): 사용자 페르소나 정보 (인증 성공시)
                 - message (str): 결과 메시지
         """
-        # 사용자 인증 처리
-        auth_result = self.user_manager.authenticate_user(user_id, password)
-
-        if auth_result['authenticated']:
-            # 인증 성공시 사용자 정보 조회
-            user_info = self.user_manager.get_user(user_id)
-            return {
-                'status': 'success',
-                'authenticated': True,
-                'user_info': user_info.get('user'),
-                'message': auth_result['message']
-            }
-        else:
+        # 입력 검증
+        if not user_id or not user_id.strip():
             return {
                 'status': 'error',
                 'authenticated': False,
                 'user_info': None,
-                'message': auth_result['message']
+                'message': '사용자 ID가 제공되지 않았습니다.'
+            }
+
+        if not password or not password.strip():
+            return {
+                'status': 'error',
+                'authenticated': False,
+                'user_info': None,
+                'message': '비밀번호가 제공되지 않았습니다.'
+            }
+
+        try:
+            # 사용자 인증 처리
+            auth_result = self.user_manager.authenticate_user(user_id, password)
+
+            if auth_result['authenticated']:
+                # 인증 성공시 사용자 정보 조회
+                user_info = self.user_manager.get_user(user_id)
+                if user_info['status'] == 'success':
+                    return {
+                        'status': 'success',
+                        'authenticated': True,
+                        'user_info': user_info['user'],
+                        'message': auth_result['message']
+                    }
+                else:
+                    return {
+                        'status': 'error',
+                        'authenticated': False,
+                        'user_info': None,
+                        'message': f'인증 후 사용자 정보 조회 실패: {user_info["message"]}'
+                    }
+            else:
+                return {
+                    'status': 'error',
+                    'authenticated': False,
+                    'user_info': None,
+                    'message': auth_result['message']
+                }
+                
+        except Exception as e:
+            return {
+                'status': 'error',
+                'authenticated': False,
+                'user_info': None,
+                'message': f'인증 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def get_user_info(self, user_id: str) -> Dict[str, Any]:
@@ -160,7 +231,21 @@ class AACInterpreterService:
                 - user (Dict): 사용자 정보 (성공시)
                 - message (str): 결과 메시지
         """
-        return self.user_manager.get_user(user_id)
+        if not user_id or not user_id.strip():
+            return {
+                'status': 'error',
+                'user': None,
+                'message': '사용자 ID가 제공되지 않았습니다.'
+            }
+
+        try:
+            return self.user_manager.get_user(user_id)
+        except Exception as e:
+            return {
+                'status': 'error',
+                'user': None,
+                'message': f'사용자 정보 조회 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def update_user_persona(self, user_id: str, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
         """사용자 페르소나 업데이트 및 필요시 선호 카테고리 재계산.
@@ -186,49 +271,78 @@ class AACInterpreterService:
                 - category_recalculated (bool): 카테고리 재계산 수행 여부
                 - message (str): 결과 메시지
         """
-        # 기본 페르소나 업데이트 수행
-        update_result = self.user_manager.update_user_persona(user_id, persona_updates)
+        # 입력 검증
+        if not user_id or not user_id.strip():
+            return {
+                'status': 'error',
+                'updated_fields': [],
+                'category_recalculated': False,
+                'message': '사용자 ID가 제공되지 않았습니다.'
+            }
 
-        if update_result['status'] != 'success':
+        if not persona_updates or not isinstance(persona_updates, dict):
+            return {
+                'status': 'error',
+                'updated_fields': [],
+                'category_recalculated': False,
+                'message': '업데이트할 페르소나 정보가 제공되지 않았습니다.'
+            }
+
+        try:
+            # 기본 페르소나 업데이트 수행
+            update_result = self.user_manager.update_user_persona(user_id, persona_updates)
+
+            if update_result['status'] != 'success':
+                return {
+                    'status': update_result['status'],
+                    'updated_fields': update_result.get('updated_fields', []),
+                    'category_recalculated': False,
+                    'message': update_result['message']
+                }
+
+            category_recalculated = False
+
+            # 관심 주제 업데이트시 카테고리 재계산 수행
+            if update_result.get('needs_category_recalculation') and self.cluster_calculator:
+                try:
+                    # 업데이트된 사용자 정보 조회
+                    user_info = self.user_manager.get_user(user_id)
+                    if user_info['status'] == 'success':
+                        interesting_topics = user_info['user'].get('interesting_topics')
+
+                        # 선호 카테고리 재계산
+                        preferred_categories = self._calculate_preferred_categories(interesting_topics)
+
+                        # 재계산된 카테고리 업데이트
+                        category_update_result = self.user_manager.update_preferred_categories(
+                            user_id, preferred_categories
+                        )
+
+                        if category_update_result['status'] == 'success':
+                            category_recalculated = True
+                            update_result['message'] += ' 선호 카테고리가 자동으로 재계산되었습니다.'
+                        else:
+                            update_result['message'] += f' 선호 카테고리 재계산 실패: {category_update_result["message"]}'
+                    else:
+                        update_result['message'] += f' 사용자 정보 재조회 실패: {user_info["message"]}'
+
+                except Exception as e:
+                    update_result['message'] += f' 선호 카테고리 재계산 중 오류 발생: {str(e)}'
+
             return {
                 'status': update_result['status'],
                 'updated_fields': update_result.get('updated_fields', []),
-                'category_recalculated': False,
+                'category_recalculated': category_recalculated,
                 'message': update_result['message']
             }
-
-        category_recalculated = False
-
-        # 관심 주제 업데이트시 카테고리 재계산 수행
-        if update_result.get('needs_category_recalculation') and self.cluster_calculator:
-            try:
-                # 업데이트된 사용자 정보 조회
-                user_info = self.user_manager.get_user(user_id)
-                interesting_topics = user_info['user'].get('interesting_topics')
-
-                # 선호 카테고리 재계산
-                preferred_categories = self._calculate_preferred_categories(interesting_topics)
-
-                # 재계산된 카테고리 업데이트
-                category_update_result = self.user_manager.update_preferred_categories(
-                    user_id, preferred_categories
-                )
-
-                if category_update_result['status'] == 'success':
-                    category_recalculated = True
-                    update_result['message'] += ' 선호 카테고리가 자동으로 재계산되었습니다.'
-                else:
-                    update_result['message'] += f' 선호 카테고리 재계산 실패: {category_update_result["message"]}'
-
-            except Exception as e:
-                update_result['message'] += f' 선호 카테고리 재계산 중 오류 발생: {str(e)}'
-
-        return {
-            'status': update_result['status'],
-            'updated_fields': update_result.get('updated_fields', []),
-            'category_recalculated': category_recalculated,
-            'message': update_result['message']
-        }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'updated_fields': [],
+                'category_recalculated': False,
+                'message': f'페르소나 업데이트 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def update_user_context(self, user_id: str, place: str, interaction_partner: str,
                            current_activity: str) -> Dict[str, Any]:
@@ -246,28 +360,44 @@ class AACInterpreterService:
                 - context_id (str): 생성된 컨텍스트 ID
                 - message (str): 결과 메시지
         """
-        # 사용자 존재 여부 확인
-        user_info = self.user_manager.get_user(user_id)
-        if user_info['status'] != 'success':
+        # 입력 검증
+        if not user_id or not user_id.strip():
             return {
                 'status': 'error',
                 'context_id': '',
-                'message': user_info['message']
+                'message': '사용자 ID가 제공되지 않았습니다.'
             }
 
-        # 컨텍스트 생성 처리
-        context_result = self.context_manager.create_context(
-            place=place,
-            interaction_partner=interaction_partner,
-            user_id=user_id,
-            current_activity=current_activity
-        )
+        try:
+            # 사용자 존재 여부 확인
+            user_info = self.user_manager.get_user(user_id)
+            if user_info['status'] != 'success':
+                return {
+                    'status': 'error',
+                    'context_id': '',
+                    'message': f'사용자 확인 실패: {user_info["message"]}'
+                }
 
-        return {
-            'status': context_result['status'],
-            'context_id': context_result.get('context_id', ''),
-            'message': context_result['message']
-        }
+            # 컨텍스트 생성 처리
+            context_result = self.context_manager.create_context(
+                place=place,
+                interaction_partner=interaction_partner,
+                user_id=user_id,
+                current_activity=current_activity
+            )
+
+            return {
+                'status': context_result['status'],
+                'context_id': context_result.get('context_id', ''),
+                'message': context_result['message']
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'context_id': '',
+                'message': f'컨텍스트 생성 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def get_card_selection_interface(self, user_id: str, context: Dict[str, Any], context_id: str) -> Dict[str, Any]:
         """카드 선택 인터페이스 데이터 생성.
@@ -286,24 +416,60 @@ class AACInterpreterService:
                 - interface_data (Dict): 선택 인터페이스 데이터
                 - message (str): 결과 메시지
         """
-        # 사용자 정보 조회
-        user_info = self.user_manager.get_user(user_id)
-        if user_info['status'] != 'success':
+        # 입력 검증
+        if not user_id or not user_id.strip():
             return {
                 'status': 'error',
                 'interface_data': {},
-                'message': user_info['message']
+                'message': '사용자 ID가 제공되지 않았습니다.'
             }
 
-        # 페르소나 정보 준비
-        user_data = user_info['user']
-        persona = {
-            'interesting_topics': user_data.get('interesting_topics', []),
-            'preferred_category_types': user_data.get('preferred_category_types', [])
-        }
+        if not context or not isinstance(context, dict):
+            return {
+                'status': 'error',
+                'interface_data': {},
+                'message': '컨텍스트 정보가 제공되지 않았습니다.'
+            }
 
-        # 카드 선택 인터페이스 데이터 생성
-        return self.card_recommender.get_card_selection_interface(persona, context, context_id)
+        if not context_id or not context_id.strip():
+            return {
+                'status': 'error',
+                'interface_data': {},
+                'message': '컨텍스트 ID가 제공되지 않았습니다.'
+            }
+
+        try:
+            # 사용자 정보 조회
+            user_info = self.user_manager.get_user(user_id)
+            if user_info['status'] != 'success':
+                return {
+                    'status': 'error',
+                    'interface_data': {},
+                    'message': f'사용자 정보 조회 실패: {user_info["message"]}'
+                }
+
+            # 페르소나 정보 준비
+            user_data = user_info['user']
+            persona = {
+                'interesting_topics': user_data.get('interesting_topics', []),
+                'preferred_category_types': user_data.get('preferred_category_types', [])
+            }
+
+            # 카드 선택 인터페이스 데이터 생성
+            recommendation_result = self.card_recommender.get_card_selection_interface(persona, context, context_id)
+            
+            return {
+                'status': recommendation_result['status'],
+                'interface_data': recommendation_result.get('interface_data', {}),
+                'message': recommendation_result['message']
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'interface_data': {},
+                'message': f'카드 선택 인터페이스 생성 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def validate_card_selection(self, selected_cards: List[str], available_options: List[str]) -> Dict[str, Any]:
         """사용자 카드 선택 검증.
@@ -318,14 +484,43 @@ class AACInterpreterService:
                 - valid (bool): 유효성 여부
                 - message (str): 결과 메시지
         """
-        if self.card_recommender is None:
+        # 입력 검증
+        if not isinstance(selected_cards, list):
             return {
                 'status': 'error',
                 'valid': False,
-                'message': '카드 추천 시스템이 초기화되지 않았습니다.'
+                'message': '선택된 카드 정보가 올바르지 않습니다.'
             }
 
-        return self.card_recommender.validate_card_selection(selected_cards, available_options)
+        if not isinstance(available_options, list):
+            return {
+                'status': 'error',
+                'valid': False,
+                'message': '선택 가능한 카드 옵션 정보가 올바르지 않습니다.'
+            }
+
+        try:
+            if self.card_recommender is None:
+                return {
+                    'status': 'error',
+                    'valid': False,
+                    'message': '카드 추천 시스템을 사용할 수 없습니다.'
+                }
+
+            validation_result = self.card_recommender.validate_card_selection(selected_cards, available_options)
+            
+            return {
+                'status': validation_result['status'],
+                'valid': validation_result.get('valid', False),
+                'message': validation_result['message']
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'valid': False,
+                'message': f'카드 선택 검증 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def interpret_cards(self,
                        user_id: str,
@@ -351,63 +546,73 @@ class AACInterpreterService:
                 - method (str): 해석 방법
                 - message (str): 결과 메시지
         """
-        # 사용자 정보 조회
-        user_info = self.user_manager.get_user(user_id)
-        if user_info['status'] != 'success':
-            return {
-                'status': 'error',
-                'interpretations': [],
-                'feedback_id': -1,
-                'method': 'none',
-                'message': user_info['message']
+        try:
+            # 사용자 정보 조회 (비즈니스 로직)
+            user_info = self.user_manager.get_user(user_id)
+            if user_info['status'] != 'success':
+                return {
+                    'status': 'error',
+                    'interpretations': [],
+                    'feedback_id': -1,
+                    'method': 'none',
+                    'message': f'사용자 정보 조회 실패: {user_info["message"]}'
+                }
+
+            # 페르소나 정보 준비
+            user_data = user_info['user']
+            persona = {
+                'age': user_data.get('age'),
+                'gender': user_data.get('gender'),
+                'disability_type': user_data.get('disability_type'),
+                'communication_characteristics': user_data.get('communication_characteristics'),
+                'interesting_topics': user_data.get('interesting_topics')
             }
 
-        # 페르소나 정보 준비
-        user_data = user_info['user']
-        persona = {
-            'age': user_data.get('age'),
-            'gender': user_data.get('gender'),
-            'disability_type': user_data.get('disability_type'),
-            'communication_characteristics': user_data.get('communication_characteristics'),
-            'interesting_topics': user_data.get('interesting_topics')
-        }
+            # 과거 해석 요약 조회
+            conv_summary = self.conversation_memory.get_user_memory_summary(user_id)
+            past_interpretation = conv_summary['summary']
 
-        # 과거 해석 요약 조회
-        conv_summary = self.conversation_memory.get_user_memory_summary(user_id)
-        past_interpretation = conv_summary['summary']
-
-        # 카드 해석 수행
-        interpretation_result = self.card_interpreter.interpret_cards(
-            persona=persona,
-            context=context,
-            cards=selected_cards,
-            past_interpretation=past_interpretation
-        )
-
-        if interpretation_result['status'] == 'success':
-            # 피드백 추적을 위해 해석 시도 기록
-            feedback_result = self.feedback_manager.record_interpretation_attempt(
-                user_id=user_id,
-                cards=selected_cards,
+            # 카드 해석 수행
+            interpretation_result = self.card_interpreter.interpret_cards(
                 persona=persona,
-                context=context,
-                interpretations=interpretation_result['interpretations']
+                context=context or {},
+                cards=selected_cards,
+                past_interpretation=past_interpretation
             )
 
-            return {
-                'status': interpretation_result['status'],
-                'interpretations': interpretation_result['interpretations'],
-                'feedback_id': feedback_result['feedback_id'],
-                'method': interpretation_result['method'],
-                'message': interpretation_result['message']
-            }
-        else:
+            if interpretation_result['status'] == 'success':
+                # 피드백 추적을 위해 해석 시도 기록
+                feedback_result = self.feedback_manager.record_interpretation_attempt(
+                    user_id=user_id,
+                    cards=selected_cards,
+                    persona=persona,
+                    context=context or {},
+                    interpretations=interpretation_result['interpretations']
+                )
+
+                return {
+                    'status': interpretation_result['status'],
+                    'interpretations': interpretation_result['interpretations'],
+                    'feedback_id': feedback_result.get('feedback_id', -1),
+                    'method': interpretation_result['method'],
+                    'message': interpretation_result['message']
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'interpretations': [],
+                    'feedback_id': -1,
+                    'method': 'none',
+                    'message': interpretation_result['message']
+                }
+                
+        except Exception as e:
             return {
                 'status': 'error',
                 'interpretations': [],
                 'feedback_id': -1,
                 'method': 'none',
-                'message': interpretation_result['message']
+                'message': f'카드 해석 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def request_partner_confirmation(self,
@@ -432,13 +637,54 @@ class AACInterpreterService:
                 - confirmation_request (dict): 생성된 확인 요청 데이터
                 - message (str): 결과 메시지
         """
-        return self.feedback_manager.request_interpretation_confirmation(
-            user_id=user_id,
-            cards=cards,
-            context=context,
-            interpretations=interpretations,
-            partner_info=partner_info
-        )
+        # 입력 검증
+        if not user_id or not user_id.strip():
+            return {
+                'status': 'error',
+                'confirmation_id': '',
+                'confirmation_request': {},
+                'message': '사용자 ID가 제공되지 않았습니다.'
+            }
+
+        if not cards or len(cards) == 0:
+            return {
+                'status': 'error',
+                'confirmation_id': '',
+                'confirmation_request': {},
+                'message': '확인 요청할 카드가 없습니다.'
+            }
+
+        if not interpretations or len(interpretations) != 3:
+            return {
+                'status': 'error',
+                'confirmation_id': '',
+                'confirmation_request': {},
+                'message': '확인 요청에는 정확히 3개의 해석이 필요합니다.'
+            }
+
+        try:
+            confirmation_result = self.feedback_manager.request_interpretation_confirmation(
+                user_id=user_id,
+                cards=cards,
+                context=context or {},
+                interpretations=interpretations,
+                partner_info=partner_info or 'Partner'
+            )
+
+            return {
+                'status': confirmation_result['status'],
+                'confirmation_id': confirmation_result.get('confirmation_id', ''),
+                'confirmation_request': confirmation_result.get('confirmation_request', {}),
+                'message': confirmation_result['message']
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'confirmation_id': '',
+                'confirmation_request': {},
+                'message': f'Partner 확인 요청 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def submit_partner_feedback(self,
                               confirmation_id: str,
@@ -457,40 +703,62 @@ class AACInterpreterService:
                 - feedback_result (dict): 생성된 피드백 데이터
                 - message (str): 결과 메시지
         """
-        # Partner 피드백 제출 처리
-        feedback_result = self.feedback_manager.submit_partner_confirmation(
-            confirmation_id=confirmation_id,
-            selected_interpretation_index=selected_interpretation_index,
-            direct_feedback=direct_feedback
-        )
+        # 입력 검증
+        if not confirmation_id or not confirmation_id.strip():
+            return {
+                'status': 'error',
+                'feedback_result': {},
+                'message': '확인 요청 ID가 제공되지 않았습니다.'
+            }
 
-        # 성공시 대화 메모리에 기록
-        if feedback_result['status'] == 'success' and self.conversation_memory:
-            try:
-                feedback_data = feedback_result['feedback_result']
-                final_interpretation = (
-                    feedback_data.get('selected_interpretation') or
-                    feedback_data.get('direct_feedback')
-                )
+        try:
+            # Partner 피드백 제출 처리
+            feedback_result = self.feedback_manager.submit_partner_confirmation(
+                confirmation_id=confirmation_id,
+                selected_interpretation_index=selected_interpretation_index,
+                direct_feedback=direct_feedback
+            )
 
-                if final_interpretation:
-                    memory_result = self.conversation_memory.add_conversation_memory(
-                        user_id=feedback_data['user_id'],
-                        cards=feedback_data['cards'],
-                        context=feedback_data['context'],
-                        interpretations=feedback_data['interpretations'],
-                        selected_interpretation=feedback_data.get('selected_interpretation'),
-                        user_correction=feedback_data.get('direct_feedback')
+            # 성공시 대화 메모리에 기록
+            if feedback_result['status'] == 'success' and self.conversation_memory:
+                try:
+                    feedback_data = feedback_result['feedback_result']
+                    final_interpretation = (
+                        feedback_data.get('selected_interpretation') or
+                        feedback_data.get('direct_feedback')
                     )
-                    
-                    # 메모리 저장 결과에 따른 메시지 업데이트
-                    if memory_result['status'] != 'success':
-                        feedback_result['message'] += f' (메모리 저장 실패: {memory_result["message"]})'
-                        
-            except Exception as e:
-                feedback_result['message'] += f' (메모리 저장 중 오류: {str(e)})'
 
-        return feedback_result
+                    if final_interpretation:
+                        memory_result = self.conversation_memory.add_conversation_memory(
+                            user_id=feedback_data['user_id'],
+                            cards=feedback_data['cards'],
+                            context=feedback_data['context'],
+                            interpretations=feedback_data['interpretations'],
+                            selected_interpretation=feedback_data.get('selected_interpretation'),
+                            user_correction=feedback_data.get('direct_feedback')
+                        )
+                        
+                        # 메모리 저장 결과에 따른 메시지 업데이트
+                        if memory_result['status'] == 'success':
+                            feedback_result['message'] += ' 대화 패턴이 학습되었습니다.'
+                        else:
+                            feedback_result['message'] += f' (메모리 저장 실패: {memory_result["message"]})'
+                            
+                except Exception as e:
+                    feedback_result['message'] += f' (메모리 저장 중 오류: {str(e)})'
+
+            return {
+                'status': feedback_result['status'],
+                'feedback_result': feedback_result.get('feedback_result', {}),
+                'message': feedback_result['message']
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'feedback_result': {},
+                'message': f'Partner 피드백 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def _calculate_preferred_categories(self, interesting_topics: List[str]) -> List[int]:
         """관심 주제를 기반으로 선호 클러스터 계산.
@@ -505,14 +773,27 @@ class AACInterpreterService:
             RuntimeError: 클러스터 계산기가 초기화되지 않은 경우
             Exception: 계산 과정에서 오류 발생시
         """
-        similarity_threshold = self.config.get('similarity_threshold')
-        required_cluster_count = self.config.get('required_cluster_count')
+        try:
+            if not self.cluster_calculator:
+                raise RuntimeError('클러스터 유사도 계산기가 초기화되지 않았습니다.')
 
-        return self.cluster_calculator.calculate_preferred_categories(
-            interesting_topics=interesting_topics,
-            similarity_threshold=similarity_threshold,
-            max_categories=required_cluster_count
-        )
+            if not interesting_topics or len(interesting_topics) == 0:
+                # 기본 클러스터 반환
+                return list(range(6))
+
+            similarity_threshold = self.config.get('similarity_threshold')
+            required_cluster_count = self.config.get('required_cluster_count')
+
+            return self.cluster_calculator.calculate_preferred_categories(
+                interesting_topics=interesting_topics,
+                similarity_threshold=similarity_threshold,
+                max_categories=required_cluster_count
+            )
+            
+        except Exception as e:
+            print(f'선호 카테고리 계산 중 오류: {e}')
+            # 오류 발생시 기본 클러스터 반환
+            return list(range(6))
 
     def get_card_recommendation_history_page(self, context_id: str, page_number: int) -> Dict[str, Any]:
         """카드 추천 히스토리 특정 페이지 조회.
@@ -530,7 +811,27 @@ class AACInterpreterService:
                 - timestamp (str): 생성 시간
                 - message (str): 결과 메시지
         """
-        return self.card_recommender.get_recommendation_history_page(context_id, page_number)
+        if not context_id or not context_id.strip():
+            return {
+                'status': 'error',
+                'cards': [],
+                'page_number': 0,
+                'total_pages': 0,
+                'timestamp': '',
+                'message': '컨텍스트 ID가 제공되지 않았습니다.'
+            }
+
+        try:
+            return self.card_recommender.get_recommendation_history_page(context_id, page_number)
+        except Exception as e:
+            return {
+                'status': 'error',
+                'cards': [],
+                'page_number': 0,
+                'total_pages': 0,
+                'timestamp': '',
+                'message': f'히스토리 페이지 조회 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def get_card_recommendation_history_summary(self, context_id: str) -> Dict[str, Any]:
         """카드 추천 히스토리 요약 정보 조회.
@@ -546,16 +847,34 @@ class AACInterpreterService:
                 - history_summary (List[Dict]): 페이지별 요약 정보
                 - message (str): 결과 메시지
         """
-        if self.card_recommender is None:
+        if not context_id or not context_id.strip():
             return {
                 'status': 'error',
                 'total_pages': 0,
                 'latest_page': 0,
                 'history_summary': [],
-                'message': '카드 추천 시스템이 초기화되지 않았습니다.'
+                'message': '컨텍스트 ID가 제공되지 않았습니다.'
             }
 
-        return self.card_recommender.get_recommendation_history_summary(context_id)
+        try:
+            if self.card_recommender is None:
+                return {
+                    'status': 'error',
+                    'total_pages': 0,
+                    'latest_page': 0,
+                    'history_summary': [],
+                    'message': '카드 추천 시스템을 사용할 수 없습니다.'
+                }
+
+            return self.card_recommender.get_recommendation_history_summary(context_id)
+        except Exception as e:
+            return {
+                'status': 'error',
+                'total_pages': 0,
+                'latest_page': 0,
+                'history_summary': [],
+                'message': f'히스토리 요약 조회 중 시스템 오류가 발생했습니다: {str(e)}'
+            }
 
     def get_context(self, context_id: str) -> Dict[str, Any]:
         """컨텍스트 정보 조회.
@@ -571,4 +890,18 @@ class AACInterpreterService:
                 - context (Dict): 컨텍스트 정보 or 빈 딕셔너리
                 - message (str): 결과 메시지
         """
-        return self.context_manager.get_context(context_id)
+        if not context_id or not context_id.strip():
+            return {
+                'status': 'error',
+                'context': {},
+                'message': '컨텍스트 ID가 제공되지 않았습니다.'
+            }
+
+        try:
+            return self.context_manager.get_context(context_id)
+        except Exception as e:
+            return {
+                'status': 'error',
+                'context': {},
+                'message': f'컨텍스트 조회 중 시스템 오류가 발생했습니다: {str(e)}'
+            }

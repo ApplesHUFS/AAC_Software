@@ -88,7 +88,7 @@ class UserManager:
             return {
                 'status': 'error',
                 'user_id': user_id,
-                'message': '이미 존재하는 사용자 ID입니다.'
+                'message': f'사용자 ID {user_id}가 이미 존재합니다. 다른 ID를 사용해주세요.'
             }
 
         # 입력 검증
@@ -97,7 +97,7 @@ class UserManager:
             return {
                 'status': 'error',
                 'user_id': user_id,
-                'message': validation_result['message']
+                'message': f'페르소나 검증 실패: {validation_result["message"]}'
             }
 
         try:
@@ -123,7 +123,7 @@ class UserManager:
             return {
                 'status': 'success',
                 'user_id': user_id,
-                'message': f'사용자 {user_id}가 성공적으로 생성되었습니다.'
+                'message': f'사용자 {user_id}({user_data["name"]})가 성공적으로 생성되었습니다.'
             }
 
         except Exception as e:
@@ -134,7 +134,7 @@ class UserManager:
             return {
                 'status': 'error',
                 'user_id': user_id,
-                'message': f'사용자 생성 중 오류 발생: {str(e)}'
+                'message': f'사용자 생성 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def update_user_persona(self, user_id: str, persona_updates: Dict[str, Any]) -> Dict[str, Any]:
@@ -166,7 +166,7 @@ class UserManager:
                 'status': 'error',
                 'updated_fields': [],
                 'needs_category_recalculation': False,
-                'message': user_validation['message']
+                'message': f'사용자 확인 실패: {user_validation["message"]}'
             }
 
         try:
@@ -196,7 +196,7 @@ class UserManager:
                         if field == 'interesting_topics':
                             needs_category_recalculation = True
                     else:
-                        # 검증 실패시 에러 메시지 생성
+                        # 검증 실패시 구체적인 에러 메시지 생성
                         if field == 'age':
                             error_msg = self._validate_age(new_value)['message']
                         elif field == 'gender':
@@ -206,24 +206,36 @@ class UserManager:
                         elif field == 'interesting_topics':
                             error_msg = self._validate_interesting_topics(new_value)['message']
                         else:
-                            error_msg = f'필드 {field}의 값이 유효하지 않습니다: {new_value}'
+                            error_msg = f'{field} 필드의 값이 유효하지 않습니다'
 
                         return {
                             'status': 'error',
                             'updated_fields': [],
                             'needs_category_recalculation': False,
-                            'message': error_msg
+                            'message': f'필드 검증 실패: {error_msg}'
                         }
+
+            if not updated_fields:
+                return {
+                    'status': 'error',
+                    'updated_fields': [],
+                    'needs_category_recalculation': False,
+                    'message': '업데이트할 유효한 필드가 없습니다.'
+                }
 
             # 업데이트 시간 갱신 및 저장
             user_data['updated_at'] = __import__('datetime').datetime.now().isoformat()
             self._save_users()
 
+            message = f'사용자 {user_id}의 페르소나가 업데이트되었습니다 (필드: {", ".join(updated_fields)})'
+            if needs_category_recalculation:
+                message += '. 관심 주제 변경으로 선호 카테고리 재계산이 필요합니다'
+
             return {
                 'status': 'success',
                 'updated_fields': updated_fields,
                 'needs_category_recalculation': needs_category_recalculation,
-                'message': f'사용자 {user_id}의 페르소나가 성공적으로 업데이트되었습니다. 업데이트된 필드: {", ".join(updated_fields)}'
+                'message': message
             }
 
         except Exception as e:
@@ -231,7 +243,7 @@ class UserManager:
                 'status': 'error',
                 'updated_fields': [],
                 'needs_category_recalculation': False,
-                'message': f'페르소나 업데이트 중 오류 발생: {str(e)}'
+                'message': f'페르소나 업데이트 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def update_preferred_categories(self, user_id: str, preferred_category_types: List[int]) -> Dict[str, Any]:
@@ -247,6 +259,12 @@ class UserManager:
                 - message (str): 결과 메시지
         """
         try:
+            if user_id not in self.users:
+                return {
+                    'status': 'error',
+                    'message': f'사용자 {user_id}를 찾을 수 없습니다.'
+                }
+
             # 사용자 데이터 업데이트
             user_data = self.users[user_id]
             user_data['preferred_category_types'] = preferred_category_types
@@ -258,13 +276,13 @@ class UserManager:
 
             return {
                 'status': 'success',
-                'message': f'사용자 {user_id}의 선호 카테고리가 업데이트되었습니다.'
+                'message': f'사용자 {user_id}의 선호 카테고리가 {len(preferred_category_types)}개로 업데이트되었습니다.'
             }
 
         except Exception as e:
             return {
                 'status': 'error',
-                'message': f'선호 카테고리 업데이트 중 오류 발생: {str(e)}'
+                'message': f'선호 카테고리 업데이트 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def _validate_required_fields(self, persona: Dict[str, Any]) -> Dict[str, Any]:
@@ -286,7 +304,7 @@ class UserManager:
                 'message': f'필수 필드가 누락되었습니다: {", ".join(missing_fields)}'
             }
 
-        return {'valid': True, 'message': '필수 필드 검증 완료'}
+        return {'valid': True, 'message': '필수 필드 검증 통과'}
 
     def _validate_age(self, age_value: Any) -> Dict[str, Any]:
         """나이 검증.
@@ -305,15 +323,15 @@ class UserManager:
             if age_int < min_age or age_int > max_age:
                 return {
                     'valid': False,
-                    'message': f'나이는 {min_age}-{max_age} 사이의 정수여야 합니다.'
+                    'message': f'나이는 {min_age}세부터 {max_age}세까지 입력 가능합니다.'
                 }
         except (ValueError, TypeError):
             return {
                 'valid': False,
-                'message': f'나이는 {min_age}-{max_age} 사이의 정수여야 합니다.'
+                'message': f'나이는 {min_age}세부터 {max_age}세까지의 숫자로 입력해주세요.'
             }
 
-        return {'valid': True, 'message': '나이 검증 완료'}
+        return {'valid': True, 'message': '나이 검증 통과'}
 
     def _validate_gender(self, gender: str) -> Dict[str, Any]:
         """성별 검증.
@@ -328,10 +346,10 @@ class UserManager:
         if gender not in valid_genders:
             return {
                 'valid': False,
-                'message': f'성별은 다음 중 하나여야 합니다: {", ".join(valid_genders)}'
+                'message': f'성별은 {", ".join(valid_genders)} 중에서 선택해주세요.'
             }
 
-        return {'valid': True, 'message': '성별 검증 완료'}
+        return {'valid': True, 'message': '성별 검증 통과'}
 
     def _validate_disability_type(self, disability_type: str) -> Dict[str, Any]:
         """장애 유형 검증.
@@ -346,10 +364,10 @@ class UserManager:
         if disability_type not in valid_disability_types:
             return {
                 'valid': False,
-                'message': f'장애유형은 다음 중 하나여야 합니다: {", ".join(valid_disability_types)}'
+                'message': f'장애 유형은 {", ".join(valid_disability_types)} 중에서 선택해주세요.'
             }
 
-        return {'valid': True, 'message': '장애 유형 검증 완료'}
+        return {'valid': True, 'message': '장애 유형 검증 통과'}
 
     def _validate_interesting_topics(self, interesting_topics: Any) -> Dict[str, Any]:
         """관심 주제 검증.
@@ -363,10 +381,16 @@ class UserManager:
         if not isinstance(interesting_topics, list) or len(interesting_topics) == 0:
             return {
                 'valid': False,
-                'message': '관심 주제는 최소 1개 이상의 리스트여야 합니다.'
+                'message': '관심 주제는 최소 1개 이상 선택해주세요.'
             }
 
-        return {'valid': True, 'message': '관심 주제 검증 완료'}
+        if len(interesting_topics) > 10:
+            return {
+                'valid': False,
+                'message': '관심 주제는 최대 10개까지 선택 가능합니다.'
+            }
+
+        return {'valid': True, 'message': '관심 주제 검증 통과'}
 
     def _validate_user_exists(self, user_id: str) -> Dict[str, Any]:
         """사용자 존재 여부 검증.
@@ -383,7 +407,7 @@ class UserManager:
                 'message': f'사용자 ID {user_id}를 찾을 수 없습니다.'
             }
 
-        return {'valid': True, 'message': '사용자 존재 검증 완료'}
+        return {'valid': True, 'message': '사용자 존재 확인 완료'}
 
     def _validate_persona(self, persona: Dict[str, Any]) -> Dict[str, Any]:
         """페르소나 정보 유효성 검증.
@@ -423,7 +447,7 @@ class UserManager:
 
         return {
             'valid': True,
-            'message': '페르소나 검증 완료'
+            'message': '페르소나 정보 검증이 완료되었습니다.'
         }
 
     def get_user(self, user_id: str) -> Dict[str, Any]:
@@ -444,7 +468,7 @@ class UserManager:
             return {
                 'status': 'error',
                 'user': None,
-                'message': user_validation['message']
+                'message': f'사용자 조회 실패: {user_validation["message"]}'
             }
 
         try:
@@ -456,14 +480,14 @@ class UserManager:
             return {
                 'status': 'success',
                 'user': user_data,
-                'message': '사용자 정보를 성공적으로 조회했습니다.'
+                'message': f'사용자 {user_id}({user_data.get("name", "Unknown")})의 정보를 조회했습니다.'
             }
             
         except Exception as e:
             return {
                 'status': 'error',
                 'user': None,
-                'message': f'사용자 정보 조회 중 오류 발생: {str(e)}'
+                'message': f'사용자 정보 조회 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def authenticate_user(self, user_id: str, password: str) -> Dict[str, Any]:
@@ -479,13 +503,13 @@ class UserManager:
                 - authenticated (bool): 인증 성공 여부
                 - message (str): 결과 메시지
         """
-        # 사용자 존재 검증
+        # 사용자 존재 검증 (비즈니스 로직)
         user_validation = self._validate_user_exists(user_id)
         if not user_validation['valid']:
             return {
                 'status': 'error',
                 'authenticated': False,
-                'message': user_validation['message']
+                'message': f'로그인 실패: {user_validation["message"]}'
             }
 
         try:
@@ -497,7 +521,7 @@ class UserManager:
                 return {
                     'status': 'error',
                     'authenticated': False,
-                    'message': '계정이 잠겼습니다.'
+                    'message': f'계정 {user_id}이 잠겨있습니다. 관리자에게 문의하세요.'
                 }
 
             # 비밀번호 검증
@@ -512,7 +536,7 @@ class UserManager:
                 return {
                     'status': 'success',
                     'authenticated': True,
-                    'message': '인증이 성공했습니다.'
+                    'message': f'사용자 {user_id}({user_data.get("name", "Unknown")})의 로그인이 성공했습니다.'
                 }
             else:
                 # 인증 실패시 시도 횟수 감소
@@ -523,14 +547,14 @@ class UserManager:
                 return {
                     'status': 'error',
                     'authenticated': False,
-                    'message': f'비밀번호가 일치하지 않습니다. 남은 시도: {remaining}회'
+                    'message': f'비밀번호가 일치하지 않습니다. 남은 로그인 시도 횟수: {remaining}회'
                 }
                 
         except Exception as e:
             return {
                 'status': 'error',
                 'authenticated': False,
-                'message': f'인증 처리 중 오류 발생: {str(e)}'
+                'message': f'인증 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def hash_password(self, password: str) -> str:

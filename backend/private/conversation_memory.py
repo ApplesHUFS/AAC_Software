@@ -119,6 +119,31 @@ class ConversationSummaryMemory:
                 - memory_updated (bool): 메모리 업데이트 여부
                 - message (str): 결과 메시지
         """
+        # 입력 검증
+        if not user_id or not user_id.strip():
+            return {
+                'status': 'error',
+                'summary': '',
+                'memory_updated': False,
+                'message': '사용자 ID가 제공되지 않았습니다.'
+            }
+
+        if not cards or len(cards) == 0:
+            return {
+                'status': 'error',
+                'summary': '',
+                'memory_updated': False,
+                'message': '메모리에 저장할 카드 정보가 없습니다.'
+            }
+
+        if not interpretations or len(interpretations) == 0:
+            return {
+                'status': 'error',
+                'summary': '',
+                'memory_updated': False,
+                'message': '메모리에 저장할 해석 정보가 없습니다.'
+            }
+
         try:
             # 사용자별 메모리 초기화
             if user_id not in self.memory_data["user_memories"]:
@@ -134,7 +159,7 @@ class ConversationSummaryMemory:
                     'status': 'error',
                     'summary': '',
                     'memory_updated': False,
-                    'message': 'Partner가 제공한 최종 해석이 없습니다.'
+                    'message': 'Partner가 제공한 최종 해석이 없습니다. 올바른 해석을 선택하거나 직접 입력해주세요.'
                 }
 
             # 대화 기록 추가
@@ -159,11 +184,15 @@ class ConversationSummaryMemory:
             # 메모리 저장
             self._save_memory()
 
+            place = context.get('place', '알 수 없는 장소') if context else '알 수 없는 장소'
+            card_count = len(cards)
+            conversation_count = len(self.memory_data["user_memories"][user_id]["conversation_history"])
+
             return {
                 'status': 'success',
                 'summary': summary_result,
                 'memory_updated': True,
-                'message': f'사용자 {user_id}의 대화 메모리가 업데이트되었습니다.'
+                'message': f'사용자 {user_id}의 대화 메모리가 업데이트되었습니다. {place}에서의 {card_count}개 카드 해석 패턴이 학습되었습니다 (총 {conversation_count}회 대화)'
             }
             
         except Exception as e:
@@ -171,7 +200,7 @@ class ConversationSummaryMemory:
                 'status': 'error',
                 'summary': '',
                 'memory_updated': False,
-                'message': f'대화 메모리 업데이트 중 오류 발생: {str(e)}'
+                'message': f'대화 메모리 업데이트 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def _update_summary_with_langchain(self, user_id: str, connection_analysis: str) -> str:
@@ -244,24 +273,40 @@ class ConversationSummaryMemory:
                 - conversation_count (int): 대화 횟수
                 - message (str): 결과 메시지
         """
+        if not user_id or not user_id.strip():
+            return {
+                'status': 'success',
+                'summary': "",
+                'conversation_count': 0,
+                'message': "사용자 ID가 제공되지 않았습니다."
+            }
+
         try:
             if user_id not in self.memory_data["user_memories"]:
                 return {
                     'status': "success",
                     'summary': "",
                     'conversation_count': 0,
-                    'message': "새로운 사용자입니다. 대화 이력이 없습니다."
+                    'message': f"사용자 {user_id}는 새로운 사용자입니다. 아직 대화 학습 이력이 없습니다."
                 }
 
             user_memory = self.memory_data["user_memories"][user_id]
             conversation_count = len(user_memory["conversation_history"])
             summary = user_memory.get("summary", "")
 
+            if conversation_count == 0:
+                return {
+                    'status': 'success',
+                    'summary': "",
+                    'conversation_count': 0,
+                    'message': f'사용자 {user_id}의 대화 기록이 없습니다.'
+                }
+
             return {
                 'status': 'success',
                 'summary': summary,
                 'conversation_count': conversation_count,
-                'message': f'사용자 {user_id}의 대화 메모리 요약을 조회했습니다. (총 {conversation_count}회 대화)'
+                'message': f'사용자 {user_id}의 과거 {conversation_count}회 대화에서 학습된 해석 패턴을 조회했습니다.'
             }
             
         except Exception as e:
@@ -269,5 +314,5 @@ class ConversationSummaryMemory:
                 'status': 'error',
                 'summary': "",
                 'conversation_count': 0,
-                'message': f'메모리 요약 조회 중 오류 발생: {str(e)}'
+                'message': f'메모리 요약 조회 중 시스템 오류가 발생했습니다: {str(e)}'
             }

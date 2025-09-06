@@ -69,6 +69,44 @@ class CardInterpreter:
         """
         timestamp = datetime.now().isoformat()
 
+        # 입력 검증
+        if not persona or not isinstance(persona, dict):
+            return {
+                'status': 'error',
+                'interpretations': [],
+                'method': 'none',
+                'timestamp': timestamp,
+                'message': '페르소나 정보가 제공되지 않았습니다. 사용자 페르소나 데이터가 필요합니다.'
+            }
+
+        if not context or not isinstance(context, dict):
+            return {
+                'status': 'error',
+                'interpretations': [],
+                'method': 'none',
+                'timestamp': timestamp,
+                'message': '컨텍스트 정보가 제공되지 않았습니다. 대화 상황 정보가 필요합니다.'
+            }
+
+        if not cards or len(cards) == 0:
+            return {
+                'status': 'error',
+                'interpretations': [],
+                'method': 'none',
+                'timestamp': timestamp,
+                'message': '해석할 카드가 선택되지 않았습니다. 최소 1개 이상의 카드를 선택해주세요.'
+            }
+
+        max_cards = self.config.get('max_card_selection', 4)
+        if len(cards) > max_cards:
+            return {
+                'status': 'error',
+                'interpretations': [],
+                'method': 'none',
+                'timestamp': timestamp,
+                'message': f'선택된 카드가 너무 많습니다. 최대 {max_cards}개까지만 선택 가능합니다. (현재: {len(cards)}개)'
+            }
+
         # LLM 팩토리 사용 가능 여부 확인
         if self.llm_factory is None:
             return {
@@ -76,10 +114,15 @@ class CardInterpreter:
                 'interpretations': [],
                 'method': 'none',
                 'timestamp': timestamp,
-                'message': 'LLM 팩토리가 초기화되지 않았습니다.'
+                'message': 'AI 해석 시스템을 사용할 수 없습니다. OpenAI API 설정을 확인해주세요.'
             }
 
         try:
+            # 사용자 정보 확인
+            user_name = persona.get('name', '사용자')
+            disability_type = persona.get('disability_type', '알 수 없음')
+            place = context.get('place', '알 수 없는 장소')
+            
             # LLM 팩토리를 통한 카드 해석 생성
             interpretations = self.llm_factory.generate_card_interpretations(
                 persona, context, cards, past_interpretation
@@ -89,19 +132,33 @@ class CardInterpreter:
             feedback_id = self.feedback_counter
             self.feedback_counter += 1
 
+            card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
+            memory_info = " (과거 해석 패턴 반영)" if past_interpretation else ""
+
             return {
                 'status': 'success',
                 'interpretations': interpretations,
                 'method': 'online',
                 'timestamp': timestamp,
-                'message': f'카드 해석 완료. 피드백 ID: {feedback_id}'
+                'message': f'{place}에서 {user_name}({disability_type})의 {len(cards)}개 카드 조합이 해석되었습니다{memory_info}'
             }
 
-        except Exception as e:
+        except ValueError as e:
+            # 해석 개수 오류 등 예상 가능한 오류
             return {
                 'status': 'error',
                 'interpretations': [],
                 'method': 'none',
                 'timestamp': timestamp,
-                'message': f'카드 해석 실패: {str(e)}'
+                'message': f'카드 해석 생성 중 오류가 발생했습니다: {str(e)}'
+            }
+
+        except Exception as e:
+            # 예상치 못한 시스템 오류
+            return {
+                'status': 'error',
+                'interpretations': [],
+                'method': 'none',
+                'timestamp': timestamp,
+                'message': f'카드 해석 처리 중 시스템 오류가 발생했습니다: {str(e)}'
             }

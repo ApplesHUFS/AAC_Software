@@ -69,8 +69,8 @@ class CardRecommender:
             num_recommendations = int(total_cards * recommendation_ratio)
             num_random = total_cards - num_recommendations
 
-            preferred_clusters = persona.get('preferred_category_types')
-            current_activity = context.get('current_activity')
+            preferred_clusters = persona.get('preferred_category_types', [])
+            current_activity = context.get('current_activity', '')
 
             # 히스토리 초기화
             if context_id not in self.recommendation_history:
@@ -96,7 +96,7 @@ class CardRecommender:
                     'time': context.get('time'),
                     'place': context.get('place'),
                     'interaction_partner': context.get('interaction_partner'),
-                    'current_activity': context.get('current_activity')
+                    'current_activity': current_activity
                 },
                 'selection_rules': {
                     'min_cards': self.config.get('min_card_selection'),
@@ -106,17 +106,20 @@ class CardRecommender:
                 'total_pages': self.recommendation_history[context_id][-1]['page_number']
             }
 
+            place = context.get('place', '알 수 없는 장소')
+            activity_info = f" ({current_activity} 활동 고려)" if current_activity else ""
+            
             return {
                 'status': 'success',
                 'interface_data': interface_data,
-                'message': f'카드 선택 인터페이스 생성 완료 (상황 관련: {len(recommended_cards)}, 선호 관련: {len(prefer_cards)})'
+                'message': f'{place}에서의 대화를 위한 {total_cards}개 카드가 준비되었습니다 (개인화 추천: {len(recommended_cards)}개, 선호 기반: {len(prefer_cards)}개){activity_info}'
             }
             
         except Exception as e:
             return {
                 'status': 'error',
                 'interface_data': {},
-                'message': f'카드 선택 인터페이스 생성 중 오류 발생: {str(e)}'
+                'message': f'카드 선택 인터페이스 생성 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
     def _select_from_preferred_clusters(self, preferred_clusters: List[int], num_cards: int) -> List[str]:
@@ -130,6 +133,10 @@ class CardRecommender:
             List[str]: 선택된 카드 파일명들
         """
         selected_cards = []
+        
+        if not preferred_clusters:
+            return self._select_random_cards([], num_cards)
+        
         n_clusters = self.config.get('n_clusters')
 
         # 각 클러스터에서 순환하면서 카드 선택
@@ -189,19 +196,34 @@ class CardRecommender:
         min_cards = self.config.get('min_card_selection')
         max_cards = self.config.get('max_card_selection')
 
+        # 입력 검증
+        if not selected_cards:
+            return {
+                'status': 'error',
+                'valid': False,
+                'message': '선택된 카드가 없습니다. 카드를 선택해주세요.'
+            }
+
+        if not available_options:
+            return {
+                'status': 'error',
+                'valid': False,
+                'message': '선택 가능한 카드 옵션 정보가 없습니다.'
+            }
+
         # 선택 카드 수 검증
         if len(selected_cards) < min_cards:
             return {
                 'status': 'error',
                 'valid': False,
-                'message': f'최소 {min_cards}개 이상의 카드를 선택해야 합니다.'
+                'message': f'최소 {min_cards}개 이상의 카드를 선택해야 합니다. 현재 {len(selected_cards)}개가 선택되었습니다.'
             }
 
         if len(selected_cards) > max_cards:
             return {
                 'status': 'error',
                 'valid': False,
-                'message': f'최대 {max_cards}개까지만 선택할 수 있습니다.'
+                'message': f'최대 {max_cards}개까지만 선택할 수 있습니다. 현재 {len(selected_cards)}개가 선택되었습니다.'
             }
 
         # 중복 선택 검증
@@ -209,7 +231,7 @@ class CardRecommender:
             return {
                 'status': 'error',
                 'valid': False,
-                'message': '중복된 카드를 선택할 수 없습니다.'
+                'message': '중복된 카드를 선택할 수 없습니다. 서로 다른 카드를 선택해주세요.'
             }
 
         # 선택 가능한 옵션 내에서 선택했는지 검증
@@ -218,13 +240,13 @@ class CardRecommender:
             return {
                 'status': 'error',
                 'valid': False,
-                'message': f'선택할 수 없는 카드입니다: {", ".join(invalid_cards)}'
+                'message': f'선택할 수 없는 카드가 포함되어 있습니다: {", ".join(invalid_cards[:3])}{"..." if len(invalid_cards) > 3 else ""}'
             }
 
         return {
             'status': 'success',
             'valid': True,
-            'message': f'{len(selected_cards)}개 카드가 성공적으로 선택되었습니다.'
+            'message': f'{len(selected_cards)}개 카드가 성공적으로 선택되어 해석 준비가 완료되었습니다.'
         }
 
     def _add_to_recommendation_history(self, context_id: str, cards: List[str]) -> Dict[str, Any]:
@@ -273,6 +295,16 @@ class CardRecommender:
                 - timestamp (str): 생성 시간
                 - message (str): 결과 메시지
         """
+        if not context_id or not context_id.strip():
+            return {
+                'status': 'error',
+                'cards': [],
+                'page_number': 0,
+                'total_pages': 0,
+                'timestamp': '',
+                'message': '컨텍스트 ID가 제공되지 않았습니다.'
+            }
+
         if context_id not in self.recommendation_history:
             self.recommendation_history[context_id] = []
 
@@ -285,7 +317,7 @@ class CardRecommender:
                 'page_number': 0,
                 'total_pages': 0,
                 'timestamp': '',
-                'message': f'컨텍스트 {context_id}의 추천 히스토리가 없습니다.'
+                'message': f'컨텍스트 {context_id}에 대한 카드 추천 히스토리가 없습니다.'
             }
         
         total_pages = len(history)
@@ -298,7 +330,7 @@ class CardRecommender:
                 'page_number': 0,
                 'total_pages': total_pages,
                 'timestamp': '',
-                'message': f'유효하지 않은 페이지 번호입니다. (1-{total_pages} 범위)'
+                'message': f'페이지 번호가 유효 범위(1-{total_pages})를 벗어났습니다. 페이지 {page_number}는 존재하지 않습니다.'
             }
 
         # 페이지 정보 반환
@@ -309,7 +341,7 @@ class CardRecommender:
             'page_number': page_number,
             'total_pages': total_pages,
             'timestamp': page_data['timestamp'],
-            'message': f'페이지 {page_number}/{total_pages}를 조회했습니다.'
+            'message': f'컨텍스트 {context_id}의 {page_number}번째 카드 추천 페이지를 조회했습니다 (총 {len(page_data["cards"])}개 카드)'
         }
 
     def get_recommendation_history_summary(self, context_id: str) -> Dict[str, Any]:
@@ -326,17 +358,35 @@ class CardRecommender:
                 - history_summary (List[Dict]): 페이지별 요약 정보
                 - message (str): 결과 메시지
         """
+        if not context_id or not context_id.strip():
+            return {
+                'status': 'error',
+                'total_pages': 0,
+                'latest_page': 0,
+                'history_summary': [],
+                'message': '컨텍스트 ID가 제공되지 않았습니다.'
+            }
+
         if context_id not in self.recommendation_history:
             return {
                 'status': 'error',
                 'total_pages': 0,
                 'latest_page': 0,
                 'history_summary': [],
-                'message': f'컨텍스트 {context_id}의 추천 히스토리가 없습니다.'
+                'message': f'컨텍스트 {context_id}에 대한 카드 추천 히스토리가 없습니다.'
             }
 
         history = self.recommendation_history[context_id]
         total_pages = len(history)
+
+        if total_pages == 0:
+            return {
+                'status': 'error',
+                'total_pages': 0,
+                'latest_page': 0,
+                'history_summary': [],
+                'message': f'컨텍스트 {context_id}에 추천된 카드가 없습니다.'
+            }
 
         # 페이지별 요약 정보 생성
         history_summary = []
@@ -352,7 +402,7 @@ class CardRecommender:
             'total_pages': total_pages,
             'latest_page': total_pages,
             'history_summary': history_summary,
-            'message': f'컨텍스트 {context_id}의 추천 히스토리 요약 (총 {total_pages}페이지)'
+            'message': f'컨텍스트 {context_id}의 카드 추천 히스토리 요약: 총 {total_pages}번의 추천이 진행되었습니다.'
         }
     
     def _select_from_context_clusters(self, current_activity: str, num_cards: int) -> List[str]:
@@ -368,13 +418,13 @@ class CardRecommender:
         selected_cards = []
         
         # 현재 활동 정보가 없는 경우 랜덤 선택
-        if not current_activity:
+        if not current_activity or not current_activity.strip():
             return self._select_random_cards([], num_cards)
         
         try:
             # 현재 활동과 관련된 클러스터 계산
             context_preferred_clusters = self.cluster_calculator.calculate_preferred_categories(
-                interesting_topics=[current_activity],
+                interesting_topics=[current_activity.strip()],
                 similarity_threshold=0.3,  
                 max_categories=3
             )
@@ -386,7 +436,7 @@ class CardRecommender:
             )
         
         except Exception as e:
-            print(f'context 기반 카드 선택 오류: {e}')
+            print(f'활동 기반 카드 선택 중 오류 발생: {e}')
             # 오류 발생시 랜덤 선택으로 대체
             selected_cards = self._select_random_cards([], num_cards)
         
