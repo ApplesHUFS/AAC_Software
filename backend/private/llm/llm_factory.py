@@ -84,7 +84,8 @@ class LLMFactory:
         return content
 
     def call_vision_api(self, system_prompt: str, user_content: List[Dict[str, Any]],
-                       temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> str:
+                       temperature: Optional[float] = None, max_tokens: Optional[int] = None,
+                       use_json_format: bool = False) -> str:
         """OpenAI Vision API 호출.
 
         Args:
@@ -92,6 +93,7 @@ class LLMFactory:
             user_content: 사용자 콘텐츠 (텍스트 + 이미지)
             temperature: 온도 설정 (선택사항)
             max_tokens: 최대 토큰 수 (선택사항)
+            use_json_format: JSON 형식 응답 요청 여부
 
         Returns:
             str: API 응답 내용
@@ -100,54 +102,76 @@ class LLMFactory:
             Exception: API 호출 실패시
         """
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            # 기본 요청 파라미터 구성
+            request_params = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content}
                 ],
-                temperature=temperature or self.temperature,
-                max_tokens=max_tokens or self.max_tokens,
-                timeout=self.timeout
-            )
+                "temperature": temperature or self.temperature,
+                "max_tokens": max_tokens or self.max_tokens,
+                "timeout": self.timeout
+            }
 
+            # JSON 형식 요청시 response_format 추가
+            if use_json_format:
+                request_params["response_format"] = {"type": "json_object"}
+
+            response = self.client.chat.completions.create(**request_params)
             return response.choices[0].message.content.strip()
             
         except Exception as e:
             raise Exception(f"OpenAI Vision API 호출 실패: {str(e)}")
 
-    def parse_interpretations(self, content: str) -> List[str]:
-        """OpenAI 응답에서 해석들을 추출.
+    def parse_json_interpretations(self, json_content: str) -> List[str]:
+        """JSON 응답에서 해석들을 추출.
 
         Args:
-            content: OpenAI 응답 내용
+            json_content: OpenAI JSON 응답 내용
 
         Returns:
-            List[str]: 추출된 해석 리스트 (최대 3개)
+            List[str]: 추출된 해석 리스트 (정확히 3개)
 
         Raises:
-            ValueError: 해석 파싱 실패시
+            ValueError: JSON 파싱 또는 해석 추출 실패시
         """
         try:
-            lines = [line.strip() for line in content.split('\n') if line.strip()]
-
-            interpretations = []
-            for cleaned in lines:
-                # 번호나 접두사 제거
-                import re
-                cleaned = re.sub(r'^[\d\.\-\*]+\s*', '', cleaned)
-                cleaned = re.sub(r'^(첫\s*번째|두\s*번째|세\s*번째|해석\s*\d+)\s*:?\s*', '', cleaned)
-
-                if len(cleaned) > 5:
-                    interpretations.append(cleaned)
-
-            if len(interpretations) < 3:
-                raise ValueError(f"충분한 해석을 생성하지 못했습니다. 생성된 해석 수: {len(interpretations)}")
-
-            return interpretations[:3]
+            # JSON 파싱
+            parsed_data = json.loads(json_content)
             
+            # interpretations 키에서 해석 리스트 추출
+            if "interpretations" not in parsed_data:
+                raise ValueError("응답에서 'interpretations' 키를 찾을 수 없습니다.")
+            
+            interpretations = parsed_data["interpretations"]
+            
+            # 해석이 리스트인지 확인
+            if not isinstance(interpretations, list):
+                raise ValueError("해석 데이터가 리스트 형식이 아닙니다.")
+            
+            # 정확히 3개의 해석이 있는지 확인
+            if len(interpretations) != 3:
+                raise ValueError(f"해석이 정확히 3개가 아닙니다. 받은 해석 수: {len(interpretations)}")
+            
+            # 각 해석이 문자열이고 최소 길이를 만족하는지 확인
+            validated_interpretations = []
+            for i, interpretation in enumerate(interpretations):
+                if not isinstance(interpretation, str):
+                    raise ValueError(f"{i+1}번째 해석이 문자열이 아닙니다.")
+                
+                cleaned = interpretation.strip()
+                if len(cleaned) < 5:
+                    raise ValueError(f"{i+1}번째 해석이 너무 짧습니다: {cleaned}")
+                
+                validated_interpretations.append(cleaned)
+            
+            return validated_interpretations
+            
+        except json.JSONDecodeError as e:
+            raise ValueError(f"JSON 파싱 실패: {str(e)}")
         except Exception as e:
-            raise ValueError(f"해석 파싱 중 오류 발생: {str(e)}")
+            raise ValueError(f"해석 추출 중 오류 발생: {str(e)}")
 
     def generate_card_interpretations(self, persona: Dict[str, Any], context: Dict[str, Any],
                                     cards: List[str], past_interpretation: str = "") -> List[str]:
@@ -167,80 +191,103 @@ class LLMFactory:
             Exception: API 호출 실패시
         """
         try:
-            # 공통된 프롬프트
-            base_prompt="""사용자의 장애 유형의 특징, 페르소나, 상황을 고려해 선택된 AAC 카드 이미지들을 해석해주세요.
-
-                              해석 원칙:
-                              1. 선택된 이미지의 시각적 요소(객체, 행동, 표정, 색깔 등)를 고려하여 해석
-                              2. 사용자의 의도를 예상해 자연스러운 한국어로 표현
-                              3. 사용자의 페르소나(나이, 성별, 장애유형, 의사소통 특성)를 고려해 해석
-                              4. 상황 정보(시간, 장소, 대화 상태, 현재 활동)를 고려해 해석
-                              5. 과거 해석 패턴이 있다면 일관성을 유지해서 해석
-
-                              정확히 3개의 해석을 생성하되, 각각 다른 관점에서 해석을 생성해 주세요.
-                              해석 앞에 번호나 접두사는 붙이지 마세요."""
-
             # 장애 유형별 시스템 프롬프트
-            system_prompts = {"자폐스펙트럼장애":"""당신은 AAC(보완대체의사소통) 해석 전문가입니다.
-                              현재 AAC 사용자는 자페스펙트럼 장애를 가지고 있습니다. 자폐스펙트럼 장애의 특징으로는 반복하려는 경향, 특정 대상에 대한 강한 집착,
-                              비유적인 표현에 대한 이해 부족 등이 있습니다.
-                        """,
+            disability_specific_prompts = {
+                "자폐스펙트럼장애": """당신은 AAC(보완대체의사소통) 해석 전문가입니다.
+현재 AAC 사용자는 자폐스펙트럼 장애를 가지고 있습니다. 자폐스펙트럼 장애의 특징으로는 반복하려는 경향, 특정 대상에 대한 강한 집착,
+비유적인 표현에 대한 이해 부족 등이 있습니다.""",
 
-                             "지적장애":"""당신은 AAC(보완대체의사소통) 해석 전문가입니다.
-                             현재 AAC 사용자는 지적장애를 가지고 있습니다. 지적장애의 특징으로는 지능지수가 IQ 70 이하로 낮고, 개인이 처해있는 환경과 그 연령에 따른
-                             자립성과 사회적 책임감의 기준에 미달하고, 사회적 상호작용 능력이 부족합니다.
-                        """,
+                "지적장애": """당신은 AAC(보완대체의사소통) 해석 전문가입니다.
+현재 AAC 사용자는 지적장애를 가지고 있습니다. 지적장애의 특징으로는 지능지수가 IQ 70 이하로 낮고, 개인이 처해있는 환경과 그 연령에 따른
+자립성과 사회적 책임감의 기준에 미달하고, 사회적 상호작용 능력이 부족합니다.""",
 
-                             "의사소통장애":"""당신은 AAC(보완대체의사소통) 해석 전문가입니다.
-                             현재 AAC 사용자는 의사소통장애를 가지고 있습니다. 의사소통장애의 특징으로는 다른 사람의 말을 이해하는 능력은 비교적 정상이지만 간단한 단어나
-                             문장 표현을 어려워해 몸짓이나 손짓으로 대체하려 합니다. 자신의 생각을 언어로 표현하는 능력의 장애를 보입니다.
-                        """}
+                "의사소통장애": """당신은 AAC(보완대체의사소통) 해석 전문가입니다.
+현재 AAC 사용자는 의사소통장애를 가지고 있습니다. 의사소통장애의 특징으로는 다른 사람의 말을 이해하는 능력은 비교적 정상이지만 간단한 단어나
+문장 표현을 어려워해 몸짓이나 손짓으로 대체하려 합니다. 자신의 생각을 언어로 표현하는 능력의 장애를 보입니다."""
+            }
             
-            disability_type=persona.get('disability_type')
-            disability_specific=system_prompts.get(disability_type, "")
+            # 기본 해석 원칙 프롬프트
+            base_prompt = """사용자의 장애 유형의 특징, 페르소나, 상황을 고려해 선택된 AAC 카드 이미지들을 해석해주세요.
+
+해석 원칙:
+1. 선택된 이미지의 시각적 요소(객체, 행동, 표정, 색깔 등)를 고려하여 해석
+2. 사용자의 의도를 예상해 자연스러운 한국어로 표현
+3. 사용자의 페르소나(나이, 성별, 장애유형, 의사소통 특성)를 고려해 해석
+4. 상황 정보(시간, 장소, 대화 상태, 현재 활동)를 고려해 해석
+5. 과거 해석 패턴이 있다면 일관성을 유지해서 해석
+
+정확히 3개의 해석을 JSON 형식으로 생성해주세요. 각각 다른 관점에서 해석을 생성해 주세요.
+
+응답은 반드시 다음 JSON 형식으로만 제공해주세요:
+{
+  "interpretations": [
+    "첫 번째 해석 내용",
+    "두 번째 해석 내용", 
+    "세 번째 해석 내용"
+  ]
+}"""
+
+            # 장애 유형에 따른 시스템 프롬프트 구성
+            disability_type = persona.get('disability_type')
+            disability_specific = disability_specific_prompts.get(disability_type, "")
 
             if disability_specific:
-                system_prompt=f"{disability_specific}\n{base_prompt}"
+                system_prompt = f"{disability_specific}\n\n{base_prompt}"
             else:
-                system_prompt=base_prompt
+                system_prompt = base_prompt
 
             # 이미지 콘텐츠 준비
             image_content = self.prepare_card_images_content(cards)
 
+            # 사용자 콘텐츠 구성
             user_content = [{
                 "type": "text",
                 "text": f"""페르소나:
-    - 나이: {persona.get('age')}
-    - 성별: {persona.get('gender')}
-    - 장애 유형: {persona.get('disability_type')}
-    - 의사소통 특성: {persona.get('communication_characteristics')}
-    - 관심 주제: {', '.join(persona.get('interesting_topics'))}
+- 나이: {persona.get('age')}
+- 성별: {persona.get('gender')}
+- 장애 유형: {persona.get('disability_type')}
+- 의사소통 특성: {persona.get('communication_characteristics')}
+- 관심 주제: {', '.join(persona.get('interesting_topics', []))}
 
-    현재 상황:
-    - 시간: {context.get('time')}
-    - 장소: {context.get('place')}
-    - 대화 상대: {context.get('interaction_partner')}
-    - 현재 활동: {context.get('current_activity')}
+현재 상황:
+- 시간: {context.get('time')}
+- 장소: {context.get('place')}
+- 대화 상대: {context.get('interaction_partner')}
+- 현재 활동: {context.get('current_activity')}
 
-    {past_interpretation if past_interpretation else ""}
-    """
+{f"과거 해석 패턴: {past_interpretation}" if past_interpretation else ""}
+"""
             }]
 
+            # 카드 이미지 콘텐츠 추가
             user_content.extend(image_content)
+            
+            # 해석 요청 메시지 추가
             user_content.append({
                 "type": "text",
                 "text": """
-    위 이미지들을 보고 이 사용자가 전달하고자 하는 의도를 3가지 관점에서 해석해주세요.
-    이미지의 시각적 내용과 순서를 반드시 고려하세요.
-    각 해석은 접두사 없이 바로 내용으로 시작하세요."""
+위 이미지들을 보고 이 사용자가 전달하고자 하는 의도를 3가지 관점에서 해석해주세요.
+이미지의 시각적 내용과 순서를 반드시 고려하세요.
+
+응답은 반드시 다음 JSON 형식으로만 제공해주세요:
+{
+  "interpretations": [
+    "첫 번째 해석 내용",
+    "두 번째 해석 내용", 
+    "세 번째 해석 내용"
+  ]
+}"""
             })
 
-            content = self.call_vision_api(system_prompt, user_content)
-            interpretations = self.parse_interpretations(content)
-
-            # 정확히 3개가 나오지 않으면 에러 발생
-            if len(interpretations) != 3:
-                raise ValueError(f"해석이 정확히 3개 생성되지 않았습니다. 생성된 해석 수: {len(interpretations)}")
+            # API 호출 (JSON 형식 요청)
+            content = self.call_vision_api(
+                system_prompt, 
+                user_content, 
+                use_json_format=True
+            )
+            
+            # JSON에서 해석 추출
+            interpretations = self.parse_json_interpretations(content)
 
             return interpretations
             
@@ -263,19 +310,20 @@ class LLMFactory:
             Exception: API 호출 실패시
         """
         try:
+            # 분석 요청 콘텐츠 구성
             content = [{
                 "type": "text",
                 "text": f"""다음 AAC 카드 이미지들을 보고, 주어진 상황에서 어떤 시각적 특징이 최종 해석으로 연결되었는지 분석해주세요.
 
-    상황 정보:
-    - 시간: {context.get('time', '알 수 없음')}
-    - 장소: {context.get('place', '알 수 없음')}
-    - 대화 상대: {context.get('interaction_partner', '알 수 없음')}
-    - 현재 활동: {context.get('current_activity', '알 수 없음')}
+상황 정보:
+- 시간: {context.get('time', '알 수 없음')}
+- 장소: {context.get('place', '알 수 없음')}
+- 대화 상대: {context.get('interaction_partner', '알 수 없음')}
+- 현재 활동: {context.get('current_activity', '알 수 없음')}
 
-    최종 해석: {final_interpretation}
+최종 해석: {final_interpretation}
 
-    이미지들:"""
+이미지들:"""
             }]
 
             # 각 카드 이미지 추가
