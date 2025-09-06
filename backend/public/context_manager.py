@@ -14,7 +14,6 @@ class ContextManager:
     Attributes:
         contexts: 컨텍스트 ID별 정보 저장
         config: 설정 딕셔너리
-        user_context_history: 사용자별 컨텍스트 이력
     """
 
     def __init__(self, config: Optional[Dict] = None):
@@ -35,6 +34,7 @@ class ContextManager:
         """새로운 대화 상황 컨텍스트 생성.
 
         Partner가 대화 상황 정보를 입력하여 컨텍스트를 생성합니다.
+        
         Args:
             place: 장소 정보 (직접 입력, 필수)
             interaction_partner: 대화 상대 관계 (직접 입력, 필수)
@@ -48,7 +48,7 @@ class ContextManager:
                 - context (Dict): 컨텍스트 정보
                 - message (str): 결과 메시지
         """
-        # 검증
+        # 필수 필드 검증
         if not place or not place.strip():
             return {
                 'status': 'error',
@@ -73,29 +73,43 @@ class ContextManager:
                 'message': '사용자 ID(user_id)는 필수 입력사항입니다.'
             }
 
-        current_activity = current_activity.strip() if current_activity else ""
+        try:
+            # 현재 활동 정보 처리
+            current_activity = current_activity.strip() if current_activity else ""
 
-        context_id = str(uuid.uuid4())
+            # 고유 컨텍스트 ID 생성
+            context_id = str(uuid.uuid4())
 
-        current_time = datetime.now()
-        time_str = current_time.strftime("%H시 %M분")
+            # 현재 시간 생성
+            current_time = datetime.now()
+            time_str = current_time.strftime("%H시 %M분")
 
-        context = {
-            'time': time_str,
-            'place': place.strip(),
-            'interaction_partner': interaction_partner.strip(),
-            'current_activity': current_activity,
-            'created_at': current_time.isoformat()
-        }
+            # 컨텍스트 데이터 구성
+            context = {
+                'time': time_str,
+                'place': place.strip(),
+                'interaction_partner': interaction_partner.strip(),
+                'current_activity': current_activity,
+                'created_at': current_time.isoformat()
+            }
 
-        self.contexts[context_id] = context # 조회를 위해 context 저장
+            # 컨텍스트 저장 (조회를 위해)
+            self.contexts[context_id] = context
 
-        return {
-            'status': 'success',
-            'context_id': context_id,
-            'context': context,
-            'message': f'컨텍스트 {context_id}가 성공적으로 생성되었습니다.'
-        }
+            return {
+                'status': 'success',
+                'context_id': context_id,
+                'context': context,
+                'message': f'컨텍스트 {context_id}가 성공적으로 생성되었습니다.'
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'context_id': '',
+                'context': {},
+                'message': f'컨텍스트 생성 중 오류 발생: {str(e)}'
+            }
 
     def get_context(self, context_id: str) -> Dict[str, Any]:
         """컨텍스트 ID로 컨텍스트 정보 조회.
@@ -116,21 +130,30 @@ class ContextManager:
                 'message': f'컨텍스트 ID {context_id}를 찾을 수 없습니다.'
             }
 
-        context = self.contexts[context_id].copy()
+        try:
+            # 컨텍스트 정보 복사
+            context = self.contexts[context_id].copy()
 
-        # 조회할 context 정보들
-        display_context = {
-            'id': context_id,
-            'time': context['time'],
-            'place': context['place'],
-            'interaction_partner': context['interaction_partner'],
-            'current_activity': context['current_activity'],
-            'created_at': context['created_at'],
-            'status': 'active'
-        }
+            # 조회용 컨텍스트 정보 구성
+            display_context = {
+                'id': context_id,
+                'time': context['time'],
+                'place': context['place'],
+                'interaction_partner': context['interaction_partner'],
+                'current_activity': context['current_activity'],
+                'created_at': context['created_at'],
+                'status': 'active'
+            }
 
-        return {
-            'status': 'success',
-            'context': display_context,
-            'message': '컨텍스트를 성공적으로 조회했습니다.'
-        }
+            return {
+                'status': 'success',
+                'context': display_context,
+                'message': '컨텍스트를 성공적으로 조회했습니다.'
+            }
+            
+        except Exception as e:
+            return {
+                'status': 'error',
+                'context': {},
+                'message': f'컨텍스트 조회 중 오류 발생: {str(e)}'
+            }

@@ -22,19 +22,25 @@ class CardInterpreter:
             config: 설정 딕셔너리.
         """
         self.config = config
-
-        # LLMFactory 초기화
-        llm_config = {
-            'openai_model': self.config.get('openai_model'),
-            'openai_temperature': self.config.get('openai_temperature'),
-            'interpretation_max_tokens': self.config.get('interpretation_max_tokens'),
-            'summary_max_tokens': self.config.get('summary_max_tokens'),
-            'api_timeout': self.config.get('api_timeout'),
-            'images_folder': self.config.get('images_folder')
-        }
-        self.llm_factory = LLMFactory(llm_config)
-
         self.feedback_counter = 100000
+
+        try:
+            # LLM 팩토리 설정 구성
+            llm_config = {
+                'openai_model': self.config.get('openai_model'),
+                'openai_temperature': self.config.get('openai_temperature'),
+                'interpretation_max_tokens': self.config.get('interpretation_max_tokens'),
+                'summary_max_tokens': self.config.get('summary_max_tokens'),
+                'api_timeout': self.config.get('api_timeout'),
+                'images_folder': self.config.get('images_folder')
+            }
+            
+            # LLM 팩토리 초기화
+            self.llm_factory = LLMFactory(llm_config)
+            
+        except Exception as e:
+            print(f"LLM 팩토리 초기화 실패: {e}")
+            self.llm_factory = None
 
     def interpret_cards(self,
         persona: Dict[str, Any],
@@ -57,18 +63,29 @@ class CardInterpreter:
             Dict containing:
                 - status (str): 'success' 또는 'error'
                 - interpretations (List[str]): 3개의 해석 결과
-                - method (str): 'online'
+                - method (str): 'online' 또는 'none'
                 - timestamp (str): 해석 생성 시간
                 - message (str): 결과 메시지
         """
         timestamp = datetime.now().isoformat()
 
-        # LLMFactory를 통한 해석 생성
+        # LLM 팩토리 사용 가능 여부 확인
+        if self.llm_factory is None:
+            return {
+                'status': 'error',
+                'interpretations': [],
+                'method': 'none',
+                'timestamp': timestamp,
+                'message': 'LLM 팩토리가 초기화되지 않았습니다.'
+            }
+
         try:
+            # LLM 팩토리를 통한 카드 해석 생성
             interpretations = self.llm_factory.generate_card_interpretations(
                 persona, context, cards, past_interpretation
             )
 
+            # 피드백 ID 생성
             feedback_id = self.feedback_counter
             self.feedback_counter += 1
 
