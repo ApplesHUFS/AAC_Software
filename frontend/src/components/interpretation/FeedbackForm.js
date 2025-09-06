@@ -107,11 +107,11 @@ const FeedbackForm = ({
     <div className="feedback-form partner-theme">
       <div className="feedback-header">
         <div className="role-indicator partner-role">
-          <span className="role-icon">👥</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
           <span>도움이 해석 확인</span>
         </div>
         <h3>
-          <span className="form-icon">✅</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="form-icon" />
           어떤 의미가 맞나요?
         </h3>
         <p>
@@ -135,7 +135,7 @@ const FeedbackForm = ({
               disabled={loading}
             />
             <label htmlFor="interpretation-feedback" className="option-label">
-              <span className="option-icon">🎯</span>
+              <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="option-icon" />
               제시된 해석 중 선택
             </label>
           </div>
@@ -151,7 +151,7 @@ const FeedbackForm = ({
               disabled={loading}
             />
             <label htmlFor="direct-feedback" className="option-label">
-              <span className="option-icon">✍️</span>
+              <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="option-icon" />
               직접 입력
             </label>
           </div>
@@ -161,7 +161,7 @@ const FeedbackForm = ({
         {feedbackType === 'interpretation' && (
           <div className="interpretation-selection">
             <h4>
-              <span className="section-icon">🎯</span>
+              <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
               올바른 해석 선택
             </h4>
             <p className="selection-instruction">
@@ -195,7 +195,7 @@ const FeedbackForm = ({
         {feedbackType === 'direct' && (
           <div className="direct-feedback-section">
             <h4>
-              <span className="section-icon">✍️</span>
+              <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
               올바른 의미 직접 입력
             </h4>
             <p className="input-instruction">
@@ -219,7 +219,7 @@ const FeedbackForm = ({
         {/* 에러 메시지 */}
         {error && (
           <div className="error-message partner-error">
-            <span className="error-icon">⚠️</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
             {error}
           </div>
         )}
@@ -238,7 +238,7 @@ const FeedbackForm = ({
               </>
             ) : (
               <>
-                <span className="button-icon">✅</span>
+                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="button-icon" />
                 이 의미가 맞습니다
               </>
             )}
@@ -248,20 +248,20 @@ const FeedbackForm = ({
         {/* 도움말 */}
         <div className="feedback-help partner-help">
           <h5>
-            <span className="help-icon">💡</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="help-icon" />
             피드백 작성 도움말
           </h5>
           <div className="help-grid">
             <div className="help-item">
-              <strong>🎯 해석 선택 시</strong>
+              <strong>해석 선택 시</strong>
               <p>AI가 제안한 3가지 중 가장 정확한 의미를 선택해주세요</p>
             </div>
             <div className="help-item">
-              <strong>✍️ 직접 입력 시</strong>
+              <strong>직접 입력 시</strong>
               <p>모든 해석이 부정확하다면 올바른 의미를 직접 써주세요</p>
             </div>
             <div className="help-item">
-              <strong>📝 작성 팁</strong>
+              <strong>작성 팁</strong>
               <p>구체적이고 명확한 피드백이 AI 학습에 도움이 됩니다</p>
             </div>
           </div>

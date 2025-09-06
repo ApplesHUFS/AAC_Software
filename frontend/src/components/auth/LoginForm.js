@@ -88,7 +88,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
 
         {error && (
           <div className="error-message partner-error">
-            <span className="error-icon">⚠️</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
             {error}
           </div>
         )}

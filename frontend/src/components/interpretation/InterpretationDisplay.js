@@ -13,8 +13,8 @@ const InterpretationDisplay = ({
       {/* 해석 헤더 */}
       <div className="interpretation-header">
         <h2>
-          <span className="header-icon">🤖</span>
-          AI 해석 결과
+          <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="header-icon" />
+          AI 해석 결과 - 어떤 의미가 맞나요?
         </h2>
         <div className="interpretation-method">
           <span className="method-badge partner-badge">
@@ -26,7 +26,7 @@ const InterpretationDisplay = ({
       {/* 상황 요약 */}
       <div className="context-summary partner-summary">
         <h3>
-          <span className="summary-icon">📍</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="summary-icon" />
           대화 상황
         </h3>
         <div className="context-details">
@@ -56,7 +56,7 @@ const InterpretationDisplay = ({
       {/* 선택된 카드 미리보기 */}
       <div className="selected-cards-summary">
         <h3>
-          <span className="summary-icon">🎨</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="summary-icon" />
           소통이가 선택한 카드 ({selectedCards.length}개)
         </h3>
         <div className="cards-preview">
@@ -76,47 +76,50 @@ const InterpretationDisplay = ({
         </div>
       </div>
 
-      {/* 해석 목록 */}
+      {/* 해석 목록과 선택 안내 통합 */}
       <div className="interpretations-list">
         <h3>
-          <span className="list-icon">🎯</span>
-          AI가 제안한 해석 ({interpretations.length}가지)
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="list-icon" />
+          AI가 제안한 해석 ({interpretations.length}가지) - 올바른 해석을 선택해주세요
         </h3>
         <p className="interpretation-instruction">
-          다음 중에서 소통이가 실제로 표현하고 싶었던 의미와 가장 가까운 해석을 선택해주세요:
+          다음 중에서 소통이가 실제로 표현하고 싶었던 의미와 가장 가까운 해석을 선택하거나, 
+          모든 해석이 부정확하다면 아래에서 '직접 입력'을 선택해주세요:
         </p>
         
-        {interpretations.map((interpretation, index) => (
-          <div 
-            key={index}
-            className="interpretation-item partner-item"
-          >
-            <div className="interpretation-number partner-number">{index + 1}</div>
-            <div className="interpretation-text">
-              {interpretation.text || interpretation}
+        <div className="interpretations-preview">
+          {interpretations.map((interpretation, index) => (
+            <div 
+              key={index}
+              className="interpretation-item partner-item"
+            >
+              <div className="interpretation-number partner-number">{index + 1}</div>
+              <div className="interpretation-text">
+                {interpretation.text || interpretation}
+              </div>
+              <div className="interpretation-confidence">
+                <small>AI 신뢰도: 높음</small>
+              </div>
             </div>
-            <div className="interpretation-confidence">
-              <small>AI 신뢰도: 높음</small>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* 참고 정보 */}
       <div className="interpretation-note partner-note">
         <h4>
-          <span className="note-icon">ℹ️</span>
+          <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="note-icon" />
           참고사항
         </h4>
         <div className="note-content">
           <p>
-            • AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다
+            AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다
           </p>
           <p>
-            • 정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수 있습니다
+            정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수 있습니다
           </p>
           <p>
-            • 제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요
+            제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요
           </p>
         </div>
       </div>
@@ -163,15 +166,15 @@ const InterpretationResult = ({
       {/* 완료 헤더 */}
       <div className="result-header">
         <div className="role-indicator partner-role">
-          <span className="role-icon">👥</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
           <span>소통 완료</span>
         </div>
         <h2>
-          <span className="header-icon">🎉</span>
+          <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="header-icon" />
           소통이의 마음을 확인했어요!
         </h2>
         <div className="success-indicator partner-success">
-          <span className="success-icon">✅</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="success-icon" />
           <span>성공적으로 완료되었습니다</span>
         </div>
       </div>
@@ -179,7 +182,7 @@ const InterpretationResult = ({
       {/* 최종 해석 */}
       <div className="final-interpretation partner-final">
         <h3>
-          <span className="final-icon">💬</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="final-icon" />
           소통이가 전하고 싶었던 마음
         </h3>
         <div className="interpretation-content">
@@ -196,7 +199,7 @@ const InterpretationResult = ({
       {/* 세션 요약 */}
       <div className="session-summary partner-session">
         <h3>
-          <span className="summary-icon">📊</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="summary-icon" />
           이번 대화 요약
         </h3>
         <div className="summary-grid">
@@ -225,7 +228,7 @@ const InterpretationResult = ({
       {/* 사용된 카드 표시 */}
       <div className="cards-used">
         <h3>
-          <span className="cards-icon">🎨</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="cards-icon" />
           소통에 사용된 카드
         </h3>
         <div className="cards-grid result-cards">
@@ -248,24 +251,24 @@ const InterpretationResult = ({
       {/* 진행 과정 요약 */}
       <div className="process-summary partner-process">
         <h4>
-          <span className="process-icon">⚡</span>
+          <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="process-icon" />
           진행 과정
         </h4>
         <div className="process-steps">
           <div className="process-step completed">
-            <span className="step-icon">📍</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="step-icon" />
             <span className="step-description">도움이가 상황 입력</span>
           </div>
           <div className="process-step completed">
-            <span className="step-icon">🎨</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="step-icon" />
             <span className="step-description">소통이가 카드 선택 ({selectedCards.length}개)</span>
           </div>
           <div className="process-step completed">
-            <span className="step-icon">🤖</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="step-icon" />
             <span className="step-description">AI 해석 생성 ({interpretations.length}가지)</span>
           </div>
           <div className="process-step completed">
-            <span className="step-icon">✅</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="step-icon" />
             <span className="step-description">도움이가 의미 확인</span>
           </div>
         </div>
@@ -277,7 +280,7 @@ const InterpretationResult = ({
           onClick={onStartNewSession}
           className="primary-button partner-button large"
         >
-          <span className="button-icon">🚀</span>
+          <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="button-icon" />
           새로운 대화 시작하기
         </button>
       </div>
@@ -286,7 +289,7 @@ const InterpretationResult = ({
       <div className="completion-message partner-completion">
         <div className="completion-content">
           <p>
-            <span className="message-icon">🎯</span>
+            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="message-icon" />
             이번 대화에서 사용된 카드와 해석 정보가 시스템에 학습되어 
             다음번에는 더 정확한 추천을 받을 수 있습니다.
           </p>

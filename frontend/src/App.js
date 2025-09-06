@@ -14,7 +14,7 @@ const APP_STEPS = {
   INTERPRETATION: 'interpretation'
 };
 
-// 세션 저장 키
+// 세션 저장 키 (React state 기반, localStorage 최소 사용)
 const SESSION_KEYS = {
   USER: 'aac_user',
   CONTEXT: 'aac_context', 
@@ -28,10 +28,10 @@ const App = () => {
   const [contextData, setContextData] = useState(null);
   const [selectedCards, setSelectedCards] = useState([]);
 
-  // 세션 저장/불러오기 유틸리티
+  // 세션 저장/불러오기 유틸리티 (최소한의 localStorage 사용)
   const saveSession = (key, data) => {
     try {
-      localStorage.setItem(key, JSON.stringify(data));
+      sessionStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
       console.error(`세션 저장 실패: ${key}`, error);
     }
@@ -39,7 +39,7 @@ const App = () => {
 
   const loadSession = (key) => {
     try {
-      const data = localStorage.getItem(key);
+      const data = sessionStorage.getItem(key);
       return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error(`세션 불러오기 실패: ${key}`, error);
@@ -49,7 +49,7 @@ const App = () => {
 
   const clearSession = () => {
     Object.values(SESSION_KEYS).forEach(key => {
-      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
     });
   };
 
@@ -131,8 +131,8 @@ const App = () => {
     setCurrentStep(APP_STEPS.DASHBOARD);
     
     // 대화 관련 세션만 정리
-    localStorage.removeItem(SESSION_KEYS.CONTEXT);
-    localStorage.removeItem(SESSION_KEYS.SELECTED_CARDS);
+    sessionStorage.removeItem(SESSION_KEYS.CONTEXT);
+    sessionStorage.removeItem(SESSION_KEYS.SELECTED_CARDS);
     saveSession(SESSION_KEYS.CURRENT_STEP, APP_STEPS.DASHBOARD);
   };
 

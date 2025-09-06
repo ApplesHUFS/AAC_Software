@@ -29,7 +29,7 @@ const ERROR_MESSAGES = {
   TIMEOUT_ERROR: '요청 시간이 초과되었습니다.'
 };
 
-// API 클라이언트
+// API 클라이언트 클래스
 class ApiClient {
   constructor() {
     this.baseURL = API_BASE_URL;
@@ -208,5 +208,6 @@ class ApiClient {
   }
 }
 
+// API 클라이언트 인스턴스 생성 및 내보내기
 const apiClient = new ApiClient();
 export default apiClient;

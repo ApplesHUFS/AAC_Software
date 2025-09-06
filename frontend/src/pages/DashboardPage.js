@@ -4,7 +4,7 @@ import ContextForm from '../components/context/ContextForm';
 import ProfileEditForm from '../components/profile/ProfileEditForm';
 
 const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'context', 'profile'
+  const [currentView, setCurrentView] = useState('main');
 
   // 새 대화 세션 시작 (도움이가 상황 설정)
   const handleStartNewSession = () => {
@@ -37,7 +37,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
       <header className="dashboard-header">
         <div className="user-info">
           <div className="role-indicator partner-role">
-            <span className="role-icon">👥</span>
+            <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
             <span>도움이 대시보드</span>
           </div>
           <h2>{user.name}님의 소통 도우미</h2>
@@ -69,7 +69,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
             <div className="welcome-section">
               <div className="welcome-card partner-card">
                 <div className="card-header">
-                  <span className="card-icon">🚀</span>
+                  <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="card-icon" />
                   <h3>새로운 대화 세션 시작</h3>
                 </div>
                 <p>
@@ -112,7 +112,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
             {user.communicationCharacteristics && (
               <div className="communication-section partner-section">
                 <h4>
-                  <span className="section-icon">💬</span>
+                  <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
                   소통이의 의사소통 특성
                 </h4>
                 <div className="communication-info">
@@ -125,7 +125,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
             {user.interestingTopics?.length > 0 && (
               <div className="interests-section partner-section">
                 <h4>
-                  <span className="section-icon">❤️</span>
+                  <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
                   소통이의 관심 주제
                 </h4>
                 <div className="topic-list">
@@ -141,7 +141,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
             {/* 사용 안내 */}
             <div className="usage-guide partner-section">
               <h4>
-                <span className="section-icon">📋</span>
+                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
                 사용 안내
               </h4>
               <div className="guide-steps">

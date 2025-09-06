@@ -27,7 +27,7 @@ const AuthPage = ({ onAuthSuccess }) => {
           <p className="service-description">
             AAC 사용자의 의사소통을 지원하는 <strong>도움이</strong> 전용 서비스
           </p>
-          <hr width = "100%" color = "black" size = "1"></hr>
+          <hr width="100%" color="black" size="1" />
         </div>
         
         <div className="auth-content">

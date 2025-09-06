@@ -12,16 +12,46 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // 페이지 히스토리 관리
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  // 히스토리 관련 상태 (단일 소스)
+  const [historyState, setHistoryState] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    isLoading: false,
+    error: null
+  });
   
   // UI 상태
   const [isRerolling, setIsRerolling] = useState(false);
 
-  // 중복 호출 방지용 ref
+  // 초기화 플래그
   const isInitialLoadDone = useRef(false);
-  const isComponentMounted = useRef(false);
+
+  // 히스토리 상태 업데이트 함수
+  const updateHistoryState = useCallback((updates) => {
+    setHistoryState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  // 히스토리 정보 로드
+  const loadHistoryInfo = useCallback(async () => {
+    if (!contextData?.contextId) return null;
+    
+    try {
+      updateHistoryState({ isLoading: true, error: null });
+      const response = await cardService.getHistorySummary(contextData.contextId);
+      
+      if (response.success && response.data) {
+        updateHistoryState({
+          totalPages: response.data.totalPages || 1,
+          isLoading: false
+        });
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      updateHistoryState({ isLoading: false, error: error.message });
+      return null;
+    }
+  }, [contextData?.contextId, updateHistoryState]);
 
   // 추천받은 카드를 전체 카드 풀에 추가
   const addToRecommendedCards = useCallback((newCards) => {
@@ -46,68 +76,70 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       setLoading(true);
       setError('');
 
-      const response = await cardService.getRecommendations(user.userId, contextData.contextId);
+      // 카드 추천과 히스토리 정보를 병렬로 로드
+      const [cardResponse, historyInfo] = await Promise.all([
+        cardService.getRecommendations(user.userId, contextData.contextId),
+        loadHistoryInfo()
+      ]);
       
-      if (response.success && response.data) {
-        const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
+      if (cardResponse.success && cardResponse.data) {
+        const normalizedCards = cardService.normalizeCardData(cardResponse.data.cards || []);
         setCards(normalizedCards);
         addToRecommendedCards(normalizedCards);
         
-        // 페이지 정보 업데이트
-        const pagination = response.data.pagination || {};
-        const latestPage = pagination.totalPages || 1;
-        setCurrentPage(latestPage);
-        setTotalPages(latestPage);
+        // 현재 페이지 설정
+        const latestPage = cardResponse.data.pagination?.totalPages || historyInfo?.totalPages || 1;
+        updateHistoryState({ currentPage: latestPage });
       } else {
-        setError(response.error || '카드 추천을 받을 수 없습니다.');
+        setError(cardResponse.error || '카드 추천을 받을 수 없습니다.');
       }
     } catch (error) {
       setError(error.message || '카드 로딩 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [user?.userId, contextData?.contextId, addToRecommendedCards]);
+  }, [user?.userId, contextData?.contextId, addToRecommendedCards, loadHistoryInfo, updateHistoryState]);
 
-  // 컴포넌트 마운트 시 초기 카드 로드
+  // 컴포넌트 마운트 시 초기 로드
   useEffect(() => {
-    isComponentMounted.current = true;
-
-    if (!isInitialLoadDone.current && isComponentMounted.current) {
+    if (!isInitialLoadDone.current) {
       isInitialLoadDone.current = true;
       loadInitialCards();
     }
-
-    return () => {
-      isComponentMounted.current = false;
-    };
   }, [loadInitialCards]);
 
   // 히스토리 페이지 변경 처리
   const handlePageChange = useCallback(async (pageNumber) => {
-    if (!contextData?.contextId || pageNumber === currentPage || loading) return;
+    if (!contextData?.contextId || pageNumber === historyState.currentPage || loading) return;
     
     try {
       setLoading(true);
       setError('');
+      updateHistoryState({ isLoading: true });
 
       const response = await cardService.getHistoryPage(contextData.contextId, pageNumber);
       
       if (response.success && response.data) {
         const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
         setCards(normalizedCards);
-        setCurrentPage(pageNumber);
+        updateHistoryState({ 
+          currentPage: pageNumber,
+          isLoading: false 
+        });
         addToRecommendedCards(normalizedCards);
       } else {
         setError(response.error || '히스토리 페이지를 불러올 수 없습니다.');
+        updateHistoryState({ isLoading: false });
       }
     } catch (error) {
       setError(error.message || '히스토리 페이지 로딩 중 오류가 발생했습니다.');
+      updateHistoryState({ isLoading: false });
     } finally {
       setLoading(false);
     }
-  }, [contextData?.contextId, currentPage, loading, addToRecommendedCards]);
+  }, [contextData?.contextId, historyState.currentPage, loading, addToRecommendedCards, updateHistoryState]);
 
-  // 카드 재추천 처리
+  // 카드 재추천 처리 (근본적 해결)
   const handleRerollCards = useCallback(async () => {
     if (isRerolling || !user?.userId || !contextData?.contextId) return;
 
@@ -115,6 +147,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     setError('');
 
     try {
+      // 새 카드 추천 요청
       const response = await cardService.getRecommendations(user.userId, contextData.contextId);
       
       if (response.success && response.data) {
@@ -122,11 +155,18 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         setCards(normalizedCards);
         addToRecommendedCards(normalizedCards);
         
-        // 페이지 정보 업데이트
-        const pagination = response.data.pagination || {};
-        const latestPage = pagination.totalPages || totalPages + 1;
-        setCurrentPage(latestPage);
-        setTotalPages(latestPage);
+        // 새 페이지 정보로 상태 업데이트
+        const newPageNumber = response.data.pagination?.totalPages || historyState.totalPages + 1;
+        updateHistoryState({ 
+          currentPage: newPageNumber,
+          totalPages: newPageNumber 
+        });
+        
+        // 히스토리 정보 새로고침 (비동기로 백그라운드에서 실행)
+        setTimeout(() => {
+          loadHistoryInfo();
+        }, 100);
+        
       } else {
         setError(response.error || '카드 재추천에 실패했습니다.');
       }
@@ -135,7 +175,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     } finally {
       setIsRerolling(false);
     }
-  }, [isRerolling, user?.userId, contextData?.contextId, totalPages, addToRecommendedCards]);
+  }, [isRerolling, user?.userId, contextData?.contextId, historyState.totalPages, addToRecommendedCards, updateHistoryState, loadHistoryInfo]);
 
   // 카드 선택/해제 처리
   const handleCardSelection = useCallback((card) => {
@@ -173,7 +213,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       setLoading(true);
       setError('');
 
-      // 백엔드에서 카드 선택 유효성 검증
       const validationResponse = await cardService.validateSelection(selectedCards, allRecommendedCards);
 
       if (validationResponse.success && validationResponse.data?.valid) {
@@ -194,14 +233,14 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       <div className="card-selection-page communicator-theme loading">
         <div className="loading-content communicator-loading">
           <div className="loading-header">
-            <span className="loading-icon">✨</span>
+            <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="loading-icon" />
             <h2>소통이를 위한 카드를 준비하고 있어요!</h2>
           </div>
           <p>소통이의 관심사와 현재 상황을 분석해서 딱 맞는 카드들을 골라드릴게요.</p>
           <div className="loading-spinner"></div>
           <div className="loading-tips">
-            <p>💡 <strong>{user.name}</strong>님이 좋아하는 주제를 고려하고 있어요</p>
-            <p>🎯 <strong>{contextData.place}</strong>에서 쓰기 좋은 카드들을 찾고 있어요</p>
+            <p><strong>{user.name}</strong>님이 좋아하는 주제를 고려하고 있어요</p>
+            <p><strong>{contextData.place}</strong>에서 쓰기 좋은 카드들을 찾고 있어요</p>
           </div>
         </div>
       </div>
@@ -213,15 +252,15 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       {/* 페이지 헤더 */}
       <header className="selection-header communicator-header">
         <div className="role-indicator communicator-role">
-          <span className="role-icon">💬</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
           <span>소통이 카드 선택</span>
         </div>
         <h2>어떤 카드로 소통할까요?</h2>
         <div className="context-info">
-          <span className="context-item">📍 {contextData.place}</span>
-          <span className="context-item">👥 {contextData.interactionPartner}와 함께</span>
+          <span className="context-item">위치: {contextData.place}</span>
+          <span className="context-item">대화상대: {contextData.interactionPartner}와 함께</span>
           {contextData.currentActivity && (
-            <span className="context-item">🎯 {contextData.currentActivity} 중</span>
+            <span className="context-item">활동: {contextData.currentActivity} 중</span>
           )}
         </div>
       </header>
@@ -241,7 +280,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
               onClick={handleRerollCards}
               disabled={loading || isRerolling}
             >
-              {isRerolling ? '🔄 새 카드 찾는 중...' : '🔄 다른 카드 보기'}
+              {isRerolling ? '새 카드 찾는 중...' : '다른 카드 보기'}
             </button>
             
             <button 
@@ -249,14 +288,14 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
               onClick={handleProceedToInterpretation}
               disabled={selectedCards.length === 0 || loading}
             >
-              <span className="button-icon">✅</span>
+              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="button-icon" />
               이 카드로 소통하기 ({selectedCards.length}개)
             </button>
           </div>
 
           {error && (
             <div className="error-message communicator-error">
-              <span className="error-icon">⚠️</span>
+              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
               {error}
             </div>
           )}
@@ -265,7 +304,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
           {allRecommendedCards.length > 0 && (
             <div className="recommendation-info communicator-info">
               <div className="info-content">
-                <span className="info-icon">🎨</span>
+                <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="info-icon" />
                 <small>
                   지금까지 <strong>{allRecommendedCards.length}개</strong>의 
                   소통이 맞춤 카드가 준비되었어요!
@@ -278,11 +317,10 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
         {/* 메인 영역 */}
         <div className="selection-main">
           {/* 히스토리 네비게이션 */}
-          {totalPages > 1 && (
+          {historyState.totalPages > 1 && (
             <CardHistoryNavigation 
               contextId={contextData.contextId}
-              currentPage={currentPage}
-              totalPages={totalPages}
+              historyState={historyState}
               onPageChange={handlePageChange}
               disabled={loading}
             />
@@ -299,15 +337,15 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
             />
           ) : (
             <div className="no-cards-message communicator-message">
-              <span className="message-icon">😅</span>
-              <h3>앗! 카드를 불러올 수 없어요</h3>
+              <img src="/images/logo_red.png" alt="로고" width="48" height="48" className="message-icon" />
+              <h3>아! 카드를 불러올 수 없어요</h3>
               <p>잠깐만 기다렸다가 다시 시도해주세요.</p>
               <button 
                 className="secondary-button retry-button"
                 onClick={loadInitialCards}
                 disabled={loading}
               >
-                🔄 다시 시도하기
+                다시 시도하기
               </button>
             </div>
           )}
@@ -317,17 +355,17 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
             <div className="cards-info communicator-guide">
               <div className="guide-content">
                 <p>
-                  <span className="guide-icon">🎯</span>
+                  <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="guide-icon" />
                   <strong>{cards.length}개</strong>의 카드가 소통이를 위해 준비되었어요! 
                 </p>
                 <p>
-                  <span className="guide-icon">❤️</span>
+                  <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="guide-icon" />
                   <strong>{user.interestingTopics?.slice(0, 3).join(', ')}</strong> 같은 
                   관심사를 고려해서 골랐어요.
                 </p>
                 <p>
-                  <span className="guide-icon">📄</span>
-                  현재 페이지: <strong>{currentPage} / {totalPages}</strong>
+                  <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="guide-icon" />
+                  현재 페이지: <strong>{historyState.currentPage} / {historyState.totalPages}</strong>
                 </p>
               </div>
             </div>

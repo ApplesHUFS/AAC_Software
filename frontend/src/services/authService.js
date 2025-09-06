@@ -50,10 +50,10 @@ export const authService = {
   // 로그아웃 처리
   async logout() {
     try {
-      localStorage.removeItem('aac_user');
-      localStorage.removeItem('aac_context');
-      localStorage.removeItem('aac_selected_cards');
-      localStorage.removeItem('aac_current_step');
+      sessionStorage.removeItem('aac_user');
+      sessionStorage.removeItem('aac_context');
+      sessionStorage.removeItem('aac_selected_cards');
+      sessionStorage.removeItem('aac_current_step');
       console.log('로그아웃 완료');
     } catch (error) {
       console.error('로그아웃 처리 중 오류:', error);
@@ -63,7 +63,7 @@ export const authService = {
   // 현재 로그인 상태 확인
   getCurrentUser() {
     try {
-      const savedUser = localStorage.getItem('aac_user');
+      const savedUser = sessionStorage.getItem('aac_user');
       if (savedUser) {
         const userData = JSON.parse(savedUser);
         if (userData.userId && userData.authenticated) {
@@ -73,7 +73,7 @@ export const authService = {
       return null;
     } catch (error) {
       console.error('사용자 정보 파싱 실패:', error);
-      localStorage.removeItem('aac_user');
+      sessionStorage.removeItem('aac_user');
       return null;
     }
   }

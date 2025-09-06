@@ -12,6 +12,13 @@ const INTERPRETATION_STEPS = {
   COMPLETED: 'completed'
 };
 
+// 동적 로딩 상태
+const LOADING_STATES = [
+  { key: 'cards', label: '카드 분석', icon: '/images/logo_red.png' },
+  { key: 'context', label: '상황 고려', icon: '/images/logo_red.png' },
+  { key: 'interpretation', label: '해석 생성', icon: '/images/logo_red.png' }
+];
+
 const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplete }) => {
   // 해석 관련 상태
   const [interpretations, setInterpretations] = useState([]);
@@ -23,6 +30,22 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(INTERPRETATION_STEPS.INTERPRETING);
   const [interpretationMethod, setInterpretationMethod] = useState('');
+  
+  // 동적 로딩 상태
+  const [currentLoadingState, setCurrentLoadingState] = useState(0);
+
+  // 로딩 상태 애니메이션
+  useEffect(() => {
+    let interval;
+    if (loading && currentStep === INTERPRETATION_STEPS.INTERPRETING) {
+      interval = setInterval(() => {
+        setCurrentLoadingState(prev => (prev + 1) % LOADING_STATES.length);
+      }, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [loading, currentStep]);
 
   // Partner 피드백 확인 요청
   const requestPartnerConfirmation = useCallback(async (interpretationData) => {
@@ -137,6 +160,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     setInterpretations([]);
     setConfirmationId(null);
     setFeedbackResult(null);
+    setCurrentLoadingState(0);
     
     generateInterpretations().catch((error) => {
       setError(error.message);
@@ -150,7 +174,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       <div className="interpretation-page partner-theme loading">
         <div className="loading-content partner-loading">
           <div className="loading-header">
-            <span className="loading-icon">🤖</span>
+            <img src="/images/logo_red.png" alt="로고" width="48" height="48" className="loading-icon" />
             <h2>AI가 소통이의 카드를 분석하고 있어요</h2>
           </div>
           <div className="loading-details">
@@ -168,9 +192,15 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
           </div>
           <div className="loading-spinner"></div>
           <div className="loading-progress">
-            <div className="progress-step active">카드 분석</div>
-            <div className="progress-step">상황 고려</div>
-            <div className="progress-step">해석 생성</div>
+            {LOADING_STATES.map((state, index) => (
+              <div 
+                key={state.key} 
+                className={`progress-step ${index === currentLoadingState ? 'active' : index < currentLoadingState ? 'completed' : ''}`}
+              >
+                <img src={state.icon} alt="로고" width="16" height="16" />
+                {state.label}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -183,7 +213,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       <div className="interpretation-page partner-theme error">
         <div className="error-content partner-error">
           <div className="error-header">
-            <span className="error-icon">⚠️</span>
+            <img src="/images/logo_red.png" alt="로고" width="48" height="48" className="error-icon" />
             <h2>해석 생성에 문제가 발생했어요</h2>
           </div>
           <div className="error-message">{error}</div>
@@ -207,7 +237,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       {currentStep === INTERPRETATION_STEPS.FEEDBACK && interpretations.length > 0 && (
         <>
           <div className="role-indicator partner-role">
-            <span className="role-icon">👥</span>
+            <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
             <span>도움이 해석 확인</span>
           </div>
           
@@ -244,15 +274,15 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       <div className="interpretation-progress partner-progress">
         <div className="progress-steps">
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.INTERPRETING ? 'active' : 'completed'}`}>
-            <span className="step-icon">🤖</span>
+            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="step-icon" />
             <span>AI 해석 생성</span>
           </div>
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.FEEDBACK ? 'active' : currentStep === INTERPRETATION_STEPS.COMPLETED ? 'completed' : ''}`}>
-            <span className="step-icon">👥</span>
+            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="step-icon" />
             <span>도움이 확인</span>
           </div>
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.COMPLETED ? 'active' : ''}`}>
-            <span className="step-icon">✅</span>
+            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="step-icon" />
             <span>소통 완료</span>
           </div>
         </div>

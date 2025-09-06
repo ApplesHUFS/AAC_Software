@@ -568,7 +568,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   transition: background-color 0.2s ease;
 }
 
@@ -1203,10 +1203,7 @@ body {
 }
 
 .card-order {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #3b82f6;
+  background: var(--primary-color);
   color: white;
   width: 20px;
   height: 20px;
@@ -1216,6 +1213,9 @@ body {
   justify-content: center;
   font-size: 0.75rem;
   font-weight: bold;
+  position: absolute;
+  top: -6px;
+  right: -6px;
 }
 
 .card-details {
@@ -1242,7 +1242,7 @@ body {
   height: 28px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -1518,7 +1518,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 10px;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
@@ -2611,9 +2611,6 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: #1e293b;
-  line-height: 1.6;
-  margin-bottom: 1rem;
 }
 
 .completion-message small {
@@ -2742,4 +2739,64 @@ body {
   .user-stats {
     padding: 1.5rem;
   }
+}
+
+/* 로고 이미지 아이콘 공통 스타일 */
+.role-icon,
+.form-icon,
+.section-icon,
+.button-icon,
+.error-icon,
+.success-icon,
+.loading-icon,
+.message-icon,
+.info-icon,
+.guide-icon,
+.help-icon,
+.nav-icon,
+.list-icon,
+.title-icon,
+.summary-icon,
+.final-icon,
+.notice-icon,
+.option-icon {
+  display: inline-block;
+  vertical-align: middle;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* 버튼 내 아이콘 여백 */
+.button-icon {
+  margin-right: 0.5rem;
+}
+
+/* 에러/성공 메시지 아이콘 */
+.error-message .error-icon,
+.success-message .success-icon {
+  margin-right: 0.5rem;
+}
+
+/* 빈 상태 아이콘 스타일 개선 */
+.empty-icon img,
+.no-cards-message img {
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+/* 안내 텍스트의 아이콘과 텍스트 정렬 */
+.guide-content p,
+.info-content,
+.navigation-help small,
+.selection-summary p {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 컨텍스트 아이템 정렬 */
+.context-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }

@@ -8,7 +8,7 @@ const PLACE_EXAMPLES = [
 ];
 
 const PARTNER_EXAMPLES = [
-  '엄마', '아빠', '형' , '누나', '언니', '오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
+  '엄마', '아빠', '형', '누나', '언니', '오빠', '친구', '선생님', '의사', '간호사', '점원', '동료'
 ];
 
 const ACTIVITY_EXAMPLES = [
@@ -81,11 +81,11 @@ const ContextForm = ({ userId, onContextCreated }) => {
     <div className="context-form partner-theme">
       <div className="context-header">
         <div className="role-indicator partner-role">
-          <span className="role-icon">👥</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
           <span>도움이 상황 입력</span>
         </div>
         <h2>
-          <span className="form-icon">📍</span>
+          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="form-icon" />
           지금 어떤 상황인가요?
         </h2>
         <p>
@@ -98,7 +98,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
         {/* 장소 입력 */}
         <div className="form-group">
           <label htmlFor="place">
-            <span className="label-icon">📍</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="label-icon" />
             현재 장소 *
           </label>
           <input
@@ -132,7 +132,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
         {/* 대화 상대 입력 */}
         <div className="form-group">
           <label htmlFor="interactionPartner">
-            <span className="label-icon">👥</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="label-icon" />
             대화 상대 *
           </label>
           <input
@@ -163,10 +163,10 @@ const ContextForm = ({ userId, onContextCreated }) => {
           </div>
         </div>
 
-        {/* 현재 활동 입력 (선택사항) */}
+        {/* 현재 활동 입력 */}
         <div className="form-group">
           <label htmlFor="currentActivity">
-            <span className="label-icon">🎯</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="label-icon" />
             현재 활동 (선택사항)
           </label>
           <input
@@ -203,7 +203,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         {error && (
           <div className="error-message partner-error">
-            <span className="error-icon">⚠️</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
             {error}
           </div>
         )}
@@ -217,7 +217,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
               </>
             ) : (
               <>
-                <span className="button-icon">🎨</span>
+                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="button-icon" />
                 소통이에게 맞춤 카드 추천하기
               </>
             )}
@@ -226,20 +226,20 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         <div className="context-help">
           <h4>
-            <span className="help-icon">💡</span>
+            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="help-icon" />
             입력 도움말
           </h4>
           <div className="help-grid">
             <div className="help-item">
-              <strong>📍 장소</strong>
+              <strong>장소</strong>
               <p>구체적인 위치를 입력하면 상황에 딱 맞는 카드를 추천받아요</p>
             </div>
             <div className="help-item">
-              <strong>👥 대화 상대</strong>
+              <strong>대화 상대</strong>
               <p>관계에 따라 적절한 표현 방식과 카드가 달라져요</p>
             </div>
             <div className="help-item">
-              <strong>🎯 현재 활동</strong>
+              <strong>현재 활동</strong>
               <p>하고 있는 일이 명확하면 더 정확한 카드 추천이 가능해요</p>
             </div>
           </div>
