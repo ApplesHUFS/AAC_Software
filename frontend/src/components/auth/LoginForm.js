@@ -47,14 +47,13 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
     <div className="auth-form partner-form">
       <h2>
         <img src="/images/logo_black.png" alt="로고" width="32" height="32" />
-        도움이 로그인
+        로그인
       </h2>
-      <p className="form-description">소통이와 함께하는 AAC 서비스에 접속하세요</p>
       
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="userId">
-            <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
+            <img src="/images/basic_info.png" alt="로고" width="16" height="16" />
             사용자 ID
           </label>
           <input
@@ -63,7 +62,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
             name="userId"
             value={formData.userId}
             onChange={handleChange}
-            placeholder="등록한 사용자 ID를 입력하세요"
+            placeholder="사용자 ID"
             disabled={loading}
             autoComplete="username"
           />
@@ -71,7 +70,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
         
         <div className="form-group">
           <label htmlFor="password">
-            <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
+            <img src="/images/account_info.png" alt="로고" width="16" height="16" />
             비밀번호
           </label>
           <input
@@ -80,7 +79,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            placeholder="비밀번호를 입력하세요"
+            placeholder="비밀번호"
             disabled={loading}
             autoComplete="current-password"
           />
@@ -100,7 +99,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
       
       <div className="auth-switch">
         <p>
-          아직 계정이 없으신가요? 
+          아직 계정이 없으신가요?{' '}
           <button 
             type="button" 
             className="link-button partner-link" 

@@ -146,7 +146,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               name="userId"
               value={formData.userId}
               onChange={handleChange}
-              placeholder="로그인에 사용할 ID를 입력하세요 (3글자 이상)"
+              placeholder="ID 입력 (3글자 이상)"
               disabled={loading}
               autoComplete="username"
             />
@@ -202,7 +202,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="소통이(AAC 사용자)의 이름이나 닉네임을 입력해주세요"
+              placeholder="이름 또는 닉네임 입력"
               disabled={loading}
             />
           </div>
@@ -267,10 +267,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           <div className="form-group">
             <label htmlFor="communicationCharacteristics">
               의사소통 특징 *
-              <small style={{display: 'block', color: '#64748b', fontWeight: 'normal', marginTop: '4px'}}>
-                AAC 카드 외에 평소 사용하는 의사소통 방법을 알려주세요
-              </small>
             </label>
+            <p className="section-description" style={{margin: '8px 0 16px 0', color: '#64748b', fontSize: '14px'}}>
+              소통이(AAC 사용자)가 좋아하는 것들을 입력하세요
+            </p>
             <textarea
               id="communicationCharacteristics"
               name="communicationCharacteristics"
@@ -279,6 +279,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               placeholder="예) 간단한 단어나 소리로 의사표현 (응, 아니야, 엄마 등)"
               rows="3"
               disabled={loading}
+              style={{ resize: 'none' }}  
             />
           </div>
         </div>
@@ -288,11 +289,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           <h4>
             <img src="/images/interest_info.png" alt="로고" width="20" height="20" className="section-icon" />
             관심 주제 *
-            <br />
-            <small style={{display: 'block', color: '#64748b', fontWeight: 'normal', fontSize: '14px', marginTop: '4px'}}>
-              소통이(AAC 사용자)가 좋아하는 것들을 입력하세요
-            </small>
           </h4>
+          <p className="section-description" style={{margin: '8px 0 16px 0', color: '#64748b', fontSize: '14px'}}>
+            소통이(AAC 사용자)가 좋아하는 것들을 입력하세요
+          </p>
           
           <div className="form-group">
             <div className="topic-input-section">
@@ -351,7 +351,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       {/* 로그인 전환 */}
       <div className="auth-switch">
         <p>
-          이미 계정이 있으신가요?  
+          이미 계정이 있으신가요?{' '}
           <button 
             type="button" 
             className="link-button partner-link" 
