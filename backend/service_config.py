@@ -23,7 +23,6 @@ SERVICE_CONFIG = {
     'display_cards_total': 20,
     'recommendation_ratio': 0.7,
     'cluster_count': 6,
-    'n_clusters': 64,
 
     # 카드 선택 및 해석
     'min_card_selection': 1,
@@ -50,8 +49,8 @@ SERVICE_CONFIG = {
     'required_cluster_count': 6,
 
     # 클러스터 유사도 계산
-    'similarity_model': 'jhgan/ko-sroberta-multitask',
-    'similarity_threshold': 0.3,
+    'similarity_model': 'dragonkue/BGE-m3-ko',
+    'similarity_threshold': 0.7,
     'device': 'auto',
 
     # 데이터 정리

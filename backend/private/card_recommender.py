@@ -41,6 +41,7 @@ class CardRecommender:
             with open(clustering_results_path, 'r', encoding='utf-8') as f:
                 cluster_data = json.load(f)
             self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
+            self.n_clusters = max(cluster_data["cluster_labels"].values())
             self.all_cards = cluster_data.get('filenames', [])
         else:
             raise FileNotFoundError(f'클러스터링 결과 파일이 필요합니다: {clustering_results_path}')
@@ -136,14 +137,12 @@ class CardRecommender:
         
         if not preferred_clusters:
             return self._select_random_cards([], num_cards)
-        
-        n_clusters = self.config.get('n_clusters')
 
         # 각 클러스터에서 순환하면서 카드 선택
         cluster_index = 0
         cards_per_cluster = {cluster_id: 0 for cluster_id in preferred_clusters}
 
-        while len(selected_cards) < num_cards and cluster_index < n_clusters:
+        while len(selected_cards) < num_cards and cluster_index < self.n_clusters:
             cluster_id = preferred_clusters[cluster_index % len(preferred_clusters)]
             cluster_cards = self.clustered_files.get(cluster_id, [])
 
