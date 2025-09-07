@@ -271,7 +271,8 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               name="communicationCharacteristics"
               value={formData.communicationCharacteristics}
               onChange={handleChange}
-              placeholder="AAC 카드 외에 평소 사용하는 의사소통 방법을 알려주세요"
+              placeholder="AAC 카드 외에 평소 사용하는 의사소통 방법을 알려주세요.
+              예) 간단한 단어나 소리로 의사표현 (응, 아니야, 엄마 등)"
               rows="3"
               disabled={loading}
             />
@@ -292,7 +293,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
                 onKeyPress={handleTopicKeyPress}
-                placeholder="소통이(AAC 사용자)가 좋아하는 것들을 입력해주세요"
+                placeholder="예) 음식, 동물, 스포츠..."
                 disabled={loading}
               />
               <button 

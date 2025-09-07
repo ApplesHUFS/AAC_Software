@@ -26,6 +26,20 @@ body {
 /* 공통 컴포넌트 */
 /* =========================== */
 
+/* 폰트 통일 */
+/* textarea 폰트를 input과 동일하게 맞추기 */
+.form-group textarea {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+/* 또는 더 간단하게 */
+.form-group textarea {
+  font: inherit;
+}
+
 /* 버튼 스타일 */
 .primary-button {
   display: inline-flex;
