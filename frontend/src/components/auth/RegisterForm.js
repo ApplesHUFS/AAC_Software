@@ -132,7 +132,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 계정 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/account_info.jpg" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/account_info.png" alt="로고" width="20" height="20" className="section-icon" />
             계정 정보
           </h4>
           
@@ -190,7 +190,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 소통이 기본 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/basic_info.jpg" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/basic_info.png" alt="로고" width="20" height="20" className="section-icon" />
             소통이(AAC 사용자) 기본 정보
           </h4>
           
@@ -244,7 +244,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 의사소통 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/communication_info.jpg" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/communication_info.png" alt="로고" width="20" height="20" className="section-icon" />
             의사소통 정보
           </h4>
           
@@ -281,7 +281,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 관심 주제 */}
         <div className="form-section">
           <h4>
-            <img src="/images/interest_info.jpg" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/interest_info.png" alt="로고" width="20" height="20" className="section-icon" />
             관심 주제 *
           </h4>
           
