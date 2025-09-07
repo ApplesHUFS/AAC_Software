@@ -150,19 +150,13 @@ class CardRecommender:
         Returns:
             List[str]: 상황 기반 추천 카드 리스트
         """
-        context_keywords = []
-        
-        # 상황 키워드 수집
-        place = context.get('place', '').strip()
+        # 현재 활동 상황 키워드로 사용
         activity = context.get('current_activity', '').strip()
         
-        if place:
-            context_keywords.append(place)
-        if activity:
-            context_keywords.append(activity)
-            
-        if not context_keywords:
+        if not activity:
             return self._select_random_cards([], target_count)
+        
+        context_keywords = [activity]
         
         try:
             # 상황과 관련성 높은 클러스터 찾기
