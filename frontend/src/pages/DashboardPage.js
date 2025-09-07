@@ -70,9 +70,9 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
                 <div className="card-header" style={{
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '4px'
+                  gap: '8px'
                 }}>
-                  <img src="/images/new_chat.png" alt="로고" width="36" height="36" className="card-icon" />
+                  <img src="/images/new_chat.png" alt="로고" width="24" height="24" className="card-icon" />
                   <h3 style={{margin: 0}}>새로운 대화 세션 시작</h3>
                 </div>
                 <p>
@@ -113,22 +113,31 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
 
             {/* 의사소통 특성 */}
             {user.communicationCharacteristics && (
-              <div className="communication-section partner-section">
-                <h4>
-                  <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+              <div className="communication-section partner-section" >
+                <h4 style={{
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  margin: 0,
+                  marginLeft: '8px'  // 아이콘 크기(24px) + gap(8px) = 32px
+                }}>
+                  <img src="/images/communication_characteristics.png" alt="로고" width="24" height="24" className="section-icon" />
                   소통이의 의사소통 특성
                 </h4>
-                <div className="communication-info">
-                  <p>{user.communicationCharacteristics}</p>
+
+                <div className="communication-info" style={{marginLeft: '8px', marginTop: '8px'}}>
+                  <p>
+                    {user.communicationCharacteristics}
+                  </p>
                 </div>
               </div>
-            )}
+            )} 
 
             {/* 관심 주제 목록 */}
             {user.interestingTopics?.length > 0 && (
               <div className="interests-section partner-section">
                 <h4>
-                  <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+                  <img src="/images/interest_topic.png" alt="로고" width="24" height="24" className="section-icon" />
                   소통이의 관심 주제
                 </h4>
                 <div className="topic-list">
@@ -142,11 +151,17 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
             )}
 
             {/* 사용 안내 */}
-            <div className="usage-guide partner-section">
-              <h4>
-                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+            <div className="usage-guide partner-section" >
+              <h3 style={{
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  margin_left: '4px',
+                  gap: '8px',
+                  marginBottom: '8px'
+                }}>
+                <img src="/images/use_info.png" alt="로고" width="24" height="24" className="section-icon" />
                 사용 안내
-              </h4>
+              </h3>
               <div className="guide-steps">
                 <div className="guide-step">
                   <span className="step-number">1</span>
@@ -170,7 +185,12 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
                   </div>
                 </div>
               </div>
+           </div>
+            <div className="ad partner-section">
+              <h4>광고
+              </h4>
             </div>
+ 
           </div>
         )}
 
