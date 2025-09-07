@@ -272,7 +272,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               value={formData.communicationCharacteristics}
               onChange={handleChange}
               placeholder="AAC 카드 외에 평소 사용하는 의사소통 방법을 알려주세요.
-              예) 간단한 단어나 소리로 의사표현 (응, 아니야, 엄마 등)"
+              \n예) 간단한 단어나 소리로 의사표현 (응, 아니야, 엄마 등)"
               rows="3"
               disabled={loading}
             />
