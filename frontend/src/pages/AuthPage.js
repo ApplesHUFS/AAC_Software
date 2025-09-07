@@ -22,10 +22,10 @@ const AuthPage = ({ onAuthSuccess }) => {
         <div className="auth-header">
           <div className="service-logo">
             <img src="/images/logo_red.png" alt="로고" width="32" height="32" />
-            <h1>소통 도우미</h1>
+            <h1>소통이룸</h1>
           </div>
           <p className="service-description">
-            AAC 사용자의 의사소통을 지원하는 <strong>도움이</strong> 전용 서비스
+            개인화된 AAC 의사소통을 지원하는 <strong>소통 도우미</strong> 서비스
           </p>
           <hr width="100%" color="black" size="1" />
         </div>

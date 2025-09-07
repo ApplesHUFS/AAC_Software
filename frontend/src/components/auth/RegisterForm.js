@@ -124,21 +124,20 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     <div className="auth-form partner-form">
       <h2>
         <img src="/images/logo_black.png" alt="로고" width="32" height="32" />
-        도움이 회원가입
+        회원가입
       </h2>
-      <p className="form-description">소통이를 위한 AAC 서비스 계정을 만들어보세요</p>
+      <p className="form-description">소통이(AAC 사용자)를 위한 새 계정 만들기</p>
       
       <form onSubmit={handleSubmit}>
         {/* 계정 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/logo_black.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/account_info.png" alt="로고" width="20" height="20" className="section-icon" />
             계정 정보
           </h4>
           
           <div className="form-group">
             <label htmlFor="userId">
-              <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
               사용자 ID *
             </label>
             <input
@@ -156,7 +155,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="password">
-                <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
                 비밀번호 *
               </label>
               <input
@@ -173,7 +171,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
             <div className="form-group">
               <label htmlFor="confirmPassword">
-                <img src="/images/logo_black.png" alt="로고" width="16" height="16" />
                 비밀번호 확인 *
               </label>
               <input
@@ -193,19 +190,19 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 소통이 기본 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/logo_black.png" alt="로고" width="20" height="20" className="section-icon" />
-            소통이 기본 정보
+            <img src="/images/basic_info.png" alt="로고" width="20" height="20" className="section-icon" />
+            소통이(AAC 사용자) 기본 정보
           </h4>
           
           <div className="form-group">
-            <label htmlFor="name">이름 (닉네임 가능) *</label>
+            <label htmlFor="name">이름 또는 닉네임 *</label>
             <input
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="소통이의 이름이나 닉네임을 입력해주세요"
+              placeholder="소통이(AAC 사용자)의 이름이나 닉네임을 입력해주세요"
               disabled={loading}
             />
           </div>
@@ -247,7 +244,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 의사소통 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/logo_black.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/communication_info.png" alt="로고" width="20" height="20" className="section-icon" />
             의사소통 정보
           </h4>
           
@@ -274,7 +271,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               name="communicationCharacteristics"
               value={formData.communicationCharacteristics}
               onChange={handleChange}
-              placeholder="AAC 카드 사용이 아닌 평소 의사소통 방식의 특징을 간단히 적어주세요"
+              placeholder="AAC 카드 외에 평소 사용하는 의사소통 방법을 알려주세요"
               rows="3"
               disabled={loading}
             />
@@ -284,8 +281,8 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 관심 주제 */}
         <div className="form-section">
           <h4>
-            <img src="/images/logo_black.png" alt="로고" width="20" height="20" className="section-icon" />
-            소통이의 관심 주제 *
+            <img src="/images/interest_info.png" alt="로고" width="20" height="20" className="section-icon" />
+            관심 주제 *
           </h4>
           
           <div className="form-group">
@@ -295,7 +292,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 value={topicInput}
                 onChange={(e) => setTopicInput(e.target.value)}
                 onKeyPress={handleTopicKeyPress}
-                placeholder="소통이가 좋아하는 것들을 입력해주세요"
+                placeholder="소통이(AAC 사용자)가 좋아하는 것들을 입력해주세요"
                 disabled={loading}
               />
               <button 
@@ -345,7 +342,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       {/* 로그인 전환 */}
       <div className="auth-switch">
         <p>
-          이미 계정이 있으신가요? 
+          이미 계정이 있으신가요?  
           <button 
             type="button" 
             className="link-button partner-link" 
