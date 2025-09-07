@@ -268,7 +268,7 @@ class Clusterer:
                     plt.scatter(embeddings_2d[mask, 0], embeddings_2d[mask, 1],
                                c=[colors[cluster_id % len(colors)]], alpha=0.7, s=20)
             
-            plt.title(f'클러스터링 결과 ({n_clusters}개 클러스터)')
+            plt.title(f'Clustering Results ({n_clusters} clusters)')
             plt.tight_layout()
             plt.savefig(output_folder / 'cluster_visualization.png', dpi=200, bbox_inches='tight')
             plt.close()
