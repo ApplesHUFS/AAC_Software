@@ -37,8 +37,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
       <header className="dashboard-header">
         <div className="user-info">
           <div className="role-indicator partner-role">
-            <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
-            <span>도움이 대시보드</span>
+            <span>대시보드</span>
           </div>
           <h2>{user.name}님의 소통 도우미</h2>
           <p>소통이와 함께하는 AAC 카드 의사소통을 시작해보세요</p>
@@ -52,7 +51,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
           {currentView === 'main' && (
             <>
               <button className="secondary-button" onClick={handleEditProfile}>
-                소통이 정보 수정
+                정보 수정
               </button>
               <button className="secondary-button" onClick={onLogout}>
                 로그아웃
@@ -68,9 +67,13 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
           <div className="dashboard-main">
             <div className="welcome-section">
               <div className="welcome-card partner-card">
-                <div className="card-header">
-                  <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="card-icon" />
-                  <h3>새로운 대화 세션 시작</h3>
+                <div className="card-header" style={{
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px'
+                }}>
+                  <img src="/images/new_chat.png" alt="로고" width="36" height="36" className="card-icon" />
+                  <h3 style={{margin: 0}}>새로운 대화 세션 시작</h3>
                 </div>
                 <p>
                   현재 상황을 입력하고 소통이에게 개인화된 AAC 카드를 추천해주세요.
