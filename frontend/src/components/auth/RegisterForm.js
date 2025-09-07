@@ -265,14 +265,18 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="communicationCharacteristics">의사소통 특징 *</label>
+            <label htmlFor="communicationCharacteristics">
+              의사소통 특징 *
+              <small style={{display: 'block', color: '#64748b', fontWeight: 'normal', marginTop: '4px'}}>
+                AAC 카드 외에 평소 사용하는 의사소통 방법을 알려주세요
+              </small>
+            </label>
             <textarea
               id="communicationCharacteristics"
               name="communicationCharacteristics"
               value={formData.communicationCharacteristics}
               onChange={handleChange}
-              placeholder="AAC 카드 외에 평소 사용하는 의사소통 방법을 알려주세요.
-              \n예) 간단한 단어나 소리로 의사표현 (응, 아니야, 엄마 등)"
+              placeholder="예) 간단한 단어나 소리로 의사표현 (응, 아니야, 엄마 등)"
               rows="3"
               disabled={loading}
             />
@@ -284,6 +288,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
           <h4>
             <img src="/images/interest_info.png" alt="로고" width="20" height="20" className="section-icon" />
             관심 주제 *
+            <br />
+            <small style={{display: 'block', color: '#64748b', fontWeight: 'normal', fontSize: '14px', marginTop: '4px'}}>
+              소통이(AAC 사용자)가 좋아하는 것들을 입력하세요
+            </small>
           </h4>
           
           <div className="form-group">
