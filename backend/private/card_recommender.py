@@ -18,6 +18,7 @@ class CardRecommender:
         recommendation_history: 컨텍스트별 추천 히스토리
         cluster_calculator: 클러스터 유사도 계산기
         cluster_tags: 클러스터별 태그 정보
+        n_clusters: 전체 클러스터 개수
     """
 
     def __init__(self, clustering_results_path: str, config: Dict[str, Any]):
@@ -47,6 +48,7 @@ class CardRecommender:
                 cluster_data = json.load(f)
             self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
             self.all_cards = cluster_data.get('filenames', [])
+            self.n_clusters = max(cluster_data["cluster_labels"]) + 1
         else:
             raise FileNotFoundError(f'클러스터링 결과 파일이 필요합니다: {clustering_results_path}')
 
@@ -82,16 +84,17 @@ class CardRecommender:
         try:
             # 설정값 조회
             total_cards = self.config.get('display_cards_total')
+            context_ratio = self.config.get('context_persona_ratio')
             
             # 히스토리 초기화
             if context_id not in self.recommendation_history:
                 self.recommendation_history[context_id] = []
 
             # 상황 기반 카드 추천
-            context_cards = self._select_context_based_cards(context, total_cards // 2)
+            context_cards = self._select_context_based_cards(context, int(total_cards * context_ratio))
             
             # 페르소나 기반 카드 추천
-            persona_cards = self._select_persona_based_cards(persona, total_cards // 2)
+            persona_cards = self._select_persona_based_cards(persona, int(total_cards * (1 - context_ratio)))
             
             # 카드 조합 및 중복 제거
             all_selection_cards = self._combine_card_selections(
@@ -152,14 +155,11 @@ class CardRecommender:
         # 상황 키워드 수집
         place = context.get('place', '').strip()
         activity = context.get('current_activity', '').strip()
-        partner = context.get('interaction_partner', '').strip()
         
         if place:
             context_keywords.append(place)
         if activity:
             context_keywords.append(activity)
-        if partner:
-            context_keywords.append(f"{partner}와 대화")
             
         if not context_keywords:
             return self._select_random_cards([], target_count)
@@ -168,8 +168,8 @@ class CardRecommender:
             # 상황과 관련성 높은 클러스터 찾기
             relevant_clusters = self._find_similar_clusters(
                 context_keywords, 
-                similarity_threshold=0.25,
-                max_clusters=8
+                similarity_threshold=self.config.get('context_similarity_threshold'),
+                max_clusters=self.config.get('context_max_clusters')
             )
             
             # 관련성 점수로 가중 선택

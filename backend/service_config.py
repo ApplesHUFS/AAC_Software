@@ -26,7 +26,7 @@ SERVICE_CONFIG = {
     'context_similarity_threshold': 0.25,
     'context_max_clusters': 8,
     'persona_similarity_threshold': 0.3,
-    'persona_max_clusters': 6,
+    'persona_max_clusters': 8,
     'context_persona_ratio': 0.5,  # 상황:페르소나 = 0.5:0.5
 
     # 카드 선택 및 해석
