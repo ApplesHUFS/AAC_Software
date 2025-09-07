@@ -41,7 +41,7 @@ class CardRecommender:
             with open(clustering_results_path, 'r', encoding='utf-8') as f:
                 cluster_data = json.load(f)
             self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
-            self.n_clusters = max(cluster_data["cluster_labels"].values())
+            self.n_clusters = max(cluster_data["cluster_labels"]) + 1
             self.all_cards = cluster_data.get('filenames', [])
         else:
             raise FileNotFoundError(f'클러스터링 결과 파일이 필요합니다: {clustering_results_path}')
