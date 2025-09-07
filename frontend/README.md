@@ -55,8 +55,7 @@ src/
 │   ├── context/                    # 상황 입력 컴포넌트
 │   │   └── ContextForm.js
 │   ├── interpretation/             # 해석 관련 컴포넌트
-│   │   ├── InterpretationDisplay.js
-│   │   └── FeedbackForm.js
+│   │   └── InterpretationDisplay.js   
 │   └── profile/                    # 프로필 관련 컴포넌트
 │       └── ProfileEditForm.js
 │
@@ -87,7 +86,7 @@ npm install
 ```bash
 npm start
 ```
-브라우저에서 http://localhost:3000 접속
+브라우저에서 localhost:3000 접속
 
 ### 프로덕션 빌드
 ```bash
