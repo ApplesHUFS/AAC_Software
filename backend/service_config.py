@@ -21,8 +21,13 @@ SERVICE_CONFIG = {
 
     # 카드 추천 시스템
     'display_cards_total': 20,
-    'recommendation_ratio': 0.7,
-    'cluster_count': 6,
+
+    # 카드 추천 알고리즘 설정
+    'context_similarity_threshold': 0.25,
+    'context_max_clusters': 8,
+    'persona_similarity_threshold': 0.3,
+    'persona_max_clusters': 6,
+    'context_persona_ratio': 0.5,  # 상황:페르소나 = 0.5:0.5
 
     # 카드 선택 및 해석
     'min_card_selection': 1,
@@ -50,7 +55,7 @@ SERVICE_CONFIG = {
 
     # 클러스터 유사도 계산
     'similarity_model': 'dragonkue/BGE-m3-ko',
-    'similarity_threshold': 0.7,
+    'similarity_threshold': 0.5,
     'device': 'auto',
 
     # 데이터 정리

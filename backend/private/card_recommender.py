@@ -1,6 +1,7 @@
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 import json
 import random
+import numpy as np
 from pathlib import Path
 from .cluster_similarity_calculator import ClusterSimilarityCalculator
 
@@ -16,6 +17,7 @@ class CardRecommender:
         config: 설정 딕셔너리
         recommendation_history: 컨텍스트별 추천 히스토리
         cluster_calculator: 클러스터 유사도 계산기
+        cluster_tags: 클러스터별 태그 정보
     """
 
     def __init__(self, clustering_results_path: str, config: Dict[str, Any]):
@@ -36,21 +38,35 @@ class CardRecommender:
             config=self.config
         )
         
+        # 클러스터 태그 로드
+        self._load_cluster_tags()
+        
         # 클러스터링 결과 데이터 로드
         if Path(clustering_results_path).exists():
             with open(clustering_results_path, 'r', encoding='utf-8') as f:
                 cluster_data = json.load(f)
             self.clustered_files = {int(k): v for k, v in cluster_data['clustered_files'].items()}
-            self.n_clusters = max(cluster_data["cluster_labels"]) + 1
             self.all_cards = cluster_data.get('filenames', [])
         else:
             raise FileNotFoundError(f'클러스터링 결과 파일이 필요합니다: {clustering_results_path}')
 
+    def _load_cluster_tags(self):
+        """클러스터 태그 정보를 로드합니다."""
+        try:
+            cluster_tags_path = self.config.get('cluster_tags_path')
+            if Path(cluster_tags_path).exists():
+                with open(cluster_tags_path, 'r', encoding='utf-8') as f:
+                    self.cluster_tags = {int(k): v for k, v in json.load(f).items()}
+            else:
+                self.cluster_tags = {}
+        except Exception as e:
+            print(f"클러스터 태그 로드 실패: {e}")
+            self.cluster_tags = {}
+
     def get_card_selection_interface(self, persona: Dict[str, Any], context: Dict[str, Any], context_id: str) -> Dict[str, Any]:
         """화면 표시용 카드 선택 인터페이스 데이터 생성.
 
-        preferred_category_types의 6개 클러스터에서 추천 카드를 선택하고,
-        나머지는 랜덤으로 채워서 총 20개 카드를 제공합니다.
+        페르소나와 상황의 의미적 유사도를 계산하여 최적의 카드 조합을 추천합니다.
 
         Args:
             persona: 사용자 페르소나 정보 중 일부 (preferred_category_types)
@@ -66,25 +82,23 @@ class CardRecommender:
         try:
             # 설정값 조회
             total_cards = self.config.get('display_cards_total')
-            recommendation_ratio = self.config.get('recommendation_ratio')
-            num_recommendations = int(total_cards * recommendation_ratio)
-            num_random = total_cards - num_recommendations
-
-            preferred_clusters = persona.get('preferred_category_types', [])
-            current_activity = context.get('current_activity', '')
-
+            
             # 히스토리 초기화
             if context_id not in self.recommendation_history:
                 self.recommendation_history[context_id] = []
 
-            # 현재 활동과 관련된 클러스터에서 추천 카드 선택
-            recommended_cards = self._select_from_context_clusters(current_activity, num_recommendations)
-
-            # 선호 클러스터에서 나머지 카드 선택
-            prefer_cards = self._select_from_preferred_clusters(preferred_clusters, num_cards=num_random)
-
-            # 전체 선택지 생성 및 순서 섞기
-            all_selection_cards = recommended_cards + prefer_cards
+            # 상황 기반 카드 추천
+            context_cards = self._select_context_based_cards(context, total_cards // 2)
+            
+            # 페르소나 기반 카드 추천
+            persona_cards = self._select_persona_based_cards(persona, total_cards // 2)
+            
+            # 카드 조합 및 중복 제거
+            all_selection_cards = self._combine_card_selections(
+                context_cards, persona_cards, total_cards
+            )
+            
+            # 카드 순서 섞기
             random.shuffle(all_selection_cards)
 
             # 추천 히스토리에 추가
@@ -97,7 +111,7 @@ class CardRecommender:
                     'time': context.get('time'),
                     'place': context.get('place'),
                     'interaction_partner': context.get('interaction_partner'),
-                    'current_activity': current_activity
+                    'current_activity': context.get('current_activity')
                 },
                 'selection_rules': {
                     'min_cards': self.config.get('min_card_selection'),
@@ -108,12 +122,12 @@ class CardRecommender:
             }
 
             place = context.get('place', '알 수 없는 장소')
-            activity_info = f" ({current_activity} 활동 고려)" if current_activity else ""
+            activity_info = f" ({context.get('current_activity')} 활동 고려)" if context.get('current_activity') else ""
             
             return {
                 'status': 'success',
                 'interface_data': interface_data,
-                'message': f'{place}에서의 대화를 위한 {total_cards}개 카드가 준비되었습니다 (개인화 추천: {len(recommended_cards)}개, 선호 기반: {len(prefer_cards)}개){activity_info}'
+                'message': f'{place}에서의 대화를 위한 {total_cards}개 카드가 상황과 페르소나를 고려하여 준비되었습니다{activity_info}'
             }
             
         except Exception as e:
@@ -123,8 +137,175 @@ class CardRecommender:
                 'message': f'카드 선택 인터페이스 생성 중 시스템 오류가 발생했습니다: {str(e)}'
             }
 
+    def _select_context_based_cards(self, context: Dict[str, Any], target_count: int) -> List[str]:
+        """현재 상황과 관련된 카드를 선택합니다.
+        
+        Args:
+            context: 현재 상황 정보
+            target_count: 목표 카드 수
+            
+        Returns:
+            List[str]: 상황 기반 추천 카드 리스트
+        """
+        context_keywords = []
+        
+        # 상황 키워드 수집
+        place = context.get('place', '').strip()
+        activity = context.get('current_activity', '').strip()
+        partner = context.get('interaction_partner', '').strip()
+        
+        if place:
+            context_keywords.append(place)
+        if activity:
+            context_keywords.append(activity)
+        if partner:
+            context_keywords.append(f"{partner}와 대화")
+            
+        if not context_keywords:
+            return self._select_random_cards([], target_count)
+        
+        try:
+            # 상황과 관련성 높은 클러스터 찾기
+            relevant_clusters = self._find_similar_clusters(
+                context_keywords, 
+                similarity_threshold=0.25,
+                max_clusters=8
+            )
+            
+            # 관련성 점수로 가중 선택
+            selected_cards = self._select_cards_from_clusters(
+                relevant_clusters, target_count
+            )
+            
+            return selected_cards
+            
+        except Exception as e:
+            print(f'상황 기반 카드 선택 중 오류: {e}')
+            return self._select_random_cards([], target_count)
+
+    def _select_persona_based_cards(self, persona: Dict[str, Any], target_count: int) -> List[str]:
+        """사용자 페르소나에 기반한 카드를 선택합니다.
+        
+        Args:
+            persona: 사용자 페르소나 정보
+            target_count: 목표 카드 수
+            
+        Returns:
+            List[str]: 페르소나 기반 추천 카드 리스트
+        """
+        preferred_clusters = persona.get('preferred_category_types', [])
+        
+        if not preferred_clusters:
+            return self._select_random_cards([], target_count)
+        
+        # 선호 클러스터에서 균등하게 선택
+        return self._select_from_preferred_clusters(preferred_clusters, target_count)
+
+    def _find_similar_clusters(self, keywords: List[str], similarity_threshold: float, max_clusters: int) -> List[Tuple[int, float]]:
+        """키워드와 의미적으로 유사한 클러스터를 찾습니다.
+        
+        Args:
+            keywords: 검색할 키워드 리스트
+            similarity_threshold: 유사도 임계값
+            max_clusters: 최대 클러스터 수
+            
+        Returns:
+            List[Tuple[int, float]]: (클러스터_ID, 유사도_점수) 리스트
+        """
+        cluster_similarities = {}
+        
+        for cluster_id, cluster_tags in self.cluster_tags.items():
+            if not cluster_tags:
+                continue
+                
+            # 클러스터 태그와 키워드 간 최대 유사도 계산
+            max_similarity = 0.0
+            for keyword in keywords:
+                for tag in cluster_tags:
+                    try:
+                        similarity = self.cluster_calculator.compute_topic_similarity(keyword, tag)
+                        max_similarity = max(max_similarity, similarity)
+                    except:
+                        continue
+                        
+            if max_similarity >= similarity_threshold:
+                cluster_similarities[cluster_id] = max_similarity
+        
+        # 유사도 순으로 정렬하여 상위 클러스터 반환
+        sorted_clusters = sorted(cluster_similarities.items(), key=lambda x: x[1], reverse=True)
+        return sorted_clusters[:max_clusters]
+
+    def _select_cards_from_clusters(self, cluster_scores: List[Tuple[int, float]], target_count: int) -> List[str]:
+        """클러스터 점수에 따라 가중치를 적용하여 카드를 선택합니다.
+        
+        Args:
+            cluster_scores: (클러스터_ID, 점수) 리스트
+            target_count: 목표 카드 수
+            
+        Returns:
+            List[str]: 선택된 카드 리스트
+        """
+        if not cluster_scores:
+            return []
+            
+        selected_cards = []
+        total_score = sum(score for _, score in cluster_scores)
+        
+        for cluster_id, score in cluster_scores:
+            cluster_cards = self.clustered_files.get(cluster_id, [])
+            if not cluster_cards:
+                continue
+                
+            # 점수 비례 카드 수 계산
+            cards_from_cluster = max(1, int((score / total_score) * target_count))
+            cards_from_cluster = min(cards_from_cluster, len(cluster_cards))
+            
+            # 클러스터에서 랜덤 선택
+            available_cards = [card for card in cluster_cards if card not in selected_cards]
+            if available_cards:
+                selected_count = min(cards_from_cluster, len(available_cards))
+                selected_cards.extend(random.sample(available_cards, selected_count))
+                
+            if len(selected_cards) >= target_count:
+                break
+                
+        return selected_cards[:target_count]
+
+    def _combine_card_selections(self, context_cards: List[str], persona_cards: List[str], total_count: int) -> List[str]:
+        """두 카드 리스트를 조합하여 중복을 제거하고 목표 수에 맞춥니다.
+        
+        Args:
+            context_cards: 상황 기반 카드
+            persona_cards: 페르소나 기반 카드  
+            total_count: 총 카드 수
+            
+        Returns:
+            List[str]: 최종 카드 리스트
+        """
+        combined_cards = []
+        used_cards = set()
+        
+        # 중복 제거하면서 추가
+        for card in context_cards:
+            if card not in used_cards and len(combined_cards) < total_count:
+                combined_cards.append(card)
+                used_cards.add(card)
+                
+        for card in persona_cards:
+            if card not in used_cards and len(combined_cards) < total_count:
+                combined_cards.append(card)
+                used_cards.add(card)
+        
+        # 부족한 카드 수만큼 랜덤 카드 추가
+        remaining_count = total_count - len(combined_cards)
+        if remaining_count > 0:
+            additional_cards = self._select_random_cards(list(used_cards), remaining_count)
+            combined_cards.extend(additional_cards)
+            
+        return combined_cards[:total_count]
+
     def _select_from_preferred_clusters(self, preferred_clusters: List[int], num_cards: int) -> List[str]:
-        """선호 클러스터에서 카드를 골고루 선택.
+        """선호 클러스터에서 카드를 골고루 선택합니다.
 
         Args:
             preferred_clusters: 선호 클러스터 ID 리스트
@@ -163,7 +344,7 @@ class CardRecommender:
         return selected_cards
 
     def _select_random_cards(self, exclude_cards: List[str], num_cards: int) -> List[str]:
-        """전체 카드에서 랜덤 선택.
+        """전체 카드에서 랜덤으로 선택합니다.
 
         Args:
             exclude_cards: 제외할 카드들
@@ -180,7 +361,7 @@ class CardRecommender:
         return random.sample(available_cards, num_cards)
 
     def validate_card_selection(self, selected_cards: List[str], available_options: List[str]) -> Dict[str, Any]:
-        """사용자 카드 선택 유효성 검증.
+        """사용자 카드 선택 유효성을 검증합니다.
 
         Args:
             selected_cards: 사용자가 선택한 카드들
@@ -249,7 +430,7 @@ class CardRecommender:
         }
 
     def _add_to_recommendation_history(self, context_id: str, cards: List[str]) -> Dict[str, Any]:
-        """카드 추천 히스토리에 추가.
+        """카드 추천 히스토리에 추가합니다.
 
         Args:
             context_id: 컨텍스트 ID
@@ -279,7 +460,7 @@ class CardRecommender:
         }
 
     def get_recommendation_history_page(self, context_id: str, page_number: int) -> Dict[str, Any]:
-        """카드 추천 히스토리 특정 페이지 조회.
+        """카드 추천 히스토리의 특정 페이지를 조회합니다.
 
         Args:
             context_id: 컨텍스트 ID
@@ -344,7 +525,7 @@ class CardRecommender:
         }
 
     def get_recommendation_history_summary(self, context_id: str) -> Dict[str, Any]:
-        """카드 추천 히스토리 요약 정보 조회.
+        """카드 추천 히스토리의 요약 정보를 조회합니다.
 
         Args:
             context_id: 컨텍스트 ID
@@ -357,7 +538,7 @@ class CardRecommender:
                 - history_summary (List[Dict]): 페이지별 요약 정보
                 - message (str): 결과 메시지
         """
-        # 히스토리 존재 여부 확인 (비즈니스 로직)
+        # 히스토리 존재 여부 확인
         if context_id not in self.recommendation_history:
             return {
                 'status': 'error',
@@ -395,40 +576,3 @@ class CardRecommender:
             'history_summary': history_summary,
             'message': f'컨텍스트 {context_id}의 카드 추천 히스토리 요약: 총 {total_pages}번의 추천이 진행되었습니다.'
         }
-    
-    def _select_from_context_clusters(self, current_activity: str, num_cards: int) -> List[str]:
-        """현재 활동과 유사도가 높은 클러스터에서 카드 선택.
-
-        Args:
-            current_activity: 현재 활동 정보
-            num_cards: 선택할 카드 수
-        
-        Returns:
-            List[str]: 선택된 카드 파일명들
-        """
-        selected_cards = []
-        
-        # 현재 활동 정보가 없는 경우 랜덤 선택
-        if not current_activity or not current_activity.strip():
-            return self._select_random_cards([], num_cards)
-        
-        try:
-            # 현재 활동과 관련된 클러스터 계산
-            context_preferred_clusters = self.cluster_calculator.calculate_preferred_categories(
-                interesting_topics=[current_activity.strip()],
-                similarity_threshold=0.3,  
-                max_categories=3
-            )
-
-            # 해당 클러스터들에서 카드 선택
-            selected_cards = self._select_from_preferred_clusters(
-                context_preferred_clusters, 
-                num_cards
-            )
-        
-        except Exception as e:
-            print(f'활동 기반 카드 선택 중 오류 발생: {e}')
-            # 오류 발생시 랜덤 선택으로 대체
-            selected_cards = self._select_random_cards([], num_cards)
-        
-        return selected_cards
