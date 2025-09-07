@@ -232,7 +232,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 onChange={handleChange}
                 disabled={loading}
               >
-                <option value="">선택해주세요</option>
+                <option value="">성별 선택</option>
                 {GENDER_OPTIONS.map(option => (
                   <option key={option} value={option}>{option}</option>
                 ))}
@@ -257,7 +257,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               onChange={handleChange}
               disabled={loading}
             >
-              <option value="">선택해주세요</option>
+              <option value="">장애 유형 선택</option>
               {DISABILITY_OPTIONS.map(option => (
                 <option key={option} value={option}>{option}</option>
               ))}
@@ -316,7 +316,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                       disabled={loading}
                       className="topic-remove"
                     >
-                      제거
+                      X
                     </button>
                   </span>
                 ))}
