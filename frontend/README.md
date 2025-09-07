@@ -86,7 +86,7 @@ npm install
 ```bash
 npm start
 ```
-브라우저에서 localhost:3000 접속
+브라우저에서 http://localhost:3000 접속
 
 ### 프로덕션 빌드
 ```bash
