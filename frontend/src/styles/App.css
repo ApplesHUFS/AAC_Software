@@ -768,19 +768,6 @@ body {
   border-left: 4px solid #3b82f6;
 }
 
-.step-number {
-  background: #3b82f6;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  flex-shrink: 0;
-}
-
 .step-content strong {
   display: block;
   color: #1e293b;
@@ -1056,20 +1043,6 @@ body {
   margin-top: 2rem;
 }
 
-.progress-step {
-  padding: 0.5rem 1rem;
-  background: #f1f5f9;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748b;
-}
-
-.progress-step.active {
-  background: #06b6d4;
-  color: white;
-}
-
 .selection-header {
   background: white;
   padding: 2rem;
@@ -1190,18 +1163,6 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-.card-preview {
-  position: relative;
-  flex-shrink: 0;
-}
-
-.card-preview img {
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
 .card-order {
   background: var(--primary-color);
   color: white;
@@ -1220,13 +1181,6 @@ body {
 
 .card-details {
   flex: 1;
-}
-
-.card-name {
-  color: #1e293b;
-  font-weight: 500;
-  font-size: 0.95rem;
-  margin-bottom: 0.25rem;
 }
 
 .card-position {
@@ -1990,7 +1944,7 @@ body {
 }
 
 .interpretation-number {
-  background: #3b82f6;
+  background: #8b5cf6;
   color: white;
   width: 32px;
   height: 32px;
@@ -2001,10 +1955,6 @@ body {
   font-weight: bold;
   flex-shrink: 0;
   font-size: 0.95rem;
-}
-
-.partner-number {
-  background: #8b5cf6;
 }
 
 .interpretation-text {
@@ -2190,30 +2140,6 @@ body {
 
 .interpretation-option input[type="radio"] {
   display: none;
-}
-
-.interpretation-label {
-  cursor: pointer;
-  display: block;
-  padding: 1.5rem;
-  border: 2px solid #f1f5f9;
-  border-radius: 16px;
-  transition: all 0.2s ease;
-}
-
-.interpretation-label:hover {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-}
-
-.interpretation-content {
-  flex: 1;
-}
-
-.interpretation-content span {
-  color: #1e293b;
-  line-height: 1.6;
-  font-size: 1rem;
 }
 
 .direct-feedback-section {
@@ -2594,6 +2520,20 @@ body {
   border: 2px solid #ddd6fe;
 }
 
+.interpretation-label {
+  cursor: pointer;
+  display: block;
+  padding: 1.5rem;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.interpretation-label:hover {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
 .interpretation-option input:checked + .interpretation-label {
   border-color: #8b5cf6;
   background: #faf5ff;
@@ -2603,6 +2543,16 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
+}
+
+.interpretation-content {
+  flex: 1;
+}
+
+.interpretation-content span {
+  color: #1e293b;
+  line-height: 1.6;
+  font-size: 1rem;
 }
 
 .ad {
