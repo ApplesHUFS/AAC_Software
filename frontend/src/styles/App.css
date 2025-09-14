@@ -1838,6 +1838,20 @@ body {
   font-weight: 600;
 }
 
+.selected-cards-summary {
+  margin-bottom: 2rem;
+}
+
+.selected-cards-summary h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
 .cards-preview {
   display: flex;
   gap: 1rem;
