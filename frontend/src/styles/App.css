@@ -27,15 +27,6 @@ body {
 /* =========================== */
 
 /* 폰트 통일 */
-/* textarea 폰트를 input과 동일하게 맞추기 */
-.form-group textarea {
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
-}
-
-/* 또는 더 간단하게 */
 .form-group textarea {
   font: inherit;
 }
@@ -257,7 +248,6 @@ body {
   color: #16a34a;
 }
 
-/* 도움이 카드/섹션 스타일 */
 .partner-card,
 .partner-section {
   background: white;
@@ -333,7 +323,6 @@ body {
   text-align: center;
 }
 
-/* 소통이 카드 관련 스타일 */
 .communicator-card {
   border: 3px solid #e2e8f0;
   border-radius: 16px;
@@ -454,7 +443,6 @@ body {
   line-height: 1.5;
 }
 
-/* 폼 섹션 */
 .form-section {
   margin-bottom: 2rem;
 }
@@ -534,7 +522,6 @@ body {
   line-height: 1.4;
 }
 
-/* 주제 관리 */
 .topic-input-section {
   display: flex;
   gap: 0.75rem;
@@ -757,7 +744,6 @@ body {
   line-height: 1.7;
 }
 
-/* 사용 안내 */
 .usage-guide {
   background: white;
   padding: 2rem;
@@ -1005,8 +991,9 @@ body {
 }
 
 .communicator-loading {
-  border: 3px solid #06b6d4;
-  border-radius: 20px;
+  background: #f0fdfa;
+  border-color: #06b6d4;
+  color: #0891b2;
 }
 
 .loading-header {
@@ -1135,7 +1122,6 @@ body {
   gap: 1.5rem;
 }
 
-/* 선택된 카드 표시 */
 .selected-cards-display {
   background: white;
   padding: 2rem;
@@ -1384,7 +1370,6 @@ body {
   font-size: 0.85rem;
 }
 
-/* 카드 그리드 */
 .card-grid {
   background: white;
   padding: 2rem;
@@ -1483,12 +1468,6 @@ body {
   border: 2px dashed #e2e8f0;
 }
 
-.communicator-loading {
-  background: #f0fdfa;
-  border-color: #06b6d4;
-  color: #0891b2;
-}
-
 .image-loading small {
   margin-top: 0.5rem;
   font-size: 0.75rem;
@@ -1561,7 +1540,6 @@ body {
   line-height: 1.3;
 }
 
-/* 히스토리 네비게이션 */
 .card-history-navigation {
   background: white;
   padding: 1.5rem;
@@ -2130,7 +2108,6 @@ body {
   background: #f0fdf4;
 }
 
-/* 피드백 폼 스타일 */
 .feedback-form {
   background: white;
   padding: 3rem;
@@ -2229,31 +2206,6 @@ body {
   background: #f8fafc;
 }
 
-.interpretation-option input:checked + .interpretation-label {
-  border-color: #8b5cf6;
-  background: #faf5ff;
-}
-
-.interpretation-preview {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.interpretation-number {
-  background: #8b5cf6;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  flex-shrink: 0;
-  font-size: 0.95rem;
-}
-
 .interpretation-content {
   flex: 1;
 }
@@ -2332,7 +2284,6 @@ body {
   font-weight: 600;
 }
 
-/* 해석 결과 스타일 */
 .interpretation-result {
   background: white;
   padding: 3rem;
@@ -2632,6 +2583,98 @@ body {
   line-height: 1.5;
 }
 
+.integrated-feedback-form {
+  margin-top: 2rem;
+}
+
+.interpretations-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  border: 2px solid #ddd6fe;
+}
+
+.interpretation-option input:checked + .interpretation-label {
+  border-color: #8b5cf6;
+  background: #faf5ff;
+}
+
+.interpretation-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.ad {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+  margin-bottom: 2rem;
+  border: 1px solid #f1f5f9;
+}
+
+/* =========================== */
+/* 아이콘 공통 스타일 */
+/* =========================== */
+.role-icon,
+.form-icon,
+.section-icon,
+.button-icon,
+.error-icon,
+.success-icon,
+.loading-icon,
+.message-icon,
+.info-icon,
+.guide-icon,
+.help-icon,
+.nav-icon,
+.list-icon,
+.title-icon,
+.summary-icon,
+.final-icon,
+.notice-icon,
+.option-icon,
+.cards-icon,
+.process-icon,
+.step-icon,
+.label-icon {
+  display: inline-block;
+  vertical-align: middle;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.button-icon {
+  margin-right: 0.5rem;
+}
+
+.error-message .error-icon,
+.success-message .success-icon {
+  margin-right: 0.5rem;
+}
+
+.empty-icon img,
+.no-cards-message img {
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.guide-content p,
+.info-content,
+.navigation-help small,
+.selection-summary p {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.context-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 /* =========================== */
 /* 반응형 디자인 */
 /* =========================== */
@@ -2753,128 +2796,4 @@ body {
   .user-stats {
     padding: 1.5rem;
   }
-}
-
-/* 로고 이미지 아이콘 공통 스타일 */
-.role-icon,
-.form-icon,
-.section-icon,
-.button-icon,
-.error-icon,
-.success-icon,
-.loading-icon,
-.message-icon,
-.info-icon,
-.guide-icon,
-.help-icon,
-.nav-icon,
-.list-icon,
-.title-icon,
-.summary-icon,
-.final-icon,
-.notice-icon,
-.option-icon {
-  display: inline-block;
-  vertical-align: middle;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-/* 버튼 내 아이콘 여백 */
-.button-icon {
-  margin-right: 0.5rem;
-}
-
-/* 에러/성공 메시지 아이콘 */
-.error-message .error-icon,
-.success-message .success-icon {
-  margin-right: 0.5rem;
-}
-
-/* 빈 상태 아이콘 스타일 개선 */
-.empty-icon img,
-.no-cards-message img {
-  margin-bottom: 1rem;
-  opacity: 0.7;
-}
-
-/* 안내 텍스트의 아이콘과 텍스트 정렬 */
-.guide-content p,
-.info-content,
-.navigation-help small,
-.selection-summary p {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* 컨텍스트 아이템 정렬 */
-.context-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-/* 통합된 해석 폼 스타일 */
-.integrated-feedback-form {
-  margin-top: 2rem;
-}
-
-.interpretations-section {
-  background: white;
-  padding: 2rem;
-  border-radius: 16px;
-  border: 2px solid #ddd6fe;
-}
-
-.interpretation-option {
-  margin-bottom: 1rem;
-}
-
-.interpretation-option input[type="radio"] {
-  display: none;
-}
-
-.interpretation-label {
-  cursor: pointer;
-  display: block;
-  padding: 1.5rem;
-  border: 2px solid #f1f5f9;
-  border-radius: 16px;
-  transition: all 0.2s ease;
-}
-
-.interpretation-label:hover {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-}
-
-.interpretation-option input:checked + .interpretation-label {
-  border-color: #8b5cf6;
-  background: #faf5ff;
-}
-
-.interpretation-preview {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.interpretation-content {
-  flex: 1;
-}
-
-.interpretation-content span {
-  color: #1e293b;
-  line-height: 1.6;
-  font-size: 1rem;
-}
-
-.ad {
-  background: white;
-  padding: 2rem;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
-  margin-bottom: 2rem;
-  border: 1px solid #f1f5f9;
 }

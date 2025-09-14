@@ -6,14 +6,14 @@ DATASET_CONFIG = {
     'output_folder': 'dataset/processed',
 
     # 임베딩 설정
-    'image_weight': 0.75,  # 이미지 가중치 (AAC 카드는 시각적 요소가 중요)
-    'clip_model': 'openai/clip-vit-base-patch32',
+    'image_weight': 0.6,  # 이미지 가중치 (AAC 카드는 시각적 요소가 중요)
+    'clip_model': 'openai/clip-vit-large-patch14',
 
     # 계층적 클러스터링 설정
-    'macro_min_clusters': 10,    # 대분류 최소 개수
-    'macro_max_clusters': 25,    # 대분류 최대 개수
-    'min_cluster_size': 20,      # 분할 가능한 최소 크기
-    'max_micro_clusters': 8,     # 대분류당 최대 세분화 수
+    'macro_min_clusters': 20,    # 대분류 최소 개수
+    'macro_max_clusters': 100,    # 대분류 최대 개수
+    'min_cluster_size': 30,      # 분할 가능한 최소 크기
+    'max_micro_clusters': 6,     # 대분류당 최대 세분화 수
 
     # 이미지 필터링
     'filter_confirm': True,
@@ -31,7 +31,7 @@ DATASET_CONFIG = {
     'device': 'auto',
 
     # 클러스터 태깅
-    'cluster_medoid_count': 4,   # 더 정확한 태깅 위함.
+    'cluster_medoid_count': 5,   # 더 정확한 태깅 위함.
 
     # 유사도 모델
     'similarity_model': 'Snowflake/snowflake-arctic-embed-l',

@@ -203,7 +203,7 @@ class Clusterer:
         best_score = -1
         best_k = min_k
         
-        for k in range(min_k, min(max_k, len(X_sample) // 2)):
+        for k in tqdm(range(min_k, min(max_k, len(X_sample) // 2)), desc='Searching optimal clusters'):
             try:
                 kmeans = SphericalKMeans(n_clusters=k, n_init=3)
                 labels = kmeans.fit(X_sample).labels_
