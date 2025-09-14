@@ -2229,11 +2229,6 @@ body {
   background: #f8fafc;
 }
 
-.interpretation-option input:checked + .interpretation-label {
-  border-color: #8b5cf6;
-  background: #faf5ff;
-}
-
 .interpretation-number {
   background: #8b5cf6;
   color: white;
