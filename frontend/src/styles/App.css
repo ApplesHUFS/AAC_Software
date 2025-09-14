@@ -1898,38 +1898,6 @@ body {
   font-size: 0.95rem;
 }
 
-.selection-instruction {
-  color: #64748b;
-  margin-bottom: 1.5rem;
-  line-height: 1.6;
-  font-size: 0.95rem;
-}
-
-.interpretation-item {
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-  border: 2px solid #f1f5f9;
-  border-radius: 16px;
-  margin-bottom: 1rem;
-  transition: all 0.2s ease;
-}
-
-.partner-item {
-  border-color: #ddd6fe;
-}
-
-.interpretation-item:hover {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-  transform: translateY(-1px);
-}
-
-.partner-item:hover {
-  border-color: #c4b5fd;
-  background: #faf5ff;
-}
-
 .interpretation-number {
   background: #8b5cf6;
   color: white;
@@ -1942,13 +1910,6 @@ body {
   font-weight: bold;
   flex-shrink: 0;
   font-size: 0.95rem;
-}
-
-.interpretation-text {
-  flex: 1;
-  color: #1e293b;
-  line-height: 1.6;
-  font-size: 1rem;
 }
 
 .interpretation-confidence {
@@ -2053,25 +2014,6 @@ body {
   margin-bottom: 2rem;
 }
 
-.feedback-header {
-  margin-bottom: 2rem;
-}
-
-.feedback-header h3 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #1e293b;
-  margin-bottom: 1rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.feedback-header p {
-  color: #64748b;
-  line-height: 1.6;
-}
-
 .feedback-type-selection {
   display: flex;
   gap: 2rem;
@@ -2173,28 +2115,6 @@ body {
   display: flex;
   justify-content: center;
   margin: 2rem 0;
-}
-
-.feedback-help {
-  background: #f8fafc;
-  padding: 2rem;
-  border-radius: 16px;
-  margin-top: 2rem;
-}
-
-.partner-help {
-  background: #faf5ff;
-  border: 1px solid #ddd6fe;
-}
-
-.feedback-help h5 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #1e293b;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-  font-weight: 600;
 }
 
 .interpretation-result {
