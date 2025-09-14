@@ -1075,6 +1075,9 @@ body {
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .selection-content {
@@ -1823,12 +1826,6 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-}
-
-.context-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .context-label {
@@ -2617,12 +2614,6 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.context-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
 }
 
 /* =========================== */
