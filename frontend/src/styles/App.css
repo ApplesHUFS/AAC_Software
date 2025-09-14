@@ -2234,12 +2234,6 @@ body {
   background: #faf5ff;
 }
 
-.interpretation-preview {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
 .interpretation-number {
   background: #8b5cf6;
   color: white;
