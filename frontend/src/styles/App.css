@@ -2215,20 +2215,6 @@ body {
   display: none;
 }
 
-.interpretation-label {
-  cursor: pointer;
-  display: block;
-  padding: 1.5rem;
-  border: 2px solid #f1f5f9;
-  border-radius: 16px;
-  transition: all 0.2s ease;
-}
-
-.interpretation-label:hover {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-}
-
 .interpretation-number {
   background: #8b5cf6;
   color: white;
