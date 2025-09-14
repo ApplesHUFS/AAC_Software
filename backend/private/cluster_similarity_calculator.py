@@ -112,6 +112,24 @@ class ClusterSimilarityCalculator:
         except Exception as e:
             raise RuntimeError(f"배치 유사도 계산 오류: {str(e)}")
 
+    def compute_topic_similarity(self, topic1: str, topic2: str) -> float:
+        """두 토픽 간 유사도 계산.
+        
+        내부적으로 compute_topic_similarities_batch를 사용하여 일관성을 유지합니다.
+
+        Args:
+            topic1: 첫 번째 토픽
+            topic2: 두 번째 토픽
+
+        Returns:
+            float: 유사도 점수 (0~1 범위)
+        """
+        try:
+            similarities = self.compute_topic_similarities_batch([topic1], [topic2])
+            return float(similarities[0, 0])
+        except Exception:
+            return 0.0
+
     def calculate_preferred_categories(self, interesting_topics: List[str],
                                      similarity_threshold: float = 0.3,
                                      max_categories: int = 6) -> List[int]:

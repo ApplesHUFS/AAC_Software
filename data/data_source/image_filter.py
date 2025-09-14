@@ -1,13 +1,26 @@
 import shutil
 import re
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional
 from collections import defaultdict
 from tqdm import tqdm
 
 class ImageFilter:
-    def __init__(self, images_folder: str):
+    """AAC 이미지 필터링 시스템.
+    
+    부적절한 내용, 의료/기술 용어, 문화 특수 용어, 행정/법률 용어 등
+    다양한 기준을 통해 AAC 카드에 부적합한 이미지들을 필터링합니다.
+    """
+    
+    def __init__(self, images_folder: str, config: Optional[Dict] = None):
+        """ImageFilter 초기화.
+        
+        Args:
+            images_folder: 이미지 폴더 경로
+            config: 설정 딕셔너리
+        """
         self.images_folder = Path(images_folder)
+        self.config = config or {}
         self.filtered_folder = self.images_folder.parent / "filtered_images"
 
         self.inappropriate_keywords = {
@@ -161,7 +174,10 @@ class ImageFilter:
         self._compile_patterns()
 
     def _compile_patterns(self):
-        """모든 키워드의 정규표현식 패턴을 미리 컴파일"""
+        """모든 키워드의 정규표현식 패턴을 미리 컴파일.
+        
+        성능 향상을 위해 모든 키워드 패턴을 한 번에 컴파일하여 저장합니다.
+        """
         all_keyword_sets = [
             self.inappropriate_keywords,
             self.medical_technical_keywords,
@@ -189,7 +205,15 @@ class ImageFilter:
                 self._compiled_patterns[keyword_lower] = re.compile(pattern, re.IGNORECASE)
 
     def _contains_word(self, text: str, keywords: Set[str]) -> bool:
-        """미리 컴파일된 패턴을 사용하여 키워드 매칭"""
+        """미리 컴파일된 패턴을 사용하여 키워드 매칭.
+        
+        Args:
+            text: 검사할 텍스트
+            keywords: 키워드 집합
+            
+        Returns:
+            bool: 키워드 발견 여부
+        """
         text_lower = text.lower()
         
         for keyword in keywords:
@@ -201,21 +225,31 @@ class ImageFilter:
 
         return False
 
-        '''
-        or 단순 일치
-        for keyword in keywords:
-            if text==keyword.lower().strip():
-                return True
-        return False
-        '''
-
     def _extract_keyword(self, filename: str) -> str:
+        """파일명에서 키워드 추출.
+        
+        파일명 패턴: {id}_{keyword}.png에서 keyword 부분을 추출합니다.
+        
+        Args:
+            filename: 파일명
+            
+        Returns:
+            str: 추출된 키워드
+        """
         stem = Path(filename).stem
         if '_' not in stem:
             return ""
         return stem.split('_', 1)[1].strip()
 
     def _should_filter(self, keyword: str) -> str:
+        """키워드가 필터링 대상인지 판단.
+        
+        Args:
+            keyword: 검사할 키워드
+            
+        Returns:
+            str: 필터링 사유 (빈 문자열이면 필터링 안함)
+        """
         keyword_lower = keyword.lower()
 
         if not keyword.strip():
@@ -243,6 +277,11 @@ class ImageFilter:
         return ""
 
     def analyze_images(self) -> Dict[str, List[str]]:
+        """이미지 분석 및 필터링 대상 파일 분류.
+        
+        Returns:
+            Dict[str, List[str]]: 카테고리별 필터링 대상 파일 목록
+        """
         if not self.images_folder.exists():
             raise FileNotFoundError(f"Images folder not found: {self.images_folder}")
 
@@ -266,7 +305,20 @@ class ImageFilter:
 
         return dict(filtered_files)
 
-    def filter_images(self, confirm: bool = True) -> int:
+    def filter_images(self, confirm: bool = None) -> int:
+        """이미지 필터링 수행.
+        
+        Args:
+            confirm: 사용자 확인 여부 (None이면 config에서 가져옴)
+            
+        Returns:
+            int: 필터링된 파일 개수
+        """
+        if confirm is None and 'filter_confirm' in self.config:
+            confirm = self.config['filter_confirm']
+        elif confirm is None:
+            confirm = True
+
         filtered_files = self.analyze_images()
         all_files_to_move = list(set(
             file for files in filtered_files.values() for file in files

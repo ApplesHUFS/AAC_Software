@@ -10,10 +10,10 @@ DATASET_CONFIG = {
     'clip_model': 'openai/clip-vit-base-patch32',
 
     # 계층적 클러스터링 설정
-    'macro_min_clusters': 8,     # 대분류 최소 개수
-    'macro_max_clusters': 20,    # 대분류 최대 개수
-    'min_cluster_size': 15,      # 분할 가능한 최소 크기
-    'max_micro_clusters': 8,     # 대분류당 최대 세분화 수
+    'macro_min_clusters': 12,     # 대분류 최소 개수
+    'macro_max_clusters': 28,    # 대분류 최대 개수
+    'min_cluster_size': 25,      # 분할 가능한 최소 크기
+    'max_micro_clusters': 6,     # 대분류당 최대 세분화 수
 
     # 이미지 필터링
     'filter_confirm': True,

@@ -13,9 +13,21 @@ plt.rcParams['axes.unicode_minus'] = False
 
 
 class SphericalKMeans:
-    """고차원 임베딩용 Spherical K-means 구현"""
+    """고차원 임베딩용 Spherical K-means 구현.
+    
+    코사인 유사도 기반의 클러스터링을 수행하여 정규화된 임베딩에 적합한
+    spherical k-means 알고리즘을 제공합니다.
+    """
     
     def __init__(self, n_clusters: int, max_iter: int = 100, n_init: int = 10, random_state: int = 42):
+        """SphericalKMeans 초기화.
+        
+        Args:
+            n_clusters: 클러스터 개수
+            max_iter: 최대 반복 횟수
+            n_init: 초기화 시도 횟수
+            random_state: 랜덤 시드
+        """
         self.n_clusters = n_clusters
         self.max_iter = max_iter
         self.n_init = n_init
@@ -24,7 +36,14 @@ class SphericalKMeans:
         self.labels_ = None
 
     def _init_centroids(self, X: np.ndarray) -> np.ndarray:
-        """K-means++ 초기화"""
+        """K-means++ 초기화 방식으로 중심점 선택.
+        
+        Args:
+            X: 입력 데이터 배열
+            
+        Returns:
+            np.ndarray: 초기화된 중심점들
+        """
         n_samples, n_features = X.shape
         rng = np.random.RandomState(self.random_state)
         
@@ -44,12 +63,28 @@ class SphericalKMeans:
         return centers
 
     def _assign_clusters(self, X: np.ndarray, centers: np.ndarray) -> np.ndarray:
-        """코사인 유사도로 클러스터 할당"""
+        """코사인 유사도로 클러스터 할당.
+        
+        Args:
+            X: 입력 데이터
+            centers: 클러스터 중심점들
+            
+        Returns:
+            np.ndarray: 클러스터 할당 결과
+        """
         similarities = np.dot(X, centers.T)
         return np.argmax(similarities, axis=1)
 
     def _update_centers(self, X: np.ndarray, labels: np.ndarray) -> np.ndarray:
-        """중심점 업데이트"""
+        """클러스터 중심점 업데이트.
+        
+        Args:
+            X: 입력 데이터
+            labels: 클러스터 할당 결과
+            
+        Returns:
+            np.ndarray: 업데이트된 중심점들
+        """
         centers = np.zeros((self.n_clusters, X.shape[1]))
         
         for k in range(self.n_clusters):
@@ -64,7 +99,14 @@ class SphericalKMeans:
         return centers
 
     def fit(self, X: np.ndarray) -> 'SphericalKMeans':
-        """Spherical K-means 학습"""
+        """Spherical K-means 학습 수행.
+        
+        Args:
+            X: 입력 데이터 배열
+            
+        Returns:
+            SphericalKMeans: 학습된 모델 인스턴스
+        """
         X_normalized = normalize(X, norm='l2')
         
         best_inertia = np.inf
@@ -103,9 +145,20 @@ class SphericalKMeans:
 
 
 class Clusterer:
-    """계층적 Spherical K-means 클러스터러"""
+    """계층적 Spherical K-means 클러스터러.
+    
+    대분류 클러스터링을 먼저 수행한 후, 각 대분류 내에서 세분화를 진행하는
+    2단계 계층적 클러스터링을 수행합니다.
+    """
     
     def __init__(self, embeddings_path: str = None, embedding_data: Dict = None, config: Dict = None):
+        """Clusterer 초기화.
+        
+        Args:
+            embeddings_path: 임베딩 파일 경로
+            embedding_data: 직접 전달된 임베딩 데이터
+            config: 설정 딕셔너리
+        """
         if embedding_data is not None:
             self.data = embedding_data
         elif embeddings_path:
@@ -124,12 +177,22 @@ class Clusterer:
         img_normalized = normalize(img_embeddings, norm='l2')
         txt_normalized = normalize(txt_embeddings, norm='l2')
         
-        img_weight = self.config.get('image_weight', 0.7)
+        # config에서 이미지 가중치 가져오기
+        img_weight = self.config['image_weight']
         self.embeddings = img_weight * img_normalized + (1 - img_weight) * txt_normalized
         self.embeddings = normalize(self.embeddings, norm='l2')
 
     def _find_optimal_clusters(self, X: np.ndarray, min_k: int = 2, max_k: int = 30) -> int:
-        """최적 클러스터 수 결정"""
+        """실루엣 스코어를 기반으로 최적 클러스터 수 결정.
+        
+        Args:
+            X: 입력 데이터
+            min_k: 최소 클러스터 수
+            max_k: 최대 클러스터 수
+            
+        Returns:
+            int: 최적 클러스터 수
+        """
         sample_size = min(len(X), 2000)
         if len(X) > sample_size:
             indices = np.random.choice(len(X), sample_size, replace=False)
@@ -156,9 +219,19 @@ class Clusterer:
         return best_k
 
     def perform_clustering(self, n_clusters: int = None) -> Dict[str, Any]:
-        """계층적 클러스터링 수행"""
+        """계층적 클러스터링 수행.
+        
+        Args:
+            n_clusters: 지정된 클러스터 수 (None이면 자동 결정)
+            
+        Returns:
+            Dict[str, Any]: 클러스터링 결과
+        """
         # 1단계: 거시적 클러스터링
-        macro_k = self._find_optimal_clusters(self.embeddings, min_k=8, max_k=20)
+        macro_min = self.config['macro_min_clusters']
+        macro_max = self.config['macro_max_clusters']
+        macro_k = self._find_optimal_clusters(self.embeddings, min_k=macro_min, max_k=macro_max)
+        
         macro_kmeans = SphericalKMeans(n_clusters=macro_k)
         macro_labels = macro_kmeans.fit(self.embeddings).labels_
         
@@ -167,18 +240,21 @@ class Clusterer:
         final_cluster_id = 0
         cluster_hierarchy = {}
         
+        min_cluster_size = self.config['min_cluster_size']
+        max_micro_clusters = self.config['max_micro_clusters']
+        
         for macro_id in range(macro_k):
             macro_mask = macro_labels == macro_id
             macro_size = np.sum(macro_mask)
             
-            if macro_size < 15:
+            if macro_size < min_cluster_size:
                 final_labels[macro_mask] = final_cluster_id
                 cluster_hierarchy[final_cluster_id] = {'macro_id': macro_id, 'size': macro_size}
                 final_cluster_id += 1
                 continue
             
             macro_embeddings = self.embeddings[macro_mask]
-            max_micro_k = min(max(2, macro_size // 15), 8)
+            max_micro_k = min(max(2, macro_size // min_cluster_size), max_micro_clusters)
             
             if max_micro_k >= 2:
                 try:
@@ -226,7 +302,12 @@ class Clusterer:
         }
 
     def save_clustering_results(self, results: Dict[str, Any], output_path: str) -> None:
-        """클러스터링 결과 저장"""
+        """클러스터링 결과를 JSON 파일로 저장.
+        
+        Args:
+            results: 클러스터링 결과
+            output_path: 출력 파일 경로
+        """
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
         cluster_data = {
@@ -240,13 +321,22 @@ class Clusterer:
             json.dump(cluster_data, f, ensure_ascii=False, indent=2)
 
     def print_cluster_summary(self, results: Dict[str, Any]) -> None:
-        """클러스터링 결과 요약"""
+        """클러스터링 결과 요약 출력.
+        
+        Args:
+            results: 클러스터링 결과
+        """
         clustered_files = results['clustered_files']
         sizes = [len(files) for files in clustered_files.values()]
         print(f"클러스터 {results['n_clusters']}개 생성, 크기 분포: {min(sizes)}-{max(sizes)}")
 
     def visualize_clusters(self, results: Dict[str, Any], output_folder: str) -> None:
-        """클러스터 시각화"""
+        """클러스터링 결과를 2D PCA로 시각화.
+        
+        Args:
+            results: 클러스터링 결과
+            output_folder: 출력 폴더 경로
+        """
         output_folder = Path(output_folder)
         output_folder.mkdir(parents=True, exist_ok=True)
 
@@ -277,7 +367,16 @@ class Clusterer:
             print(f"시각화 오류: {e}")
 
     def cluster_and_save(self, n_clusters: int, output_folder: str, visualize: bool = True) -> Dict[str, Any]:
-        """전체 클러스터링 프로세스"""
+        """전체 클러스터링 프로세스 실행.
+        
+        Args:
+            n_clusters: 클러스터 수 (None이면 자동 결정)
+            output_folder: 출력 폴더 경로
+            visualize: 시각화 수행 여부
+            
+        Returns:
+            Dict[str, Any]: 클러스터링 결과
+        """
         results = self.perform_clustering(n_clusters)
         
         output_folder = Path(output_folder)
