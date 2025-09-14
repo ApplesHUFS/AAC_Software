@@ -2207,14 +2207,6 @@ body {
   font-weight: 600;
 }
 
-.interpretation-option {
-  margin-bottom: 1rem;
-}
-
-.interpretation-option input[type="radio"] {
-  display: none;
-}
-
 .interpretation-number {
   background: #8b5cf6;
   color: white;
