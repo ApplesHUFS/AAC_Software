@@ -2610,11 +2610,6 @@ body {
 .guide-content p,
 .info-content,
 .navigation-help small,
-.selection-summary p {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 
 /* =========================== */
 /* 반응형 디자인 */
