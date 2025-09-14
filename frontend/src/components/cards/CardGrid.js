@@ -143,7 +143,7 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
     return (
       <div className="selected-cards-display empty communicator-sidebar">
         <h3>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="title-icon" />
+          <img src="/images/selected_card.png" alt="로고" width="24" height="24" className="title-icon" />
           선택한 카드
         </h3>
         <div className="empty-state">
@@ -160,7 +160,7 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
   return (
     <div className="selected-cards-display communicator-sidebar">
       <h3>
-        <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="title-icon" />
+        <img src="/images/selected_card.png" alt="로고" width="24" height="24" className="title-icon" />
         선택한 카드 ({selectedCards.length}/{maxCards})
       </h3>
       
@@ -178,6 +178,7 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
             
             <div className="card-details">
               <span className="card-name">{card.name}</span>
+              <br />
               <small className="card-position">{index + 1}번째 카드</small>
             </div>
             
@@ -186,7 +187,7 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
               onClick={() => onRemoveCard(card)}
               title={`${card.name} 카드 제거`}
             >
-              제거
+             X
             </button>
           </div>
         ))}
@@ -196,12 +197,10 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
         <p>
           {maxCards - selectedCards.length > 0 ? (
             <>
-              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="summary-icon" />
               <strong>{maxCards - selectedCards.length}개</strong> 더 선택할 수 있어요!
             </>
           ) : (
             <>
-              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="summary-icon" />
               모든 카드를 선택했어요!
             </>
           )}
@@ -210,7 +209,7 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
 
       <div className="selection-guide communicator-guide">
         <h5>
-          <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="guide-icon" />
+          <img src="/images/use_info.png" alt="로고" width="20" height="20" className="guide-icon" />
           카드 선택 안내
         </h5>
         <ul>

@@ -152,7 +152,6 @@ const CardHistoryNavigation = ({
 
       <div className="navigation-help">
         <small>
-          <img src="/images/logo_red.png" alt="로고" width="12" height="12" className="help-icon" />
           이전에 추천받은 카드들을 다시 볼 수 있어요. 
           마음에 드는 카드가 있었다면 찾아보세요!
         </small>

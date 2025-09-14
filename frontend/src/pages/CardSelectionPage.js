@@ -233,12 +233,11 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       <div className="card-selection-page communicator-theme loading">
         <div className="loading-content communicator-loading">
           <div className="loading-header">
-            <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="loading-icon" />
             <h2>소통이를 위한 카드를 준비하고 있어요!</h2>
           </div>
           <p>소통이의 관심사와 현재 상황을 분석해서 딱 맞는 카드들을 골라드릴게요.</p>
           <div className="loading-spinner"></div>
-          <div className="loading-tips">
+          <div className="loading-tips" style={{ textAlign: 'center' }}>
             <p><strong>{user.name}</strong>님이 좋아하는 주제를 고려하고 있어요</p>
             <p><strong>{contextData.place}</strong>에서 쓰기 좋은 카드들을 찾고 있어요</p>
           </div>
@@ -252,8 +251,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
       {/* 페이지 헤더 */}
       <header className="selection-header communicator-header">
         <div className="role-indicator communicator-role">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
-          <span>소통이 카드 선택</span>
+          <span>카드 선택</span>
         </div>
         <h2>어떤 카드로 소통할까요?</h2>
         <div className="context-info">
@@ -288,7 +286,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
               onClick={handleProceedToInterpretation}
               disabled={selectedCards.length === 0 || loading}
             >
-              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="button-icon" />
               이 카드로 소통하기 ({selectedCards.length}개)
             </button>
           </div>
@@ -304,7 +301,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
           {allRecommendedCards.length > 0 && (
             <div className="recommendation-info communicator-info">
               <div className="info-content">
-                <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="info-icon" />
                 <small>
                   지금까지 <strong>{allRecommendedCards.length}개</strong>의 
                   소통이 맞춤 카드가 준비되었어요!

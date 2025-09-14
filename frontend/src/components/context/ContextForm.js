@@ -81,15 +81,13 @@ const ContextForm = ({ userId, onContextCreated }) => {
     <div className="context-form partner-theme">
       <div className="context-header">
         <div className="role-indicator partner-role">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
           <span>도움이 상황 입력</span>
         </div>
         <h2>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="form-icon" />
           지금 어떤 상황인가요?
         </h2>
-        <p>
-          소통이의 현재 상황을 입력해주시면 소통이에게 딱 맞는 AAC 카드를 추천해드려요. 
+        <p style={{ whiteSpace: 'pre-line' }}>
+          소통이의 현재 상황을 입력해주시면 소통이에게 딱 맞는 AAC 카드를 추천해드려요.{'\n'}
           상황에 맞는 카드를 통해 더 원활한 소통이 가능해집니다.
         </p>
       </div>
@@ -98,7 +96,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
         {/* 장소 입력 */}
         <div className="form-group">
           <label htmlFor="place">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="label-icon" />
+            <img src="/images/place.png" alt="로고" width="20" height="20" className="label-icon" />
             현재 장소 *
           </label>
           <input
@@ -132,7 +130,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
         {/* 대화 상대 입력 */}
         <div className="form-group">
           <label htmlFor="interactionPartner">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="label-icon" />
+            <img src="/images/interactionPartner.png" alt="로고" width="20" height="20" className="label-icon" />
             대화 상대 *
           </label>
           <input
@@ -166,7 +164,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
         {/* 현재 활동 입력 */}
         <div className="form-group">
           <label htmlFor="currentActivity">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="label-icon" />
+            <img src="/images/currentActivity.png" alt="로고" width="20" height="20" className="label-icon" />
             현재 활동 (선택사항)
           </label>
           <input
@@ -195,7 +193,12 @@ const ContextForm = ({ userId, onContextCreated }) => {
               ))}
             </div>
           </div>
-          <small className="form-hint">
+          <small className="form-hint"     
+          style={{ 
+            marginTop: '20px',
+            display: 'block',
+            lineHeight: '2'
+       }}>
             현재 하고 있는 구체적인 활동을 입력하시면 
             더 정확한 카드 추천을 받을 수 있어요.
           </small>
@@ -217,8 +220,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
               </>
             ) : (
               <>
-                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="button-icon" />
-                소통이에게 맞춤 카드 추천하기
+                맞춤 카드 추천하기
               </>
             )}
           </button>
@@ -226,7 +228,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         <div className="context-help">
           <h4>
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="help-icon" />
+            <img src="/images/use_info.png" alt="로고" width="24" height="24" className="help-icon" />
             입력 도움말
           </h4>
           <div className="help-grid">

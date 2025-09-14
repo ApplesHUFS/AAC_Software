@@ -40,7 +40,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
             <span>대시보드</span>
           </div>
           <h2>{user.name}님의 소통 도우미</h2>
-          <p>소통이와 함께하는 AAC 카드 의사소통을 시작해보세요</p>
+          <p>appName와 함께하는 AAC 카드 의사소통을 시작해보세요☺️</p>
         </div>
         <div className="header-actions">
           {currentView !== 'main' && (
@@ -75,8 +75,8 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
                   <img src="/images/new_chat.png" alt="로고" width="24" height="24" className="card-icon" />
                   <h3 style={{margin: 0}}>새로운 대화 세션 시작</h3>
                 </div>
-                <p>
-                  현재 상황을 입력하고 소통이에게 개인화된 AAC 카드를 추천해주세요.
+                <p style={{ whiteSpace: 'pre-line' }}>
+                  현재 상황을 입력하고 소통이에게 개인화된 AAC 카드를 추천해주세요.{'\n'}
                   AI가 소통이의 관심사와 대화 맥락을 고려하여 최적의 카드를 제안합니다.
                 </p>
                 <button className="primary-button large" onClick={handleStartNewSession}>

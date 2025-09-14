@@ -13,9 +13,9 @@ const INTERPRETATION_STEPS = {
 
 // 동적 로딩 상태
 const LOADING_STATES = [
-  { key: 'cards', label: '카드 분석', icon: '/images/logo_red.png' },
-  { key: 'context', label: '상황 고려', icon: '/images/logo_red.png' },
-  { key: 'interpretation', label: '해석 생성', icon: '/images/logo_red.png' }
+  { key: 'cards', label: '카드 분석', icon: '/images/card_analysis.png' },
+  { key: 'context', label: '상황 고려', icon: '/images/context_consideration.png' },
+  { key: 'interpretation', label: '해석 생성', icon: '/images/interpretation_generate.png' }
 ];
 
 const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplete }) => {
@@ -173,7 +173,6 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       <div className="interpretation-page partner-theme loading">
         <div className="loading-content partner-loading">
           <div className="loading-header">
-            <img src="/images/logo_red.png" alt="로고" width="48" height="48" className="loading-icon" />
             <h2>AI가 소통이의 카드를 분석하고 있어요</h2>
           </div>
           <div className="loading-details">
@@ -184,9 +183,9 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
               ))}
               {selectedCards.length > 3 && <span>외 {selectedCards.length - 3}개...</span>}
             </div>
-            <p>
+            <p style={{ whiteSpace: 'pre-line' }}>
               <strong>{contextData.place}</strong>에서 <strong>{contextData.interactionPartner}</strong>과의 
-              대화 상황을 고려해서 가장 적절한 해석 3가지를 만들어드릴게요.
+              대화 상황을 고려해서{'\n'}가장 적절한 해석 3가지를 만들어드릴게요.
             </p>
           </div>
           <div className="loading-spinner"></div>
