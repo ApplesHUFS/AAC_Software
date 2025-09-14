@@ -1884,16 +1884,6 @@ body {
   max-width: 70px;
 }
 
-.interpretations-list h3 {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
 .interpretation-instruction {
   color: #64748b;
   margin-bottom: 1.5rem;
@@ -2609,7 +2599,6 @@ body {
 
 .guide-content p,
 .info-content,
-.navigation-help small,
 
 /* =========================== */
 /* 반응형 디자인 */
