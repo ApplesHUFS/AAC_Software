@@ -4,7 +4,7 @@ import { cardService } from '../services/cardService';
 import CardGrid, { SelectedCardsDisplay } from '../components/cards/CardGrid';
 import CardHistoryNavigation from '../components/cards/CardHistoryNavigation';
 
-const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
+const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackToDashboard }) => {
   // 카드 관련 상태
   const [cards, setCards] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
@@ -227,6 +227,13 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     }
   }, [selectedCards, allRecommendedCards, onCardSelectionComplete]);
 
+  // 대시보드로 돌아가기 처리
+  const handleBackToDashboard = useCallback(() => {
+    if (onBackToDashboard) {
+      onBackToDashboard();
+    }
+  }, [onBackToDashboard]);
+
   // 로딩 상태
   if (loading && cards.length === 0) {
     return (
@@ -252,8 +259,19 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
     <div className="card-selection-page communicator-theme">
       {/* 페이지 헤더 */}
       <header className="selection-header communicator-header">
-        <div className="role-indicator communicator-role">
-          <span>카드 선택</span>
+        <div className="header-top">
+          <div className="role-indicator communicator-role">
+            <span>카드 선택</span>
+          </div>
+          <div className="header-actions">
+            <button 
+              className="secondary-button" 
+              onClick={handleBackToDashboard}
+              disabled={loading}
+            >
+              대시보드로
+            </button>
+          </div>
         </div>
         <h2>어떤 카드로 소통할까요?</h2>
         <div className="context-info">

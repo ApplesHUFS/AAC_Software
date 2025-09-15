@@ -94,6 +94,18 @@
   box-shadow: 0 4px 16px rgba(0,0,0,0.08);
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
 .selection-header h2 {
   margin-bottom: 1rem;
   color: #1e293b;
@@ -535,7 +547,7 @@
   line-height: 1.3;
 }
 
-/* 카드 히스토리 네비게이션 */
+/* 카드 히스토리 내비게이션 */
 .card-history-navigation {
   background: white;
   padding: 1.5rem;

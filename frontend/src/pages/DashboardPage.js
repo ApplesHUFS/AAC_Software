@@ -3,7 +3,17 @@ import React, { useState } from 'react';
 import ContextForm from '../components/context/ContextForm';
 import ProfileEditForm from '../components/profile/ProfileEditForm';
 
-const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
+const DashboardPage = ({ 
+  user, 
+  contextData, 
+  selectedCards, 
+  hasActiveSession,
+  onLogout, 
+  onUserUpdate, 
+  onContextCreated,
+  onResumeSession,
+  onResetSession
+}) => {
   const [currentView, setCurrentView] = useState('main');
 
   // 새 대화 세션 시작 (도움이가 상황 설정)
@@ -32,6 +42,42 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
     setCurrentView('main');
   };
 
+  // 진행 중인 세션 이어서 하기
+  const handleResumeActiveSession = () => {
+    if (onResumeSession) {
+      onResumeSession();
+    }
+  };
+
+  // 진행 중인 세션 초기화하고 새로 시작
+  const handleStartNewSessionFromActive = () => {
+    if (onResetSession) {
+      onResetSession();
+    }
+    setCurrentView('context');
+  };
+
+  // 진행 상황 요약 텍스트 생성
+  const getSessionProgressText = () => {
+    if (!contextData) return '';
+    
+    const location = contextData.place;
+    const partner = contextData.interactionPartner;
+    const activity = contextData.currentActivity;
+    const cardCount = selectedCards?.length || 0;
+    
+    let progressText = `${location}에서 ${partner}와`;
+    if (activity) {
+      progressText += ` ${activity} 중`;
+    }
+    
+    if (cardCount > 0) {
+      progressText += ` (${cardCount}개 카드 선택됨)`;
+    }
+    
+    return progressText;
+  };
+
   return (
     <div className="dashboard-page partner-theme">
       <header className="dashboard-header">
@@ -40,7 +86,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
             <span>대시보드</span>
           </div>
           <h2>{user.name}님의 소통 도우미</h2>
-          <p>appName와 함께하는 AAC 카드 의사소통을 시작해보세요☺️</p>
+          <p>소통이룸과 함께하는 AAC 카드 의사소통을 시작해보세요☺️</p>
         </div>
         <div className="header-actions">
           {currentView !== 'main' && (
@@ -65,6 +111,61 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
         {/* 메인 화면 */}
         {currentView === 'main' && (
           <div className="dashboard-main">
+            {/* 진행 중인 세션이 있는 경우 우선 표시 */}
+            {hasActiveSession && contextData && (
+              <div className="active-session-section partner-section">
+                <h3 style={{
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <img src="/images/current_session.png" alt="로고" width="24" height="24" className="section-icon" />
+                  진행 중인 대화 세션
+                </h3>
+                <div className="session-info" style={{
+                  background: '#fef3c7',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  marginBottom: '20px',
+                  border: '1px solid #f59e0b'
+                }}>
+                  <div className="session-details" style={{marginBottom: '16px'}}>
+                    <p style={{margin: 0, fontWeight: '500', color: '#92400e'}}>
+                      <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="info-icon" />
+                      {getSessionProgressText()}
+                    </p>
+                    {selectedCards?.length > 0 && (
+                      <small style={{color: '#78716c', display: 'block', marginTop: '8px'}}>
+                        해석 단계에서 중단되었습니다. 도움이의 확인을 기다리고 있어요.
+                      </small>
+                    )}
+                  </div>
+                  
+                  <div className="session-actions" style={{
+                    display: 'flex',
+                    gap: '12px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <button 
+                      className="primary-button partner-button"
+                      onClick={handleResumeActiveSession}
+                    >
+                      <img src="/images/continue_session.png" alt="로고" width="16" height="16" className="button-icon" />
+                      이어서 하기
+                    </button>
+                    <button 
+                      className="secondary-button"
+                      onClick={handleStartNewSessionFromActive}
+                    >
+                      <img src="/images/new_chat.png" alt="로고" width="16" height="16" className="button-icon" />
+                      새 대화 시작
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="welcome-section">
               <div className="welcome-card partner-card">
                 <div className="card-header" style={{
@@ -73,14 +174,20 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
                   gap: '8px'
                 }}>
                   <img src="/images/new_chat.png" alt="로고" width="24" height="24" className="card-icon" />
-                  <h3 style={{margin: 0}}>새로운 대화 세션 시작</h3>
+                  <h3 style={{margin: 0}}>
+                    {hasActiveSession ? '새로운 대화 세션 시작' : '새로운 대화 세션 시작'}
+                  </h3>
                 </div>
                 <p style={{ whiteSpace: 'pre-line' }}>
                   현재 상황을 입력하고 소통이에게 개인화된 AAC 카드를 추천해주세요.{'\n'}
                   AI가 소통이의 관심사와 대화 맥락을 고려하여 최적의 카드를 제안합니다.
                 </p>
-                <button className="primary-button large" onClick={handleStartNewSession}>
-                  대화 상황 입력하기
+                <button 
+                  className="primary-button large" 
+                  onClick={handleStartNewSession}
+                  disabled={currentView !== 'main'}
+                >
+                  {hasActiveSession ? '새 대화 상황 입력하기' : '대화 상황 입력하기'}
                 </button>
               </div>
 
@@ -187,7 +294,7 @@ const DashboardPage = ({ user, onLogout, onUserUpdate, onContextCreated }) => {
               </div>
            </div>
             <div className="ad partner-section">
-              <h4>광고
+              <h4>광고 
               </h4>
             </div>
  

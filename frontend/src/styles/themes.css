@@ -92,10 +92,10 @@
   color: #8b5cf6;
 }
 
-.partner-form h2,
 .partner-theme .form-group input:focus,
 .partner-theme .form-group select:focus,
-.partner-theme .form-group textarea:focus {
+.partner-theme .form-group textarea:focus,
+.partner-theme .context-input:focus {
   border-color: #8b5cf6;
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
 }

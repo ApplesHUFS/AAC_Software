@@ -146,6 +146,13 @@ const App = () => {
     saveSession(SESSION_KEYS.CURRENT_STEP, APP_STEPS.DASHBOARD);
   };
 
+  // 대시보드로 돌아가기 (카드 선택 페이지에서 사용)
+  const handleBackToDashboard = () => {
+    // 진행 중인 대화 세션 데이터는 유지하되, 대시보드로 이동
+    setCurrentStep(APP_STEPS.DASHBOARD);
+    saveSession(SESSION_KEYS.CURRENT_STEP, APP_STEPS.DASHBOARD);
+  };
+
   // 현재 단계에 따른 컴포넌트 렌더링
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -168,6 +175,7 @@ const App = () => {
             user={currentUser}
             contextData={contextData}
             onCardSelectionComplete={handleCardSelectionComplete}
+            onBackToDashboard={handleBackToDashboard}
           />
         ) : null;
       
