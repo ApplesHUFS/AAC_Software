@@ -535,11 +535,11 @@ class CardRecommender:
         # 히스토리 존재 여부 확인
         if context_id not in self.recommendation_history:
             return {
-                'status': 'error',
+                'status': 'success',
                 'total_pages': 0,
                 'latest_page': 0,
                 'history_summary': [],
-                'message': f'컨텍스트 {context_id}에 대한 카드 추천 히스토리가 없습니다.'
+                'message': f'컨텍스트 {context_id}는 새로운 대화입니다. 첫 번째 카드 추천을 준비중입니다.'
             }
 
         history = self.recommendation_history[context_id]
@@ -547,11 +547,11 @@ class CardRecommender:
 
         if total_pages == 0:
             return {
-                'status': 'error',
+                'status': 'success',
                 'total_pages': 0,
                 'latest_page': 0,
                 'history_summary': [],
-                'message': f'컨텍스트 {context_id}에 추천된 카드가 없습니다.'
+                'message': f'컨텍스트 {context_id}의 첫 번째 카드 추천을 준비중입니다.'
             }
 
         # 페이지별 요약 정보 생성
