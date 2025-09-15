@@ -4,7 +4,17 @@ import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import CardSelectionPage from './pages/CardSelectionPage';
 import InterpretationPage from './pages/InterpretationPage';
-import './styles/App.css';
+
+// css 파일들
+import './styles/globals.css';
+import './styles/common.css';
+import './styles/themes.css';
+import './styles/auth.css';
+import './styles/dashboard.css';
+import './styles/cards.css';
+import './styles/interpretation.css';
+import './styles/context.css';
+import './styles/responsive.css';
 
 // 애플리케이션 진행 단계
 const APP_STEPS = {
