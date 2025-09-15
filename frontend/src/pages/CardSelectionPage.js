@@ -235,11 +235,13 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete }) => {
           <div className="loading-header">
             <h2>소통이를 위한 카드를 준비하고 있어요!</h2>
           </div>
-          <p>소통이의 관심사와 현재 상황을 분석해서 딱 맞는 카드들을 골라드릴게요.</p>
+          <p style={{ whiteSpace: 'pre-line' }}>
+            소통이의 관심사와 현재 상황을 분석해서{'\n'}딱 맞는 카드들을 골라드릴게요😄
+          </p>
           <div className="loading-spinner"></div>
           <div className="loading-tips" style={{ textAlign: 'center' }}>
-            <p><strong>{user.name}</strong>님이 좋아하는 주제를 고려하고 있어요</p>
-            <p><strong>{contextData.place}</strong>에서 쓰기 좋은 카드들을 찾고 있어요</p>
+            <p><strong>{user.name}</strong>님이 좋아하는 주제를 고려하고 있어요.</p>
+            <p><strong>{contextData.place}</strong>에서 쓰기 좋은 카드들을 찾고 있어요.</p>
           </div>
         </div>
       </div>
