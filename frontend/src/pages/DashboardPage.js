@@ -179,8 +179,7 @@ const DashboardPage = ({
                   </h3>
                 </div>
                 <p style={{ whiteSpace: 'pre-line' }}>
-                  현재 상황을 입력하고 소통이에게 개인화된 AAC 카드를 추천해주세요.{'\n'}
-                  AI가 소통이의 관심사와 대화 맥락을 고려하여 최적의 카드를 제안합니다.
+                  AI가 소통이의 관심사와 대화 맥락을 고려해 개인화된 AAC 카드를 추천해드려요.
                 </p>
                 <button 
                   className="primary-button large" 

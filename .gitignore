@@ -100,3 +100,5 @@ coverage.xml
 # OpenAI API keys
 openai_key.txt
 api_keys.txt
+
+test_aac_service.py
