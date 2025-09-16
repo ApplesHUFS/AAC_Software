@@ -109,7 +109,6 @@ const InterpretationDisplay = ({
       {/* 통합된 헤더 */}
       <div className="interpretation-header">
         <div className="role-indicator partner-role">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
           <span>도움이 해석 확인</span>
         </div>
         <h2>
