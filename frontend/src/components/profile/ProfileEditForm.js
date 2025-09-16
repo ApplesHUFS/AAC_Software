@@ -276,7 +276,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
                       disabled={loading}
                       className="topic-remove"
                     >
-                      제거
+                      X
                     </button>
                   </span>
                 ))}
