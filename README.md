@@ -1,3 +1,8 @@
+```
+chmod +x download_arasaac.sh
+./download_arasaac.sh
+```
+
 # pre-commit run
 
 # AAC 카드 해석 시스템
