@@ -77,7 +77,6 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### 3. 서버 실행
 
 ```bash
-cd backend
 python app.py
 ```
 

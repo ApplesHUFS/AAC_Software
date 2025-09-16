@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 한국어 ARASAAC 픽토그램 다운로더
-# dataset/images에 이미지 파일들을 병렬 다운로드
+# dataset/images에 이미지 파일들 다운로드
 
 set -e
 
@@ -12,7 +12,7 @@ OUTPUT_DIR="dataset/images"
 MAX_PARALLEL=20
 TEMP_DIR=$(mktemp -d)
 
-# 필수 도구 확인
+# 필수 도구들
 check_dependencies() {
     local missing=""
     
