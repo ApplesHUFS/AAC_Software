@@ -112,7 +112,7 @@ const InterpretationDisplay = ({
           <span>도움이 해석 확인</span>
         </div>
         <h2>
-          <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="header-icon" />
+          <img src="/images/AI.png" alt="로고" width="32" height="32" className="header-icon" />
           AI가 제안한 해석 - 어떤 의미가 맞나요?
         </h2>
         <div className="interpretation-method">

@@ -244,7 +244,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 의사소통 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/communication_info.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/communication_characteristics.png" alt="로고" width="20" height="20" className="section-icon" />
             의사소통 정보
           </h4>
           
@@ -287,7 +287,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 관심 주제 */}
         <div className="form-section">
           <h4>
-            <img src="/images/interest_info.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/interest_topic.png" alt="로고" width="20" height="20" className="section-icon" />
             관심 주제 *
           </h4>
           <p className="section-description" style={{margin: '8px 0 16px 0', color: '#64748b', fontSize: '14px'}}>
@@ -337,7 +337,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 에러 메시지 */}
         {error && (
           <div className="error-message partner-error">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
+            <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
             {error}
           </div>
         )}

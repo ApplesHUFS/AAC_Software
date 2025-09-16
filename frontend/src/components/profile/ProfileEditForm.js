@@ -140,22 +140,17 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
   return (
     <div className="profile-edit-form partner-theme">
       <div className="form-header">
-        <div className="role-indicator partner-role">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
-          <span>도움이 설정</span>
-        </div>
         <h2>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="form-icon" />
-          소통이 정보 수정
+          정보 수정
         </h2>
-        <p>소통이에게 더 나은 개인화된 서비스를 제공하기 위해 정보를 업데이트하세요.</p>
+        <p>정보를 업데이트하면, 소통이에게 더 맞춤화된 서비스를 드릴 수 있어요.</p>
       </div>
       
       <form onSubmit={handleSubmit}>
         {/* 기본 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/basic_info2.png" alt="로고" width="20" height="20" className="section-icon" />
             기본 정보
           </h4>
           
@@ -209,7 +204,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         {/* 장애 및 의사소통 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/communication_characteristics.png" alt="로고" width="20" height="20" className="section-icon" />
             의사소통 정보
           </h4>
           
@@ -246,7 +241,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         {/* 관심 주제 */}
         <div className="form-section">
           <h4>
-            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img src="/images/interest_topic.png" alt="로고" width="20" height="20" className="section-icon" />
             소통이의 관심 주제 *
           </h4>
           
@@ -293,14 +288,14 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         {/* 메시지 */}
         {error && (
           <div className="error-message partner-error">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
+            <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
             {error}
           </div>
         )}
         
         {success && (
           <div className="success-message partner-success">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="success-icon" />
+            <img src="/images/success.png" alt="로고" width="16" height="16" className="success-icon" />
             {success}
           </div>
         )}
@@ -327,7 +322,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         {/* 변경 사항 알림 */}
         {hasChanges() && !loading && (
           <div className="changes-notice partner-notice">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="notice-icon" />
+            <img src="/images/save.png" alt="로고" width="16" height="16" className="notice-icon" />
             변경된 내용이 있습니다. 저장하시겠습니까?
           </div>
         )}
