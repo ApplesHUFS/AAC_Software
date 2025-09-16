@@ -312,7 +312,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
 
           {error && (
             <div className="error-message communicator-error">
-              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
+              <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
               {error}
             </div>
           )}
@@ -363,27 +363,6 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
               >
                 다시 시도하기
               </button>
-            </div>
-          )}
-
-          {/* 카드 정보 */}
-          {cards.length > 0 && (
-            <div className="cards-info communicator-guide">
-              <div className="guide-content">
-                <p>
-                  <img src="/images/selected_card.png" alt="로고" width="16" height="16" className="guide-icon" />
-                  <strong>{cards.length}개</strong>의 카드가 소통이를 위해 준비되었어요! 
-                </p>
-                <p>
-                  <img src="/images/interest_topic.png" alt="로고" width="16" height="16" className="guide-icon" />
-                  <strong>{user.interestingTopics?.slice(0, 3).join(', ')}</strong> 같은 
-                  관심사를 고려해서 골랐어요.
-                </p>
-                <p>
-                  <img src="/images/page.png" alt="로고" width="16" height="16" className="guide-icon" />
-                  현재 페이지: <strong>{historyState.currentPage} / {historyState.totalPages}</strong>
-                </p>
-              </div>
             </div>
           )}
         </div>

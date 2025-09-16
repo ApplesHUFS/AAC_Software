@@ -211,7 +211,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       <div className="interpretation-page partner-theme error">
         <div className="error-content partner-error">
           <div className="error-header">
-            <img src="/images/logo_red.png" alt="로고" width="48" height="48" className="error-icon" />
+            <img src="/images/error.png" alt="로고" width="48" height="48" className="error-icon" />
             <h2>해석 생성에 문제가 발생했어요</h2>
           </div>
           <div className="error-message">{error}</div>
@@ -259,15 +259,12 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       <div className="interpretation-progress partner-progress">
         <div className="progress-steps">
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.INTERPRETING ? 'active' : 'completed'}`}>
-            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="step-icon" />
             <span>AI 해석 생성</span>
           </div>
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.FEEDBACK ? 'active' : currentStep === INTERPRETATION_STEPS.COMPLETED ? 'completed' : ''}`}>
-            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="step-icon" />
             <span>도움이 확인</span>
           </div>
           <div className={`progress-step ${currentStep === INTERPRETATION_STEPS.COMPLETED ? 'active' : ''}`}>
-            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="step-icon" />
             <span>소통 완료</span>
           </div>
         </div>

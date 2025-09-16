@@ -38,14 +38,6 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
           disabled={disabled || (!isCardSelected(card) && selectedCards.length >= maxSelection)}
         />
       ))}
-      
-      <div className="grid-info communicator-info">
-        <p>
-          <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="info-icon" />
-          {cards.length}개의 카드 중 <strong>{selectedCards.length}개</strong> 선택됨 
-          (최대 {maxSelection}개까지)
-        </p>
-      </div>
     </div>
   );
 };

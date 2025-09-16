@@ -59,7 +59,7 @@ const CardHistoryNavigation = ({
     return (
       <div className="card-history-navigation loading communicator-navigation">
         <div className="navigation-loading">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="loading-icon" />
+          <div className="loading-spinner"></div>
           <span>이전 카드들 찾는 중...</span>
         </div>
       </div>
@@ -71,7 +71,7 @@ const CardHistoryNavigation = ({
     return (
       <div className="card-history-navigation error communicator-navigation">
         <div className="navigation-error">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="error-icon" />
+          <img src="/images/error.png" alt="로고" width="24" height="24" className="error-icon" />
           <span>이전 카드를 불러올 수 없어요</span>
         </div>
       </div>
@@ -92,45 +92,11 @@ const CardHistoryNavigation = ({
 
   return (
     <div className="card-history-navigation communicator-navigation">
-      <div className="navigation-header">
-        <h4>
-          <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="nav-icon" />
-          이전에 본 카드들
-        </h4>
-        <span className="page-indicator">
-          {currentPage} / {totalPages} 묶음
-        </span>
-      </div>
-
-      <div className="page-controls">
-        <button 
-          onClick={() => handlePageNavigation(currentPage - 1)}
-          disabled={disabled || isLoading || currentPage <= 1}
-          className="nav-button prev communicator-nav-btn"
-        >
-          이전 카드
-        </button>
-        
-        <div className="page-info">
-          <span className="current-page">{currentPage}</span>
-          <span className="separator">/</span>
-          <span className="total-pages">{totalPages}</span>
-        </div>
-        
-        <button 
-          onClick={() => handlePageNavigation(currentPage + 1)}
-          disabled={disabled || isLoading || currentPage >= totalPages}
-          className="nav-button next communicator-nav-btn"
-        >
-          다른 카드
-        </button>
-      </div>
-
       {/* 카드 묶음 목록 */}
       {historySummary.length > 0 && (
         <div className="page-list">
           <h5>
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="list-icon" />
+            <img src="/images/card_deck.png" alt="로고" width="24" height="24" className="list-icon" />
             카드 묶음 목록
           </h5>
           <div className="page-buttons">
