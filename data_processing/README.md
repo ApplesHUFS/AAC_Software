@@ -33,3 +33,31 @@ data_processing/
     └── image_filter.py         # AAC 이미지 필터링 시스템
 
 ```
+
+## 설치 및 실행
+
+### 1. 환경 설정
+
+```bash
+# Python 가상환경 생성
+python -m venv env
+source env/bin/activate  # Linux/Mac
+# 또는 env\Scripts\activate  # Windows
+
+# 의존성 설치
+pip install -r requirements.txt
+```
+
+### 2. 환경 변수 설정
+
+`.env` 파일을 생성하고 OpenAI API 키를 설정하세요:
+
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+### 3. 데이터 처리 실행 실행
+
+```bash
+python data_prepare.py
+```
