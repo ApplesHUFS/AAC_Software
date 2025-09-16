@@ -5,23 +5,22 @@
 ## 주요 기능
 
 ### 사용자 관리
-- 회원가입: 개인 페르소나 정보 입력 (나이, 성별, 장애 유형, 의사소통 특성, 관심 주제)
-- 로그인 및 인증
-- 프로필 편집 및 업데이트
+- 회원가입: 사용자의 페르소나 정보 입력 (나이, 성별, 장애 유형, 의사소통 특성, 관심 주제)
+- 로그인 및 사용자 인증
+- 프로필 편집 및 페르소나 업데이트
 
 ### 대화 상황 관리
 - 현재 상황 입력 (장소, 대화 상대, 현재 활동)
-- 상황별 맞춤 카드 추천
 
 ### 카드 추천 및 선택
-- 개인 관심사 기반 카드 추천 (70% 관련 카드 + 30% 랜덤)
+- 개인 관심사와 상황 기반 카드 추천 (50% 상황 관련 카드 + 50% 관심사 관련 카드)
 - 히스토리 기반 페이지 네비게이션
 - 카드 재추천 (리롤) 기능
-- 최대 4개 카드 선택
+- 최소 1개, 최대 4개 카드 선택
 
 ### AI 해석 및 피드백
 - OpenAI API 기반 3가지 해석 생성
-- Partner 피드백 수집
+- Partner의 피드백 작성
 - 해석 결과 저장 및 학습
 
 ## 기술 스택
@@ -47,8 +46,8 @@ src/
 │
 ├── components/                     # 재사용 컴포넌트
 │   ├── auth/                       # 인증 관련 컴포넌트
-│   │   ├── LoginForm.js
-│   │   └── RegisterForm.js
+│   │   ├── LoginForm.js            # 사용자 로그인 컴포넌트
+│   │   └── RegisterForm.js         # 회원가입 컴포넌트
 │   ├── cards/                      # 카드 관련 컴포넌트
 │   │   ├── CardGrid.js
 │   │   └── CardHistoryNavigation.js
@@ -56,7 +55,7 @@ src/
 │   │   └── ContextForm.js
 │   ├── interpretation/             # 해석 관련 컴포넌트
 │   │   └── InterpretationDisplay.js   
-│   └── profile/                    # 프로필 관련 컴포넌트
+│   └── profile/                    # 프로필 수정 관련 컴포넌트
 │       └── ProfileEditForm.js
 │
 ├── services/                       # API 서비스
@@ -67,7 +66,16 @@ src/
 │   └── feedbackService.js          # 피드백 관리 서비스
 │
 └── styles/                         # 스타일시트
-    └── App.css                     # 메인 스타일시트
+    ├── auth.css                    # 인증 페이지 스타일
+    ├── cards.css                   # 카드 선택 페이지 스타일
+    ├── common.css                  # 공통 컴포넌트
+    ├── context.css                 # 컨텍스트 폼 스타일
+    ├── dashborad.css               # 대시보드 페이지 스타일
+    ├── globals.css                 # 전역 설정
+    ├── interpretation.css          # 해석 페이지 스타일
+    ├── responsive.css              # 반응현 디자인
+    └── themes.css                  # 도움이 (partner) 테마
+
 ```
 
 ## 설치 및 실행
@@ -119,23 +127,23 @@ NODE_ENV=development
 ### 인증 (Authentication)
 - `POST /api/auth/register` - 회원가입
 - `POST /api/auth/login` - 로그인
-- `GET /api/auth/profile/{userId}` - 프로필 조회
-- `PUT /api/auth/profile/{userId}` - 프로필 업데이트
+- `GET /api/auth/profile/{userId}` - 사용자 프로필 조회
+- `PUT /api/auth/profile/{userId}` - 사용자 프로필 업데이트
 
 ### 상황 관리 (Context)
-- `POST /api/context` - 대화 상황 생성
+- `POST /api/context` - 대화 상황 (context) 생성
 - `GET /api/context/{contextId}` - 상황 조회
 
 ### 카드 관리 (Cards)
 - `POST /api/cards/recommend` - 카드 추천
-- `POST /api/cards/validate` - 선택 검증
-- `POST /api/cards/interpret` - 카드 해석
-- `GET /api/cards/history/{contextId}` - 히스토리 요약
-- `GET /api/cards/history/{contextId}/page/{pageNumber}` - 히스토리 페이지
+- `POST /api/cards/validate` - 카드 선택 유효성 검증
+- `POST /api/cards/interpret` - 선택된 카드 해석
+- `GET /api/cards/history/{contextId}` - 카드 추천 히스토리 요약
+- `GET /api/cards/history/{contextId}/page/{pageNumber}` - 특정 페이지의 카드 히스토리 조회
 
 ### 피드백 (Feedback)
-- `POST /api/feedback/request` - 피드백 요청
-- `POST /api/feedback/submit` - 피드백 제출
+- `POST /api/feedback/request` - 파트너의 피드백 확인 요청
+- `POST /api/feedback/submit` - 파트너의 피드백 제출
 
 ### 이미지 서빙
 - `GET /api/images/{filename}` - 카드 이미지
