@@ -1,9 +1,12 @@
 """AAC 클러스터링 시스템 설정"""
 
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 DATASET_CONFIG = {
-    # 기본 경로
-    'images_folder': 'dataset/images',
-    'output_folder': 'dataset/processed',
+    'images_folder': str(PROJECT_ROOT / 'dataset' / 'images'),
+    'output_folder': str(PROJECT_ROOT / 'dataset' / 'processed'),
 
     # 임베딩 설정
     'image_weight': 0.6,  # 이미지 가중치 (AAC 카드는 시각적 요소가 중요)
@@ -45,6 +48,32 @@ DATASET_CONFIG = {
 }
 
 
+def get_project_root() -> Path:
+    """프로젝트 루트 디렉토리 반환.
+    
+    현재 파일의 위치에 관계없이 프로젝트 루트를 찾습니다.
+    
+    Returns:
+        Path: 프로젝트 루트 경로
+    """
+    return PROJECT_ROOT
+
+
+def get_data_paths() -> dict:
+    """데이터 관련 경로들을 반환.
+    
+    Returns:
+        dict: 주요 데이터 경로들
+    """
+    return {
+        'project_root': PROJECT_ROOT,
+        'dataset_folder': PROJECT_ROOT / 'dataset',
+        'images_folder': Path(DATASET_CONFIG['images_folder']),
+        'output_folder': Path(DATASET_CONFIG['output_folder']),
+        'filtered_images': Path(DATASET_CONFIG['images_folder']).parent / 'filtered_images'
+    }
+
+
 def validate_config(config: dict) -> bool:
     """설정 유효성 검사.
     
@@ -66,6 +95,10 @@ def validate_config(config: dict) -> bool:
         if key not in config:
             raise ValueError(f"필수 설정 누락: {key}")
     
+    images_path = Path(config['images_folder'])
+    if not images_path.parent.exists():
+        print(f"경고: 데이터셋 폴더가 존재하지 않습니다: {images_path.parent}")
+    
     # 클러스터링 설정 검증
     if config['macro_min_clusters'] >= config['macro_max_clusters']:
         raise ValueError("macro_min_clusters는 macro_max_clusters보다 작아야 합니다")
@@ -84,4 +117,11 @@ def validate_config(config: dict) -> bool:
 
 if __name__ == "__main__":
     validate_config(DATASET_CONFIG)
-    print("4000개 이미지 데이터셋 최적화 설정 완료")
+    
+    # 경로 정보 출력
+    paths = get_data_paths()
+    print("프로젝트 경로 정보:")
+    for name, path in paths.items():
+        print(f"  {name}: {path}")
+    
+    print("\n설정 검증 완료 - 백엔드 폴더 이동 대응")

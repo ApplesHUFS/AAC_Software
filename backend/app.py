@@ -1,9 +1,18 @@
+import os
+import sys
+from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import traceback
-import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional
+
+# 프로젝트 루트 경로 설정 (backend 폴더의 부모 디렉토리)
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
+# 작업 디렉토리를 프로젝트 루트로 변경
+os.chdir(PROJECT_ROOT)
 
 from backend.aac_interpreter_service import AACInterpreterService
 
@@ -113,7 +122,8 @@ def health_check():
 def serve_image(filename):
     """AAC 카드 이미지 서빙 (React에서 직접 접근 가능)"""
     try:
-        return send_from_directory('dataset/images', filename)
+        images_path = PROJECT_ROOT / 'dataset' / 'images'
+        return send_from_directory(str(images_path), filename)
     except FileNotFoundError:
         return api_response(
             success=False,
@@ -637,8 +647,6 @@ def validate_cards():
         selected_cards = data.get('selectedCards', [])
         available_options = data.get('availableOptions', [])
 
-
-
         if not selected_cards:
             return api_response(
                 success=False,
@@ -875,6 +883,7 @@ def submit_feedback():
 
 if __name__ == '__main__':
     print("AAC Interpreter API Server (React 최적화) 시작 중...")
+    print(f"프로젝트 루트: {PROJECT_ROOT}")
     print("서버 주소: http://localhost:8000")
     print("헬스체크: http://localhost:8000/health")
     print("CORS 설정: React 개발 서버 (3000, 5173) 허용")
