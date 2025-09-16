@@ -14,7 +14,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # 작업 디렉토리를 프로젝트 루트로 변경
 os.chdir(PROJECT_ROOT)
 
-from backend.aac_interpreter_service import AACInterpreterService
+from aac_interpreter_service import AACInterpreterService
 
 app = Flask(__name__)
 

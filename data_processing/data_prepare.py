@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 from tqdm import tqdm
 
-from data.dataset_config import DATASET_CONFIG
+from dataset_config import DATASET_CONFIG
 
-from data.data_source.image_filter import ImageFilter
-from data.data_source.embeddings import CLIPEncoder
-from data.data_source.clustering import Clusterer
-from data.data_source.cluster_tagger import ClusterTagger
+from data_source.image_filter import ImageFilter
+from data_source.embeddings import CLIPEncoder
+from data_source.clustering import Clusterer
+from data_source.cluster_tagger import ClusterTagger
 
 
 class DataPreparationPipeline:
