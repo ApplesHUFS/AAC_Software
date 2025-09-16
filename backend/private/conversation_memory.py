@@ -68,20 +68,20 @@ class ConversationSummaryMemory:
         self._load_memory()
 
     def _load_memory(self):
-        """메모리 파일에서 데이터 로드."""
-        try:
-            # 파일이 없으면 기본 구조로 생성
-            if not os.path.exists('user_data/conversation_memory.json'):
-                with open('user_data/conversation_memory.json', 'w', encoding='utf-8') as f:
-                    json.dump({"user_memories": {}}, f)
+            """메모리 파일에서 데이터 로드."""
+            try:
+                if not os.path.exists(self.memory_file_path):
+                    os.makedirs(os.path.dirname(self.memory_file_path), exist_ok=True)
+                    with open(self.memory_file_path, 'w', encoding='utf-8') as f:
+                        json.dump({"user_memories": {}}, f)
+                        
+                # 메모리 데이터 로드
+                with open(self.memory_file_path, 'r', encoding='utf-8') as f:
+                    self.memory_data = json.load(f)
                     
-            # 메모리 데이터 로드
-            with open(self.memory_file_path, 'r', encoding='utf-8') as f:
-                self.memory_data = json.load(f)
-                
-        except Exception as e:
-            print(f"메모리 파일 로드 실패: {e}")
-            self.memory_data = {"user_memories": {}}
+            except Exception as e:
+                print(f"메모리 파일 로드 실패: {e}")
+                self.memory_data = {"user_memories": {}}
 
     def _save_memory(self):
         """메모리 데이터를 파일에 저장."""

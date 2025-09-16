@@ -48,23 +48,24 @@ class FeedbackManager:
             print(f"피드백 파일 저장 실패: {e}")
 
     def _load_from_file(self):
-        """파일에서 피드백 데이터 로드."""
-        try:
-            # 파일이 없으면 기본 구조로 생성
-            if not os.path.exists('user_data/feedback.json'):
-                with open('user_data/feedback.json', 'w', encoding='utf-8') as f:
-                    json.dump({"interpretations": [], "feedbacks": []}, f)
+            """파일에서 피드백 데이터 로드."""
+            try:
+                if not os.path.exists(self.feedback_file_path):
+                    os.makedirs(os.path.dirname(self.feedback_file_path), exist_ok=True)
+                    with open(self.feedback_file_path, 'w', encoding='utf-8') as f:
+                        json.dump({"interpretations": [], "feedbacks": []}, f)
 
-            # 파일에서 데이터 로드
-            with open(self.feedback_file_path, "r", encoding="utf-8") as f:
-                self._data = json.load(f)
-                
-            # 피드백 ID 카운터 설정
-            if self._data.get("feedbacks"):
-                self._feedback_id_counter = max([f["feedback_id"] for f in self._data["feedbacks"]]) + 1
-                
-        except Exception as e:
-            print(f"피드백 파일 로드 실패: {e}")
+                # 파일에서 데이터 로드
+                with open(self.feedback_file_path, "r", encoding="utf-8") as f:
+                    self._data = json.load(f)
+                    
+                # 피드백 ID 카운터 설정
+                if self._data.get("feedbacks"):
+                    self._feedback_id_counter = max([f["feedback_id"] for f in self._data["feedbacks"]]) + 1
+                    
+            except Exception as e:
+                print(f"피드백 파일 로드 실패: {e}")
+                self._data = {"interpretations": [], "feedbacks": []}
 
     def request_interpretation_confirmation(self,
                                          user_id: str,

@@ -1,6 +1,11 @@
 """
 AAC Interpreter Service 설정 파일
 """
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.parent
+DATASET_ROOT = PROJECT_ROOT / 'dataset'
+USER_DATA_ROOT = PROJECT_ROOT / 'user_data'
 
 SERVICE_CONFIG = {
     # OpenAI API 설정
@@ -11,13 +16,13 @@ SERVICE_CONFIG = {
     'api_timeout': 15,
 
     # 파일 경로
-    'images_folder': 'dataset/images',
-    'users_file_path': 'user_data/users.json',
-    'feedback_file_path': 'user_data/feedback.json',
-    'memory_file_path': 'user_data/conversation_memory.json',
-    'cluster_tags_path': 'dataset/processed/cluster_tags.json',
-    'embeddings_path': 'dataset/processed/embeddings.json',
-    'clustering_results_path': 'dataset/processed/clustering_results.json',
+    'images_folder': str(DATASET_ROOT / 'images'),
+    'users_file_path': str(USER_DATA_ROOT / 'users.json'),
+    'feedback_file_path': str(USER_DATA_ROOT / 'feedback.json'),
+    'memory_file_path': str(USER_DATA_ROOT / 'conversation_memory.json'),
+    'cluster_tags_path': str(DATASET_ROOT / 'processed' / 'cluster_tags.json'),
+    'embeddings_path': str(DATASET_ROOT / 'processed' / 'embeddings.json'),
+    'clustering_results_path': str(DATASET_ROOT / 'processed' / 'clustering_results.json'),
 
     # 카드 추천 시스템
     'display_cards_total': 20,

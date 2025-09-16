@@ -33,21 +33,21 @@ class UserManager:
         self._load_users()
 
     def _load_users(self):
-        """사용자 데이터 파일 로드."""
-        try:
-            # 파일이 없으면 기본 구조로 생성
-            if not os.path.exists('user_data/users.json'):
-                with open('user_data/users.json', 'w', encoding='utf-8') as f:
-                    json.dump({}, f)
+            """사용자 데이터 파일 로드."""
+            try:
+                if not os.path.exists(self.users_file_path):
+                    os.makedirs(os.path.dirname(self.users_file_path), exist_ok=True)
+                    with open(self.users_file_path, 'w', encoding='utf-8') as f:
+                        json.dump({}, f)
 
-            # 사용자 데이터 로드
-            with open(self.users_file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                self.users = {k: v for k, v in data.items()}
-                
-        except Exception as e:
-            print(f"사용자 데이터 로드 실패: {e}")
-            self.users = {}
+                # 사용자 데이터 로드
+                with open(self.users_file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.users = {k: v for k, v in data.items()}
+                    
+            except Exception as e:
+                print(f"사용자 데이터 로드 실패: {e}")
+                self.users = {}
 
     def _save_users(self):
         """사용자 데이터 저장."""
