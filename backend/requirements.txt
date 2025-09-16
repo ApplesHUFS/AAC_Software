@@ -1,0 +1,18 @@
+# Web Framework
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# AI/ML Core
+openai>=1.0.0
+langchain>=0.1.0
+langchain-openai>=0.1.0
+sentence-transformers>=2.2.0
+
+# Scientific Computing
+numpy>=1.24.0
+torch>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+tqdm>=4.64.0
+Pillow>=9.0.0
