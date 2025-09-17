@@ -1,6 +1,6 @@
 // src/components/cards/CardHistoryNavigation.js
-import React, { useState, useEffect } from 'react';
-import { cardService } from '../../services/cardService';
+import React, { useState, useEffect } from "react";
+import { cardService } from "../../services/cardService";
 
 const CardHistoryNavigation = ({
   contextId,
@@ -10,7 +10,7 @@ const CardHistoryNavigation = ({
 }) => {
   const [historySummary, setHistorySummary] = useState([]);
   const [localLoading, setLocalLoading] = useState(false);
-  const [localError, setLocalError] = useState('');
+  const [localError, setLocalError] = useState("");
 
   const { currentPage, totalPages, isLoading } = historyState;
 
@@ -24,7 +24,7 @@ const CardHistoryNavigation = ({
 
       try {
         setLocalLoading(true);
-        setLocalError('');
+        setLocalError("");
 
         const response = await cardService.getHistorySummary(contextId);
 
@@ -34,8 +34,8 @@ const CardHistoryNavigation = ({
           setHistorySummary([]);
         }
       } catch (error) {
-        console.error('히스토리 요약 로드 실패:', error);
-        setLocalError('히스토리 정보를 불러올 수 없습니다.');
+        console.error("히스토리 요약 로드 실패:", error);
+        setLocalError("히스토리 정보를 불러올 수 없습니다.");
         setHistorySummary([]);
       } finally {
         setLocalLoading(false);
@@ -47,7 +47,8 @@ const CardHistoryNavigation = ({
 
   // 페이지 변경 핸들러
   const handlePageNavigation = (pageNumber) => {
-    if (pageNumber === currentPage || disabled || isLoading || localLoading) return;
+    if (pageNumber === currentPage || disabled || isLoading || localLoading)
+      return;
 
     if (pageNumber < 1 || pageNumber > totalPages) return;
 
@@ -71,7 +72,13 @@ const CardHistoryNavigation = ({
     return (
       <div className="card-history-navigation error communicator-navigation">
         <div className="navigation-error">
-          <img src="/images/error.png" alt="로고" width="24" height="24" className="error-icon" />
+          <img
+            src="/images/error.png"
+            alt="로고"
+            width="24"
+            height="24"
+            className="error-icon"
+          />
           <span>이전 카드를 불러올 수 없어요</span>
         </div>
       </div>
@@ -83,7 +90,13 @@ const CardHistoryNavigation = ({
     return (
       <div className="card-history-navigation single communicator-navigation">
         <div className="navigation-info">
-          <img src="/images/logo.png" alt="로고" width="24" height="24" className="info-icon" />
+          <img
+            src="/images/logo.png"
+            alt="로고"
+            width="24"
+            height="24"
+            className="info-icon"
+          />
           <span>첫 번째 카드 추천이에요!</span>
         </div>
       </div>
@@ -96,14 +109,22 @@ const CardHistoryNavigation = ({
       {historySummary.length > 0 && (
         <div className="page-list">
           <h5>
-            <img src="/images/card_deck.png" alt="로고" width="24" height="24" className="list-icon" />
+            <img
+              src="/images/card_deck.png"
+              alt="로고"
+              width="24"
+              height="24"
+              className="list-icon"
+            />
             카드 묶음 목록
           </h5>
           <div className="page-buttons">
             {historySummary.map((summary) => (
               <button
                 key={summary.pageNumber}
-                className={`page-button ${currentPage === summary.pageNumber ? 'active' : ''}`}
+                className={`page-button ${
+                  currentPage === summary.pageNumber ? "active" : ""
+                }`}
                 onClick={() => handlePageNavigation(summary.pageNumber)}
                 disabled={disabled || isLoading}
                 title={`${summary.cardCount}개 카드 - ${summary.timestamp}`}
@@ -118,8 +139,8 @@ const CardHistoryNavigation = ({
 
       <div className="navigation-help">
         <small>
-          이전에 추천받은 카드들을 다시 볼 수 있어요.
-          마음에 드는 카드가 있었다면 찾아보세요!
+          이전에 추천받은 카드들을 다시 볼 수 있어요. 마음에 드는 카드가
+          있었다면 찾아보세요!
         </small>
       </div>
     </div>
