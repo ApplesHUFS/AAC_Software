@@ -205,7 +205,7 @@ const InterpretationPage = ({
           <div className="loading-details">
             <p>
               선택하신 <strong>{selectedCards.length}개</strong>의 카드를 꼼꼼히
-              살펴보고 있어요.
+              살펴보고 있어요.👀
             </p>
             <div className="selected-cards-preview">
               {selectedCards.slice(0, 3).map((card, index) => (
@@ -219,8 +219,8 @@ const InterpretationPage = ({
             </div>
             <p style={{ whiteSpace: "pre-line" }}>
               <strong>{contextData.place}</strong>에서{" "}
-              <strong>{contextData.interactionPartner}</strong>과의 대화 상황을
-              고려해서{"\n"}가장 적절한 해석 3가지를 만들어드릴게요.
+              <strong>{contextData.interactionPartner}</strong>와(과)의 대화 상황을
+              고려해서{"\n"}가장 적절한 해석 3가지를 만들어드릴게요!
             </p>
           </div>
           <div className="loading-spinner"></div>

@@ -63,9 +63,10 @@
 
 .interpretation-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
   margin-bottom: 2rem;
+  text-align: center;
 }
 
 .interpretation-header h2 {
@@ -106,7 +107,7 @@
 
 .context-details {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr); /* 2열 고정 */
   gap: 1rem;
 }
 
@@ -392,6 +393,10 @@
   font-weight: 500;
 }
 
+.success-message {
+  color: #10b981;
+}
+
 .success-icon {
   background: #10b981;
   color: white;
@@ -525,10 +530,6 @@
   transition: transform 0.2s ease;
 }
 
-.card-item-result:hover {
-  transform: translateY(-2px);
-}
-
 .card-item-result img {
   width: 60px;
   height: 60px;
@@ -573,7 +574,7 @@
 
 .process-steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 0.5fr);
   gap: 1rem;
 }
 
@@ -581,7 +582,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
+  padding: 0.7rem;
   background: white;
   border-radius: 12px;
   border: 1px solid #e2e8f0;

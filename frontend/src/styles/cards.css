@@ -18,7 +18,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 70vh;
+  min-height: 100vh;
 }
 
 .loading-content {
@@ -283,7 +283,7 @@
 .selection-summary {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #06b6d4;
   text-align: center;
 }
 
@@ -299,7 +299,7 @@
 .selection-guide {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #06b6d4;
 }
 
 .selection-guide h5 {
@@ -396,7 +396,7 @@
 
 .card-grid:not(.empty) {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 1.5rem;
 }
 
@@ -465,7 +465,7 @@
 
 .image-loading {
   width: 100%;
-  height: 100px;
+  height: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -483,7 +483,7 @@
 
 .image-error {
   width: 100%;
-  height: 100px;
+  height: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;

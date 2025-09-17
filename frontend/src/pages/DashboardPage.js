@@ -86,7 +86,7 @@ const DashboardPage = ({
             <span>대시보드</span>
           </div>
           <h2>{user.name}님의 소통 도우미</h2>
-          <p>소통이룸과 함께하는 AAC 카드 의사소통을 시작해보세요☺️</p>
+          <p ><strong style={{ color: '#b49cf7' }}>소통, 이룸</strong>과 함께하는 AAC 카드 의사소통을 시작해보세요☺️</p>
         </div>
         <div className="header-actions">
           {currentView !== "main" && (

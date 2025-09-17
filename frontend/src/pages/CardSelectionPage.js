@@ -349,7 +349,7 @@ const CardSelectionPage = ({
         <div className="context-info">
           <span className="context-item">위치: {contextData.place}</span>
           <span className="context-item">
-            대화상대: {contextData.interactionPartner}와 함께
+            대화상대: {contextData.interactionPartner}와(과) 함께
           </span>
           {contextData.currentActivity && (
             <span className="context-item">

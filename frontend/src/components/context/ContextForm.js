@@ -299,15 +299,42 @@ const ContextForm = ({ userId, onContextCreated }) => {
           </h4>
           <div className="help-grid">
             <div className="help-item">
-              <strong>장소</strong>
+              <div className="help-header">
+                <img
+                  src="/images/place.png"
+                  alt="로고"
+                  width="20"
+                  height="20"
+                  className="help-icon"
+                />
+                <strong>장소</strong>
+              </div>
               <p>구체적인 위치를 입력하면 상황에 딱 맞는 카드를 추천받아요</p>
             </div>
             <div className="help-item">
-              <strong>대화 상대</strong>
+              <div className="help-header">
+                <img
+                  src="/images/interactionPartner.png"
+                  alt="대화상대"
+                  width="20"
+                  height="20"
+                  className="help-icon"
+                />
+                <strong>대화 상대</strong>
+              </div>
               <p>관계에 따라 적절한 표현 방식과 카드가 달라져요</p>
             </div>
             <div className="help-item">
-              <strong>현재 활동</strong>
+              <div className="help-header">
+                <img
+                  src="/images/currentActivity.png"
+                  alt="현재활동"
+                  width="20"
+                  height="20"
+                  className="help-icon"
+                />
+                <strong>현재 활동</strong>
+              </div>
               <p>하고 있는 일이 명확하면 더 정확한 카드 추천이 가능해요</p>
             </div>
           </div>

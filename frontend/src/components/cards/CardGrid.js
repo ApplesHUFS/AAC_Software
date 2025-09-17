@@ -184,7 +184,7 @@ const SelectedCardsDisplay = ({
         </h3>
         <div className="empty-state">
           <div className="empty-icon">
-            <img src="/images/logo_red.png" alt="로고" width="48" height="48" />
+            <img src="/images/basic_logo2.png" alt="로고" width="48" height="48" />
           </div>
           <p>원하는 카드를 선택해보세요</p>
           <small>1~{maxCards}개까지 선택할 수 있어요</small>
@@ -264,8 +264,8 @@ const SelectedCardsDisplay = ({
         </h5>
         <ul>
           <li>최소 1개, 최대 {maxCards}개까지 고를 수 있어요</li>
-          <li>카드 순서가 의미 전달에 중요해요</li>
-          <li>제거 버튼으로 카드를 뺄 수 있어요</li>
+          <li>카드 순서가 의미 전달에 중요해요.</li>
+          <li>선택한 카드를 다시 누르거나,<br />x 버튼으로 카드를 제거할 수 있어요</li>
         </ul>
       </div>
     </div>

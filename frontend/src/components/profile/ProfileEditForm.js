@@ -150,7 +150,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
       <div className="form-header">
         <h2>정보 수정</h2>
         <p>
-          정보를 업데이트하면, 소통이에게 더 맞춤화된 서비스를 드릴 수 있어요.
+          정보를 업데이트하면, 소통이에게 더 맞춤화된 서비스를 드릴 수 있어요!
         </p>
       </div>
 

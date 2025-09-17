@@ -7,7 +7,6 @@ const InterpretationDisplay = ({
   interpretations,
   selectedCards,
   contextInfo,
-  method = "ai",
   confirmationId,
   onFeedbackSubmit,
 }) => {
@@ -125,13 +124,8 @@ const InterpretationDisplay = ({
             height="32"
             className="header-icon"
           />
-          AI가 제안한 해석 - 어떤 의미가 맞나요?
+          AI가 제안한 해석 - 이 의미가 맞나요?
         </h2>
-        <div className="interpretation-method">
-          <span className="method-badge partner-badge">
-            {method === "ai" ? "AI 해석" : "규칙 기반 해석"}
-          </span>
-        </div>
       </div>
 
       {/* 상황 요약 */}
@@ -218,6 +212,7 @@ const InterpretationDisplay = ({
               width="24"
               height="24"
               className="list-icon"
+              style={{ marginRight: '8px' }}
             />
             AI가 제안한 해석 ({interpretations.length}가지)
           </h3>
@@ -298,8 +293,8 @@ const InterpretationDisplay = ({
                 <img
                   src="/images/type.png"
                   alt="로고"
-                  width="20"
-                  height="20"
+                  width="24"
+                  height="24"
                   className="section-icon"
                 />
                 올바른 의미 직접 입력
@@ -311,7 +306,8 @@ const InterpretationDisplay = ({
               <textarea
                 value={directFeedback}
                 onChange={handleDirectFeedbackChange}
-                placeholder="소통이가 카드로 표현하고 싶었던 정확한 의미를 구체적으로 써주세요. 예: '배가 고파서 밥을 먹고 싶어요', '친구와 같이 놀고 싶어요' 등"
+                placeholder={`소통이가 카드로 표현하고 싶었던 정확한 의미를 구체적으로 써주세요.
+예: '배가 고파서 밥을 먹고 싶어요', '친구와 같이 놀고 싶어요' 등`}  
                 rows="4"
                 disabled={loading}
                 maxLength="500"
@@ -370,14 +366,14 @@ const InterpretationDisplay = ({
           피드백 작성 도움말
         </h4>
         <div className="note-content">
+          <p>- 제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요.</p>
           <p>
-            AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다.
+            - AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다.
           </p>
           <p>
-            정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수
+            - 정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수
             있습니다.
           </p>
-          <p>제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요.</p>
         </div>
       </div>
     </div>
@@ -442,16 +438,7 @@ const InterpretationResult = ({
           />
           소통이의 마음을 확인했어요!
         </h2>
-        <div className="success-indicator partner-success">
-          <img
-            src="/images/sucess.png"
-            alt="로고"
-            width="24"
-            height="24"
-            className="success-icon"
-          />
-          <span>성공적으로 완료되었습니다</span>
-        </div>
+        <span style={{ color: '#10b981' }}>성공적으로 완료되었습니다</span>
       </div>
 
       {/* 최종 해석 */}
@@ -468,10 +455,9 @@ const InterpretationResult = ({
         </h3>
         <div className="interpretation-content">
           <div className="final-message">"{getFinalInterpretation()}"</div>
-          <div className="interpretation-meta">
-            <span className="feedback-type">({getFeedbackType()})</span>
-            <span className="completion-time">
-              완료시간: {getCompletionTime()}
+          <div className="interpretation-meta" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <span className="completion-time" style={{fontSize: '12px', color: '#6b7280'}}>
+              {getCompletionTime()}
             </span>
           </div>
         </div>
@@ -499,12 +485,8 @@ const InterpretationResult = ({
             </span>
           </div>
           <div className="summary-item">
-            <span className="summary-label">선택한 카드:</span>
+            <span className="summary-label">선택한 카드 수:</span>
             <span className="summary-value">{selectedCards.length}개</span>
-          </div>
-          <div className="summary-item">
-            <span className="summary-label">AI 제안 해석:</span>
-            <span className="summary-value">{interpretations.length}개</span>
           </div>
           <div className="summary-item">
             <span className="summary-label">확인 방식:</span>
@@ -513,7 +495,7 @@ const InterpretationResult = ({
         </div>
       </div>
 
-      {/* 사용된 카드 표시 */}
+            {/* 사용된 카드 표시 */}
       <div className="cards-used">
         <h3>
           <img
@@ -548,7 +530,7 @@ const InterpretationResult = ({
       <div className="process-summary partner-process">
         <h4>
           <img
-            src="/images/success.png"
+            src="/images/process.png"
             alt="로고"
             width="20"
             height="20"
@@ -559,47 +541,47 @@ const InterpretationResult = ({
         <div className="process-steps">
           <div className="process-step completed">
             <img
-              src="/images/logo_red.png"
+              src="/images/communication_situation.png"
               alt="로고"
               width="16"
               height="16"
               className="step-icon"
             />
-            <span className="step-description">도움이가 상황 입력</span>
+            <span className="step-description">상황 입력</span>
           </div>
           <div className="process-step completed">
             <img
-              src="/images/logo_red.png"
+              src="/images/selected_card.png"
               alt="로고"
               width="16"
               height="16"
               className="step-icon"
             />
             <span className="step-description">
-              소통이가 카드 선택 ({selectedCards.length}개)
+              카드 선택 ({selectedCards.length}개)
             </span>
           </div>
           <div className="process-step completed">
             <img
-              src="/images/logo_red.png"
+              src="/images/interpretation_generate.png"
               alt="로고"
               width="16"
               height="16"
               className="step-icon"
             />
             <span className="step-description">
-              AI 해석 생성 ({interpretations.length}가지)
+              AI 해석 생성
             </span>
           </div>
           <div className="process-step completed">
             <img
-              src="/images/logo_red.png"
+              src="/images/pin.png"
               alt="로고"
               width="16"
               height="16"
               className="step-icon"
             />
-            <span className="step-description">도움이가 의미 확인</span>
+            <span className="step-description"> 의미 확인</span>
           </div>
         </div>
       </div>

@@ -132,7 +132,6 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   return (
     <div className="auth-form partner-form">
       <h2>
-        <img src="/images/logo_black.png" alt="로고" width="32" height="32" />
         회원가입
       </h2>
       <p className="form-description">
