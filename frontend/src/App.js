@@ -1,4 +1,15 @@
-// src/App.js
+/*
+ * AAC Interpreter Frontend
+ * Copyright (c) 2024 [귀하 이름]
+ * 
+ * This program is licensed under CC BY-NC-SA 4.0
+ * https://creativecommons.org/licenses/by-nc-sa/4.0/
+ * 
+ * Contains pictograms from ARASAAC (http://www.arasaac.org)
+ * Pictograms author: Sergio Palao
+ * Pictograms license: CC BY-NC-SA
+ */
+
 import React, { useState, useEffect } from 'react';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
