@@ -122,13 +122,13 @@
 .context-item {
   background: #f0fdfa;
   color: #0891b2;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  padding: 1rem 1.5rem;
+  border-radius: 28px;
+  font-size: 1.1rem;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 .selection-content {

@@ -83,7 +83,7 @@ const CardHistoryNavigation = ({
     return (
       <div className="card-history-navigation single communicator-navigation">
         <div className="navigation-info">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="info-icon" />
+          <img src="/images/logo.png" alt="로고" width="24" height="24" className="info-icon" />
           <span>첫 번째 카드 추천이에요!</span>
         </div>
       </div>

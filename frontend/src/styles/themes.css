@@ -47,16 +47,6 @@
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
 }
 
-.partner-error .error-icon,
-.partner-theme .error-icon {
-  color: #dc2626;
-}
-
-.partner-success .success-icon,
-.partner-theme .success-icon {
-  color: #16a34a;
-}
-
 .partner-card,
 .partner-section {
   background: white;

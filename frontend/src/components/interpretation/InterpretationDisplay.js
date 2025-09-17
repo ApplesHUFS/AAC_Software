@@ -125,7 +125,7 @@ const InterpretationDisplay = ({
       {/* 상황 요약 */}
       <div className="context-summary partner-summary">
         <h3>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="summary-icon" />
+          <img src="/images/communication_situation.png" alt="로고" width="24" height="24" className="summary-icon" />
           대화 상황
         </h3>
         <div className="context-details">
@@ -155,8 +155,8 @@ const InterpretationDisplay = ({
       {/* 선택된 카드 미리보기 */}
       <div className="selected-cards-summary">
         <h3>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="summary-icon" />
-          소통이가 선택한 카드 ({selectedCards.length}개)
+          <img src="/images/selected_card.png" alt="로고" width="24" height="24" className="summary-icon" />
+          선택된 카드 ({selectedCards.length}개)
         </h3>
         <div className="cards-preview">
           {selectedCards.map((card, index) => (
@@ -179,7 +179,7 @@ const InterpretationDisplay = ({
       <form onSubmit={handleSubmitFeedback} className="integrated-feedback-form">
         <div className="interpretations-section">
           <h3>
-            <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="list-icon" />
+            <img src="/images/AI.png" alt="로고" width="24" height="24" className="list-icon" />
             AI가 제안한 해석 ({interpretations.length}가지)
           </h3>
           <p className="interpretation-instruction">
@@ -199,7 +199,6 @@ const InterpretationDisplay = ({
                 disabled={loading}
               />
               <label htmlFor="interpretation-feedback" className="option-label">
-                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="option-icon" />
                 제시된 해석 중 선택
               </label>
             </div>
@@ -215,7 +214,6 @@ const InterpretationDisplay = ({
                 disabled={loading}
               />
               <label htmlFor="direct-feedback" className="option-label">
-                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="option-icon" />
                 직접 입력
               </label>
             </div>
@@ -241,9 +239,6 @@ const InterpretationDisplay = ({
                       <div className="interpretation-content">
                         <span>{interpretation.text || interpretation}</span>
                       </div>
-                      <div className="interpretation-confidence">
-                        <small>AI 신뢰도: 높음</small>
-                      </div>
                     </div>
                   </label>
                 </div>
@@ -255,7 +250,7 @@ const InterpretationDisplay = ({
           {feedbackType === 'direct' && (
             <div className="direct-feedback-section">
               <h4>
-                <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="section-icon" />
+                <img src="/images/type.png" alt="로고" width="20" height="20" className="section-icon" />
                 올바른 의미 직접 입력
               </h4>
               <p className="input-instruction">
@@ -279,7 +274,7 @@ const InterpretationDisplay = ({
           {/* 에러 메시지 */}
           {error && (
             <div className="error-message partner-error">
-              <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
+              <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
               {error}
             </div>
           )}
@@ -298,8 +293,7 @@ const InterpretationDisplay = ({
                 </>
               ) : (
                 <>
-                  <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="button-icon" />
-                  이 의미가 맞습니다
+                  해석 선택ㄴ
                 </>
               )}
             </button>
@@ -310,18 +304,18 @@ const InterpretationDisplay = ({
       {/* 참고 정보 */}
       <div className="interpretation-note partner-note">
         <h4>
-          <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="note-icon" />
+          <img src="/images/use_info.png" alt="로고" width="20" height="20" className="note-icon" />
           피드백 작성 도움말
         </h4>
         <div className="note-content">
           <p>
-            AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다
+            AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다.
           </p>
           <p>
-            정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수 있습니다
+            정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수 있습니다.
           </p>
           <p>
-            제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요
+            제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요.
           </p>
         </div>
       </div>
@@ -368,15 +362,14 @@ const InterpretationResult = ({
       {/* 완료 헤더 */}
       <div className="result-header">
         <div className="role-indicator partner-role">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="role-icon" />
           <span>소통 완료</span>
         </div>
         <h2>
-          <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="header-icon" />
+          <img src="/images/heart.png" alt="로고" width="32" height="32" className="header-icon" />
           소통이의 마음을 확인했어요!
         </h2>
         <div className="success-indicator partner-success">
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="success-icon" />
+          <img src="/images/sucess.png" alt="로고" width="24" height="24" className="success-icon" />
           <span>성공적으로 완료되었습니다</span>
         </div>
       </div>
@@ -384,7 +377,7 @@ const InterpretationResult = ({
       {/* 최종 해석 */}
       <div className="final-interpretation partner-final">
         <h3>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="final-icon" />
+          <img src="/images/message.png" alt="로고" width="24" height="24" className="final-icon" />
           소통이가 전하고 싶었던 마음
         </h3>
         <div className="interpretation-content">
@@ -401,7 +394,7 @@ const InterpretationResult = ({
       {/* 세션 요약 */}
       <div className="session-summary partner-session">
         <h3>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="summary-icon" />
+          <img src="/images/summary.png" alt="로고" width="24" height="24" className="summary-icon" />
           이번 대화 요약
         </h3>
         <div className="summary-grid">
@@ -430,7 +423,7 @@ const InterpretationResult = ({
       {/* 사용된 카드 표시 */}
       <div className="cards-used">
         <h3>
-          <img src="/images/logo_red.png" alt="로고" width="24" height="24" className="cards-icon" />
+          <img src="/images/card_deck.png" alt="로고" width="24" height="24" className="cards-icon" />
           소통에 사용된 카드
         </h3>
         <div className="cards-grid result-cards">
@@ -453,7 +446,7 @@ const InterpretationResult = ({
       {/* 진행 과정 요약 */}
       <div className="process-summary partner-process">
         <h4>
-          <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="process-icon" />
+          <img src="/images/success.png" alt="로고" width="20" height="20" className="process-icon" />
           진행 과정
         </h4>
         <div className="process-steps">
@@ -482,7 +475,6 @@ const InterpretationResult = ({
           onClick={onStartNewSession}
           className="primary-button partner-button large"
         >
-          <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="button-icon" />
           새로운 대화 시작하기
         </button>
       </div>
@@ -491,7 +483,6 @@ const InterpretationResult = ({
       <div className="completion-message partner-completion">
         <div className="completion-content">
           <p>
-            <img src="/images/logo_red.png" alt="로고" width="20" height="20" className="message-icon" />
             이번 대화에서 사용된 카드와 해석 정보가 시스템에 학습되어 
             다음번에는 더 정확한 추천을 받을 수 있습니다.
           </p>

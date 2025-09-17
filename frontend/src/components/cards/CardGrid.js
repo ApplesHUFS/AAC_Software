@@ -19,7 +19,7 @@ const CardGrid = ({ cards, selectedCards, onCardSelect, maxSelection = 4, disabl
     return (
       <div className="card-grid empty communicator-message">
         <div className="no-cards-message">
-          <img src="/images/logo_red.png" alt="로고" width="64" height="64" className="message-icon" />
+          <img src="/images/logo.png" alt="로고" width="64" height="64" className="message-icon" />
           <h3>아직 카드가 없어요</h3>
           <p>도움이가 카드를 준비해드릴게요!</p>
         </div>
@@ -93,7 +93,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
         
         {imageError ? (
           <div className="image-error communicator-error">
-            <img src="/images/logo_red.png" alt="로고" width="32" height="32" className="error-icon" />
+            <img src="/images/error.png" alt="로고" width="32" height="32" className="error-icon" />
             <span>이미지를 불러올 수 없어요</span>
             <small>{card.name}</small>
           </div>

@@ -206,7 +206,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
         {error && (
           <div className="error-message partner-error">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
+            <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
             {error}
           </div>
         )}
