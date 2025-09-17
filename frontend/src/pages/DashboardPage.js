@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import ContextForm from '../components/context/ContextForm';
 import ProfileEditForm from '../components/profile/ProfileEditForm';
 
-const DashboardPage = ({ 
-  user, 
-  contextData, 
-  selectedCards, 
+const DashboardPage = ({
+  user,
+  contextData,
+  selectedCards,
   hasActiveSession,
-  onLogout, 
-  onUserUpdate, 
+  onLogout,
+  onUserUpdate,
   onContextCreated,
   onResumeSession,
   onResetSession
@@ -60,21 +60,21 @@ const DashboardPage = ({
   // 진행 상황 요약 텍스트 생성
   const getSessionProgressText = () => {
     if (!contextData) return '';
-    
+
     const location = contextData.place;
     const partner = contextData.interactionPartner;
     const activity = contextData.currentActivity;
     const cardCount = selectedCards?.length || 0;
-    
+
     let progressText = `${location}에서 ${partner}와`;
     if (activity) {
       progressText += ` ${activity} 중`;
     }
-    
+
     if (cardCount > 0) {
       progressText += ` (${cardCount}개 카드 선택됨)`;
     }
-    
+
     return progressText;
   };
 
@@ -115,8 +115,8 @@ const DashboardPage = ({
             {hasActiveSession && contextData && (
               <div className="active-session-section partner-section">
                 <h3 style={{
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '8px',
                   marginBottom: '16px'
                 }}>
@@ -141,20 +141,20 @@ const DashboardPage = ({
                       </small>
                     )}
                   </div>
-                  
+
                   <div className="session-actions" style={{
                     display: 'flex',
                     gap: '12px',
                     flexWrap: 'wrap'
                   }}>
-                    <button 
+                    <button
                       className="primary-button partner-button"
                       onClick={handleResumeActiveSession}
                     >
                       <img src="/images/continue_session.png" alt="로고" width="16" height="16" className="button-icon" />
                       이어서 하기
                     </button>
-                    <button 
+                    <button
                       className="secondary-button"
                       onClick={handleStartNewSessionFromActive}
                     >
@@ -169,8 +169,8 @@ const DashboardPage = ({
             <div className="welcome-section">
               <div className="welcome-card partner-card">
                 <div className="card-header" style={{
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '8px'
                 }}>
                   <img src="/images/new_chat.png" alt="로고" width="24" height="24" className="card-icon" />
@@ -181,8 +181,8 @@ const DashboardPage = ({
                 <p style={{ whiteSpace: 'pre-line' }}>
                   AI가 소통이의 관심사와 대화 맥락을 고려해 개인화된 AAC 카드를 추천해드려요.
                 </p>
-                <button 
-                  className="primary-button large" 
+                <button
+                  className="primary-button large"
                   onClick={handleStartNewSession}
                   disabled={currentView !== 'main'}
                 >
@@ -221,8 +221,8 @@ const DashboardPage = ({
             {user.communicationCharacteristics && (
               <div className="communication-section partner-section" >
                 <h4 style={{
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: '8px',
                   margin: 0,
                   marginLeft: '8px'  // 아이콘 크기(24px) + gap(8px) = 32px
@@ -237,7 +237,7 @@ const DashboardPage = ({
                   </p>
                 </div>
               </div>
-            )} 
+            )}
 
             {/* 관심 주제 목록 */}
             {user.interestingTopics?.length > 0 && (
@@ -259,8 +259,8 @@ const DashboardPage = ({
             {/* 사용 안내 */}
             <div className="usage-guide partner-section" >
               <h3 style={{
-                  display: 'flex', 
-                  alignItems: 'center', 
+                  display: 'flex',
+                  alignItems: 'center',
                   margin_left: '4px',
                   gap: '8px',
                   marginBottom: '8px'
@@ -293,16 +293,16 @@ const DashboardPage = ({
               </div>
            </div>
             <div className="ad partner-section">
-              <h4>광고 
+              <h4>광고
               </h4>
             </div>
- 
+
           </div>
         )}
 
         {/* 컨텍스트 입력 화면 */}
         {currentView === 'context' && (
-          <ContextForm 
+          <ContextForm
             userId={user.userId}
             onContextCreated={handleContextCreated}
           />
@@ -310,7 +310,7 @@ const DashboardPage = ({
 
         {/* 프로필 편집 화면 */}
         {currentView === 'profile' && (
-          <ProfileEditForm 
+          <ProfileEditForm
             user={user}
             onProfileUpdated={handleProfileUpdated}
             onCancel={handleBackToMain}

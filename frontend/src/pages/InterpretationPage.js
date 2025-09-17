@@ -23,13 +23,13 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   const [interpretations, setInterpretations] = useState([]);
   const [feedbackResult, setFeedbackResult] = useState(null);
   const [confirmationId, setConfirmationId] = useState(null);
-  
+
   // UI 상태
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(INTERPRETATION_STEPS.INTERPRETING);
   const [interpretationMethod, setInterpretationMethod] = useState('');
-  
+
   // 동적 로딩 상태
   const [currentLoadingState, setCurrentLoadingState] = useState(0);
 
@@ -63,7 +63,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
       };
 
       const response = await feedbackService.requestPartnerConfirmation(requestPayload);
-      
+
       if (response.success && response.data?.confirmationId) {
         setConfirmationId(response.data.confirmationId);
         setCurrentStep(INTERPRETATION_STEPS.FEEDBACK);
@@ -100,7 +100,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
 
         // 해석 생성 후 즉시 Partner 피드백 요청
         await requestPartnerConfirmation(interpretationData);
-        
+
       } else {
         throw new Error(response.error || '서버에서 해석 생성을 거부했습니다.');
       }
@@ -112,7 +112,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
   // 컴포넌트 마운트 시 해석 생성 시작
   useEffect(() => {
     let isCancelled = false;
-    
+
     const runInterpretation = async () => {
       try {
         if (!isCancelled) {
@@ -128,9 +128,9 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
         }
       }
     };
-    
+
     runInterpretation();
-    
+
     return () => {
       isCancelled = true;
     };
@@ -160,7 +160,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     setConfirmationId(null);
     setFeedbackResult(null);
     setCurrentLoadingState(0);
-    
+
     generateInterpretations().catch((error) => {
       setError(error.message);
       setLoading(false);
@@ -184,15 +184,15 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
               {selectedCards.length > 3 && <span>외 {selectedCards.length - 3}개...</span>}
             </div>
             <p style={{ whiteSpace: 'pre-line' }}>
-              <strong>{contextData.place}</strong>에서 <strong>{contextData.interactionPartner}</strong>과의 
+              <strong>{contextData.place}</strong>에서 <strong>{contextData.interactionPartner}</strong>과의
               대화 상황을 고려해서{'\n'}가장 적절한 해석 3가지를 만들어드릴게요.
             </p>
           </div>
           <div className="loading-spinner"></div>
           <div className="loading-progress">
             {LOADING_STATES.map((state, index) => (
-              <div 
-                key={state.key} 
+              <div
+                key={state.key}
                 className={`progress-step ${index === currentLoadingState ? 'active' : index < currentLoadingState ? 'completed' : ''}`}
               >
                 <img src={state.icon} alt="로고" width="16" height="16" />
@@ -215,7 +215,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
             <h2>해석 생성에 문제가 발생했어요</h2>
           </div>
           <div className="error-message">{error}</div>
-          
+
           <div className="error-actions">
             <button className="primary-button" onClick={handleRetry}>
               다시 시도하기
@@ -233,7 +233,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
     <div className="interpretation-page partner-theme">
       {/* 통합된 해석 표시 및 피드백 단계 */}
       {currentStep === INTERPRETATION_STEPS.FEEDBACK && interpretations.length > 0 && (
-        <InterpretationDisplay 
+        <InterpretationDisplay
           interpretations={interpretations}
           selectedCards={selectedCards}
           contextInfo={contextData}
@@ -246,7 +246,7 @@ const InterpretationPage = ({ user, contextData, selectedCards, onSessionComplet
 
       {/* 해석 완료 단계 */}
       {currentStep === INTERPRETATION_STEPS.COMPLETED && feedbackResult && (
-        <InterpretationResult 
+        <InterpretationResult
           feedbackResult={feedbackResult}
           selectedCards={selectedCards}
           contextInfo={contextData}

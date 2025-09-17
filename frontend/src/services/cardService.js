@@ -27,7 +27,7 @@ export const cardService = {
       } else if (error.status === 503) {
         throw new Error('카드 추천 시스템을 사용할 수 없습니다.');
       }
-      
+
       throw error;
     }
   },
@@ -40,7 +40,7 @@ export const cardService = {
       }
 
       const response = await api.get(`/api/cards/history/${contextId.trim()}`);
-      
+
       if (response.success && response.data) {
         return response;
       } else {
@@ -59,7 +59,7 @@ export const cardService = {
       }
 
       const response = await api.get(`/api/cards/history/${contextId.trim()}/page/${pageNumber}`);
-      
+
       if (response.success && response.data?.cards) {
         return response;
       } else {
@@ -105,7 +105,7 @@ export const cardService = {
       };
 
       const response = await api.post('/api/cards/validate', payload);
-      
+
       if (response.success) {
         return response;
       } else {
@@ -151,7 +151,7 @@ export const cardService = {
       if (error.status === 503) {
         throw new Error('카드 해석 시스템을 사용할 수 없습니다.');
       }
-      
+
       throw error;
     }
   },

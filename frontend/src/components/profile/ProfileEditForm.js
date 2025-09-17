@@ -30,9 +30,9 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
   // 관심 주제 추가
   const handleAddTopic = () => {
     const topic = topicInput.trim();
-    
+
     if (!topic) return;
-    
+
     if (formData.interestingTopics.includes(topic)) {
       setError('이미 추가된 관심 주제입니다.');
       return;
@@ -81,13 +81,13 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
     if (!formData.disabilityType) return '장애 유형을 선택해주세요.';
     if (!formData.communicationCharacteristics.trim()) return '의사소통 특징을 입력해주세요.';
     if (formData.interestingTopics.length === 0) return '관심 주제를 최소 1개 이상 입력해주세요.';
-    
+
     return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -114,16 +114,16 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
       };
 
       const response = await authService.updateProfile(user.userId, updateData);
-      
+
       if (response.success) {
         setSuccess('소통이 정보가 성공적으로 업데이트되었습니다.');
-        
+
         // 업데이트된 사용자 정보 생성
         const updatedUser = {
           ...user,
           ...updateData
         };
-        
+
         setTimeout(() => {
           onProfileUpdated(updatedUser);
         }, 1500);
@@ -145,7 +145,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         </h2>
         <p>정보를 업데이트하면, 소통이에게 더 맞춤화된 서비스를 드릴 수 있어요.</p>
       </div>
-      
+
       <form onSubmit={handleSubmit}>
         {/* 기본 정보 */}
         <div className="form-section">
@@ -153,7 +153,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
             <img src="/images/basic_info2.png" alt="로고" width="20" height="20" className="section-icon" />
             기본 정보
           </h4>
-          
+
           <div className="form-group">
             <label htmlFor="name">이름 (닉네임 가능) *</label>
             <input
@@ -207,7 +207,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
             <img src="/images/communication_characteristics.png" alt="로고" width="20" height="20" className="section-icon" />
             의사소통 정보
           </h4>
-          
+
           <div className="form-group">
             <label htmlFor="disabilityType">장애 유형 *</label>
             <select
@@ -244,7 +244,7 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
             <img src="/images/interest_topic.png" alt="로고" width="20" height="20" className="section-icon" />
             소통이의 관심 주제 *
           </h4>
-          
+
           <div className="form-group">
             <div className="topic-input-section">
               <input
@@ -255,8 +255,8 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
                 placeholder="소통이가 좋아하는 것들을 입력해주세요"
                 disabled={loading}
               />
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={handleAddTopic}
                 disabled={loading || !topicInput.trim()}
                 className="secondary-button add-topic-btn"
@@ -264,14 +264,14 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
                 추가
               </button>
             </div>
-            
+
             {formData.interestingTopics.length > 0 && (
               <div className="topic-list">
                 {formData.interestingTopics.map((topic, index) => (
                   <span key={index} className="topic-tag partner-topic">
                     {topic}
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => handleRemoveTopic(topic)}
                       disabled={loading}
                       className="topic-remove"
@@ -292,27 +292,27 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
             {error}
           </div>
         )}
-        
+
         {success && (
           <div className="success-message partner-success">
             <img src="/images/success.png" alt="로고" width="16" height="16" className="success-icon" />
             {success}
           </div>
         )}
-        
+
         {/* 액션 버튼 */}
         <div className="form-actions">
-          <button 
-            type="button" 
-            className="secondary-button" 
+          <button
+            type="button"
+            className="secondary-button"
             onClick={onCancel}
             disabled={loading}
           >
             취소
           </button>
-          <button 
-            type="submit" 
-            className="primary-button partner-button" 
+          <button
+            type="submit"
+            className="primary-button partner-button"
             disabled={loading || !hasChanges()}
           >
             {loading ? '저장 중...' : '변경사항 저장'}

@@ -45,7 +45,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -64,7 +64,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
       };
 
       const response = await contextService.createContext(contextData);
-      
+
       if (response.success) {
         onContextCreated(response.data);
       } else {
@@ -91,7 +91,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
           상황에 맞는 카드를 통해 더 원활한 소통이 가능해집니다.
         </p>
       </div>
-      
+
       <form onSubmit={handleSubmit}>
         {/* 장소 입력 */}
         <div className="form-group">
@@ -193,13 +193,13 @@ const ContextForm = ({ userId, onContextCreated }) => {
               ))}
             </div>
           </div>
-          <small className="form-hint"     
-          style={{ 
+          <small className="form-hint"
+          style={{
             marginTop: '20px',
             display: 'block',
             lineHeight: '2'
        }}>
-            현재 하고 있는 구체적인 활동을 입력하시면 
+            현재 하고 있는 구체적인 활동을 입력하시면
             더 정확한 카드 추천을 받을 수 있어요.
           </small>
         </div>
@@ -210,7 +210,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
             {error}
           </div>
         )}
-        
+
         <div className="form-actions">
           <button type="submit" className="primary-button partner-button large" disabled={loading}>
             {loading ? (
