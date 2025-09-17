@@ -13,13 +13,13 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.userId.trim() || !formData.password) {
       setError('사용자 ID와 비밀번호를 모두 입력해주세요.');
       return;
@@ -30,7 +30,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
 
     try {
       const response = await authService.login(formData.userId.trim(), formData.password);
-      
+
       if (response.success && response.data.authenticated) {
         onLoginSuccess(response.data);
       } else {
@@ -48,7 +48,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
       <h2>
         로그인
       </h2>
-      
+
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="userId">
@@ -66,7 +66,7 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
             autoComplete="username"
           />
         </div>
-        
+
         <div className="form-group">
           <label htmlFor="password">
             <img src="/images/account_info.png" alt="로고" width="16" height="16" />
@@ -90,18 +90,18 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
             {error}
           </div>
         )}
-        
+
         <button type="submit" className="primary-button partner-button" disabled={loading}>
           {loading ? '로그인 중...' : '로그인'}
         </button>
       </form>
-      
+
       <div className="auth-switch">
         <p>
           아직 계정이 없으신가요?{' '}
-          <button 
-            type="button" 
-            className="link-button partner-link" 
+          <button
+            type="button"
+            className="link-button partner-link"
             onClick={switchToRegister}
             disabled={loading}
           >

@@ -1,102 +1,253 @@
+# =============================================================================
+# AAC Software - .gitignore
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Environment Variables & Secrets
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+openai_key.txt
+api_keys.txt
+secrets/
+
+# -----------------------------------------------------------------------------
 # Python
+# -----------------------------------------------------------------------------
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+
+# Virtual environments
 .Python
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
-.venv
-.env
+.venv/
+pipenv/
 
-# PyTorch/ML models
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.coverage
+.pytest_cache/
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# -----------------------------------------------------------------------------
+# Machine Learning & AI Models
+# -----------------------------------------------------------------------------
+# Model files
 *.pth
 *.pkl
 *.pt
 *.bin
 *.safetensors
-checkpoints/
+*.onnx
+*.pb
 
-# Data files
+# Checkpoints & experiments
+checkpoints/
+experiments/
+wandb/
+mlruns/
+
+# Embeddings & processed ML data
+/aac_embeddings/
+embeddings/
+features/
+models/saved/
+
+# -----------------------------------------------------------------------------
+# AAC Project Specific Data
+# -----------------------------------------------------------------------------
+# User generated data
 user_data/
+profiles/
+
+# Dataset files
 dataset/processed/
-dataset/raw/
-/dataset/images
-/dataset/metadata
-/aac_embeddings
-/dataset/filtered_images
+dataset/images/
+dataset/filtered_images/
+
+# Cache directories
+.cache/
+cache/
+
+# -----------------------------------------------------------------------------
+# Node.js & Frontend
+# -----------------------------------------------------------------------------
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Build outputs
+frontend/build/
+frontend/dist/
+frontend/.next/
+frontend/out/
+
+# Runtime data
+frontend/pids
+frontend/*.pid
+frontend/*.seed
+frontend/*.pid.lock
 
 # Logs
-*.log
-logs/
-pip-log.txt
-pip-delete-this-directory.txt
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/lerna-debug.log*
 
-# IDE
+# Optional npm cache directory
+frontend/.npm
+
+# Optional eslint cache
+frontend/.eslintcache
+
+# Microbundle cache
+frontend/.rpt2_cache/
+frontend/.rts2_cache_cjs/
+frontend/.rts2_cache_es/
+frontend/.rts2_cache_umd/
+
+# -----------------------------------------------------------------------------
+# Development Tools & IDEs
+# -----------------------------------------------------------------------------
+# VSCode
 .vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# IntelliJ IDEA
 .idea/
+*.iml
+*.ipr
+*.iws
+
+# Vim
 *.swp
 *.swo
 *~
 
-# OS
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+
+# -----------------------------------------------------------------------------
+# Operating System
+# -----------------------------------------------------------------------------
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Node.js (Frontend)
-frontend/node_modules/
-frontend/build/
-frontend/dist/
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
 
-# Dependencies
-node_modules/
+# -----------------------------------------------------------------------------
+# Logs & Temporary Files
+# -----------------------------------------------------------------------------
+# Application logs
+*.log
+logs/
+log/
 
-# Build outputs
-build/
-dist/
-
-# Environment variables
-.env.local
-.env.development
-.env.test
-.env.production
+# Runtime logs
+pip-log.txt
+pip-delete-this-directory.txt
 
 # Temporary files
 *.tmp
 *.temp
 temp/
 tmp/
+*.bak
+*.swp
 
-# Cache
-.cache/
-.pytest_cache/
-*.cache
-
-# Coverage
-htmlcov/
-.coverage
-coverage.xml
-*.cover
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# Large files
+# -----------------------------------------------------------------------------
+# Archive & Large Files
+# -----------------------------------------------------------------------------
+# Compressed files
 *.zip
 *.tar.gz
 *.rar
 *.7z
+*.tar
+*.gz
+*.bz2
+*.xz
 
-# OpenAI API keys
-openai_key.txt
-api_keys.txt
+# Large media files (if not essential)
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+
+# -----------------------------------------------------------------------------
+# Docker & Containers
+# -----------------------------------------------------------------------------
+# Docker volumes
+docker-volumes/
+
+# -----------------------------------------------------------------------------
+# Documentation Build
+# -----------------------------------------------------------------------------
+docs/_build/
+docs/build/
+site/
+
+# -----------------------------------------------------------------------------
+# Backup Files
+# -----------------------------------------------------------------------------
+*.backup
+*.bck
+backup/
+backups/

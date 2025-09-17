@@ -7,4 +7,4 @@ card_interpreter와 conversation_memory에서 공통으로 사용합니다.
 
 from .llm_factory import LLMFactory
 
-__all__ = ['LLMFactory']
+__all__ = ["LLMFactory"]

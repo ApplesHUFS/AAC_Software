@@ -29,15 +29,15 @@ const AuthPage = ({ onAuthSuccess }) => {
           </p>
           <hr width="100%" color="black" size="1" />
         </div>
-        
+
         <div className="auth-content">
           {isLogin ? (
-            <LoginForm 
+            <LoginForm
               onLoginSuccess={handleLoginSuccess}
               switchToRegister={() => setIsLogin(false)}
             />
           ) : (
-            <RegisterForm 
+            <RegisterForm
               onRegisterSuccess={handleRegisterSuccess}
               switchToLogin={() => setIsLogin(true)}
             />

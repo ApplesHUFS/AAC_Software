@@ -19,7 +19,7 @@ import './styles/responsive.css';
 // 애플리케이션 진행 단계
 const APP_STEPS = {
   AUTH: 'auth',
-  DASHBOARD: 'dashboard', 
+  DASHBOARD: 'dashboard',
   CARDS: 'cards',
   INTERPRETATION: 'interpretation'
 };
@@ -27,7 +27,7 @@ const APP_STEPS = {
 // 세션 저장 키 (React state 기반, localStorage 최소 사용)
 const SESSION_KEYS = {
   USER: 'aac_user',
-  CONTEXT: 'aac_context', 
+  CONTEXT: 'aac_context',
   SELECTED_CARDS: 'aac_selected_cards',
   CURRENT_STEP: 'aac_current_step'
 };
@@ -76,7 +76,7 @@ const App = () => {
 
     if (savedContext && savedStep) {
       setContextData(savedContext);
-      
+
       if (savedStep === APP_STEPS.INTERPRETATION && savedCards?.length > 0) {
         setSelectedCards(savedCards);
         setCurrentStep(APP_STEPS.INTERPRETATION);
@@ -97,7 +97,7 @@ const App = () => {
       authenticated: loginResponse.authenticated,
       ...loginResponse.user
     };
-    
+
     setCurrentUser(userData);
     setCurrentStep(APP_STEPS.DASHBOARD);
     saveSession(SESSION_KEYS.USER, userData);
@@ -139,7 +139,7 @@ const App = () => {
     setContextData(null);
     setSelectedCards([]);
     setCurrentStep(APP_STEPS.DASHBOARD);
-    
+
     // 대화 관련 세션만 정리
     sessionStorage.removeItem(SESSION_KEYS.CONTEXT);
     sessionStorage.removeItem(SESSION_KEYS.SELECTED_CARDS);
@@ -158,37 +158,37 @@ const App = () => {
     switch (currentStep) {
       case APP_STEPS.AUTH:
         return <AuthPage onAuthSuccess={handleAuthSuccess} />;
-      
+
       case APP_STEPS.DASHBOARD:
         return currentUser ? (
-          <DashboardPage 
+          <DashboardPage
             user={currentUser}
             onLogout={handleLogout}
             onUserUpdate={handleUserUpdate}
             onContextCreated={handleContextCreated}
           />
         ) : null;
-      
+
       case APP_STEPS.CARDS:
         return (currentUser && contextData) ? (
-          <CardSelectionPage 
+          <CardSelectionPage
             user={currentUser}
             contextData={contextData}
             onCardSelectionComplete={handleCardSelectionComplete}
             onBackToDashboard={handleBackToDashboard}
           />
         ) : null;
-      
+
       case APP_STEPS.INTERPRETATION:
         return (currentUser && contextData && selectedCards.length > 0) ? (
-          <InterpretationPage 
+          <InterpretationPage
             user={currentUser}
             contextData={contextData}
             selectedCards={selectedCards}
             onSessionComplete={handleSessionComplete}
           />
         ) : null;
-      
+
       default:
         return <AuthPage onAuthSuccess={handleAuthSuccess} />;
     }

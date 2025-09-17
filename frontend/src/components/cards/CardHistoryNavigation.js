@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { cardService } from '../../services/cardService';
 
-const CardHistoryNavigation = ({ 
-  contextId, 
-  historyState, 
-  onPageChange, 
+const CardHistoryNavigation = ({
+  contextId,
+  historyState,
+  onPageChange,
   disabled = false,
 }) => {
   const [historySummary, setHistorySummary] = useState([]);
@@ -25,9 +25,9 @@ const CardHistoryNavigation = ({
       try {
         setLocalLoading(true);
         setLocalError('');
-        
+
         const response = await cardService.getHistorySummary(contextId);
-        
+
         if (response.success && response.data?.historySummary) {
           setHistorySummary(response.data.historySummary);
         } else {
@@ -48,7 +48,7 @@ const CardHistoryNavigation = ({
   // 페이지 변경 핸들러
   const handlePageNavigation = (pageNumber) => {
     if (pageNumber === currentPage || disabled || isLoading || localLoading) return;
-    
+
     if (pageNumber < 1 || pageNumber > totalPages) return;
 
     onPageChange(pageNumber);
@@ -118,7 +118,7 @@ const CardHistoryNavigation = ({
 
       <div className="navigation-help">
         <small>
-          이전에 추천받은 카드들을 다시 볼 수 있어요. 
+          이전에 추천받은 카드들을 다시 볼 수 있어요.
           마음에 드는 카드가 있었다면 찾아보세요!
         </small>
       </div>

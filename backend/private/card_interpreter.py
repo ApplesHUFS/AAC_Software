@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 from .llm import LLMFactory
 
 
@@ -27,26 +28,29 @@ class CardInterpreter:
         try:
             # LLM 팩토리 설정 구성
             llm_config = {
-                'openai_model': self.config.get('openai_model'),
-                'openai_temperature': self.config.get('openai_temperature'),
-                'interpretation_max_tokens': self.config.get('interpretation_max_tokens'),
-                'summary_max_tokens': self.config.get('summary_max_tokens'),
-                'api_timeout': self.config.get('api_timeout'),
-                'images_folder': self.config.get('images_folder')
+                "openai_model": self.config.get("openai_model"),
+                "openai_temperature": self.config.get("openai_temperature"),
+                "interpretation_max_tokens": self.config.get(
+                    "interpretation_max_tokens"
+                ),
+                "summary_max_tokens": self.config.get("summary_max_tokens"),
+                "api_timeout": self.config.get("api_timeout"),
+                "images_folder": self.config.get("images_folder"),
             }
-            
+
             # LLM 팩토리 초기화
             self.llm_factory = LLMFactory(llm_config)
-            
+
         except Exception as e:
             print(f"LLM 팩토리 초기화 실패: {e}")
             self.llm_factory = None
 
-    def interpret_cards(self,
+    def interpret_cards(
+        self,
         persona: Dict[str, Any],
         context: Dict[str, Any],
         cards: List[str],
-        past_interpretation: str = ""
+        past_interpretation: str = "",
     ) -> Dict[str, Any]:
         """선택된 AAC 카드 조합 해석.
 
@@ -72,53 +76,51 @@ class CardInterpreter:
         # LLM 팩토리 사용 가능 여부 확인 (비즈니스 로직)
         if self.llm_factory is None:
             return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': 'AI 해석 시스템을 사용할 수 없습니다. OpenAI API 설정을 확인해주세요.'
+                "status": "error",
+                "interpretations": [],
+                "method": "none",
+                "timestamp": timestamp,
+                "message": "AI 해석 시스템을 사용할 수 없습니다. OpenAI API 설정을 확인해주세요.",
             }
 
         try:
             # 사용자 정보 확인
-            user_name = persona.get('name', '사용자')
-            disability_type = persona.get('disability_type', '알 수 없음')
-            place = context.get('place', '알 수 없는 장소')
-            
+            user_name = persona.get("name", "사용자")
+            disability_type = persona.get("disability_type", "알 수 없음")
+            place = context.get("place", "알 수 없는 장소")
+
             # LLM 팩토리를 통한 카드 해석 생성
             interpretations = self.llm_factory.generate_card_interpretations(
                 persona, context, cards, past_interpretation
             )
 
             # 피드백 ID 생성
-            feedback_id = self.feedback_counter
             self.feedback_counter += 1
 
-            card_names = [card.replace('.png', '').replace('_', ' ') for card in cards]
             memory_info = " (과거 해석 패턴 반영)" if past_interpretation else ""
 
             return {
-                'status': 'success',
-                'interpretations': interpretations,
-                'method': 'online',
-                'timestamp': timestamp,
-                'message': f'{place}에서 {user_name}({disability_type})의 {len(cards)}개 카드 조합이 해석되었습니다{memory_info}'
+                "status": "success",
+                "interpretations": interpretations,
+                "method": "online",
+                "timestamp": timestamp,
+                "message": f"{place}에서 {user_name}({disability_type})의 {len(cards)}개 카드 조합이 해석되었습니다{memory_info}",
             }
 
         except ValueError as e:
             return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': f'카드 해석 생성 중 오류가 발생했습니다: {str(e)}'
+                "status": "error",
+                "interpretations": [],
+                "method": "none",
+                "timestamp": timestamp,
+                "message": f"카드 해석 생성 중 오류가 발생했습니다: {str(e)}",
             }
 
         except Exception as e:
             return {
-                'status': 'error',
-                'interpretations': [],
-                'method': 'none',
-                'timestamp': timestamp,
-                'message': f'카드 해석 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+                "status": "error",
+                "interpretations": [],
+                "method": "none",
+                "timestamp": timestamp,
+                "message": f"카드 해석 처리 중 시스템 오류가 발생했습니다: {str(e)}",
             }
