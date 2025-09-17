@@ -71,11 +71,11 @@ echo "OPENAI_API_KEY=your_openai_api_key_here" > data_processing/.env
 ### 3. 데이터셋 준비
 ```bash
 # 데이터셋 다운로드 스크립트 실행
-cd data_processing
-chmod +x download_dataset.sh
-./download_dataset.sh
+chmod +x download_arasaac.sh
+./download_arasaac.sh
 
 # 데이터 처리 파이프라인 실행
+cd data_processing
 pip install -r requirements.txt
 python data_prepare.py
 ```
@@ -118,7 +118,46 @@ npm start
 
 ## 라이센스
 
-이 프로젝트는 연구 및 교육 목적으로 제작되었습니다.
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
+
+본 프로젝트는 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa] 하에 배포됩니다.
+
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
+
+### 라이센스 조건
+
+**저작자표시 (Attribution)**  
+본 저작물을 사용, 배포, 전시할 때에는 반드시 원저작자와 출처를 명시하여야 합니다.
+
+**비영리 (NonCommercial)**  
+본 저작물은 비영리 목적으로만 사용할 수 있으며, 상업적 이용은 허용되지 않습니다.
+
+**동일조건변경허락 (ShareAlike)**  
+본 저작물을 개작, 변형 또는 가공했을 경우 반드시 원저작물과 동일한 라이센스 조건으로 배포하여야 합니다.
+
+### 포함된 제3자 저작물
+
+본 소프트웨어는 다음의 제3자 저작물을 포함하고 있습니다:
+
+**ARASAAC 픽토그램**
+- 저작자: Sergio Palao
+- 출처: [ARASAAC Portal Aragonés de la Comunicación Aumentativa y Alternativa](http://www.arasaac.org)
+- 라이센스: Creative Commons BY-NC-SA
+- 저작권자: Gobierno de Aragón (아라곤 자치정부, 스페인)
+
+사용된 그림 기호는 Aragón 정부의 자산이며 Sergio Palao가 ARASAAC용으로 제작하였으며 Creative Commons 라이선스 BY-NC-SA에 따라 배포됩니다.
+
+### 면책사항
+
+본 소프트웨어는 "있는 그대로" 제공되며, 명시적이거나 묵시적인 어떠한 보증도 제공하지 않습니다. 본 소프트웨어의 사용으로 인해 발생하는 모든 손해에 대해 저작자는 어떠한 책임도 지지 않습니다.
+
+### 추가 정보
+
+라이센스에 대한 자세한 내용은 [Creative Commons 공식 웹사이트](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.ko)에서 확인하실 수 있습니다.
+
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
+[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
 
 ---
 
