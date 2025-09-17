@@ -11,7 +11,7 @@ DATASET_CONFIG = {
     "image_weight": 0.6,  # 이미지 가중치 (AAC 카드는 시각적 요소가 중요)
     "clip_model": "openai/clip-vit-large-patch14",
     # 계층적 클러스터링 설정
-    "macro_min_clusters": 20,  # 대분류 최소 개수
+    "macro_min_clusters": 70,  # 대분류 최소 개수
     "macro_max_clusters": 100,  # 대분류 최대 개수
     "min_cluster_size": 20,  # 분할 가능한 최소 크기
     "max_micro_clusters": 6,  # 대분류당 최대 세분화 수

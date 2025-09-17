@@ -1,3 +1,15 @@
+"""
+AAC Interpreter Backend
+Copyright (c) 2025 APPLES
+
+This program is licensed under CC BY-NC-SA 4.0
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Contains pictograms from ARASAAC (http://www.arasaac.org)
+Pictograms author: Sergio Palao
+Pictograms license: CC BY-NC-SA
+"""
+
 from typing import Any, Dict, List, Optional
 
 # Private
