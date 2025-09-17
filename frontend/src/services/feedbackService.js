@@ -33,13 +33,13 @@ export const feedbackService = {
       return '피드백 결과 없음';
     }
 
-    const finalInterpretation = feedbackResult.selected_interpretation || 
-                               feedbackResult.direct_feedback || 
+    const finalInterpretation = feedbackResult.selected_interpretation ||
+                               feedbackResult.direct_feedback ||
                                feedbackResult.selectedInterpretation ||
                                feedbackResult.directFeedback ||
                                '해석 없음';
 
-    const feedbackType = feedbackResult.feedback_type === 'interpretation_selected' ? 
+    const feedbackType = feedbackResult.feedback_type === 'interpretation_selected' ?
                         '제시된 해석 선택' : '직접 피드백';
 
     return `${feedbackType}: "${finalInterpretation}"`;

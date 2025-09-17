@@ -1,7 +1,8 @@
 import base64
 import json
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -30,11 +31,11 @@ class LLMFactory:
             config: 설정 딕셔너리
         """
         self.client = OpenAI()
-        self.model = config.get('openai_model')
-        self.temperature = config.get('openai_temperature')
-        self.max_tokens = config.get('interpretation_max_tokens')
-        self.timeout = config.get('api_timeout')
-        self.images_folder = Path(config.get('images_folder'))
+        self.model = config.get("openai_model")
+        self.temperature = config.get("openai_temperature")
+        self.max_tokens = config.get("interpretation_max_tokens")
+        self.timeout = config.get("api_timeout")
+        self.images_folder = Path(config.get("images_folder"))
 
     def encode_image(self, image_path: Path) -> str:
         """이미지를 base64로 인코딩.
@@ -46,7 +47,7 @@ class LLMFactory:
             str: base64 인코딩된 이미지 문자열
         """
         with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+            return base64.b64encode(image_file.read()).decode("utf-8")
 
     def prepare_card_images_content(self, cards: List[str]) -> List[Dict[str, Any]]:
         """카드 이미지들을 OpenAI Vision API 형태로 준비.
@@ -64,28 +65,37 @@ class LLMFactory:
 
             if image_path.exists():
                 base64_image = self.encode_image(image_path)
-                content.extend([
-                    {"type": "text", "text": f"\n카드 {i}:"},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/png;base64,{base64_image}",
-                            "detail": "high"
-                        }
-                    }
-                ])
+                content.extend(
+                    [
+                        {"type": "text", "text": f"\n카드 {i}:"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{base64_image}",
+                                "detail": "high",
+                            },
+                        },
+                    ]
+                )
             else:
-                keyword = card_filename.replace('.png', '').replace('_', ' ')
-                content.append({
-                    "type": "text",
-                    "text": f"\n카드 {i}: {keyword} (이미지 파일 없음)"
-                })
+                keyword = card_filename.replace(".png", "").replace("_", " ")
+                content.append(
+                    {
+                        "type": "text",
+                        "text": f"\n카드 {i}: {keyword} (이미지 파일 없음)",
+                    }
+                )
 
         return content
 
-    def call_vision_api(self, system_prompt: str, user_content: List[Dict[str, Any]],
-                       temperature: Optional[float] = None, max_tokens: Optional[int] = None,
-                       use_json_format: bool = False) -> str:
+    def call_vision_api(
+        self,
+        system_prompt: str,
+        user_content: List[Dict[str, Any]],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        use_json_format: bool = False,
+    ) -> str:
         """OpenAI Vision API 호출.
 
         Args:
@@ -107,11 +117,11 @@ class LLMFactory:
                 "model": self.model,
                 "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content}
+                    {"role": "user", "content": user_content},
                 ],
                 "temperature": temperature or self.temperature,
                 "max_tokens": max_tokens or self.max_tokens,
-                "timeout": self.timeout
+                "timeout": self.timeout,
             }
 
             # JSON 형식 요청시 response_format 추가
@@ -120,7 +130,7 @@ class LLMFactory:
 
             response = self.client.chat.completions.create(**request_params)
             return response.choices[0].message.content.strip()
-            
+
         except Exception as e:
             raise Exception(f"OpenAI Vision API 호출 실패: {str(e)}")
 
@@ -139,42 +149,49 @@ class LLMFactory:
         try:
             # JSON 파싱
             parsed_data = json.loads(json_content)
-            
+
             # interpretations 키에서 해석 리스트 추출
             if "interpretations" not in parsed_data:
                 raise ValueError("응답에서 'interpretations' 키를 찾을 수 없습니다.")
-            
+
             interpretations = parsed_data["interpretations"]
-            
+
             # 해석이 리스트인지 확인
             if not isinstance(interpretations, list):
                 raise ValueError("해석 데이터가 리스트 형식이 아닙니다.")
-            
+
             # 정확히 3개의 해석이 있는지 확인
             if len(interpretations) != 3:
-                raise ValueError(f"해석이 정확히 3개가 아닙니다. 받은 해석 수: {len(interpretations)}")
-            
+                raise ValueError(
+                    f"해석이 정확히 3개가 아닙니다. 받은 해석 수: {len(interpretations)}"
+                )
+
             # 각 해석이 문자열이고 최소 길이를 만족하는지 확인
             validated_interpretations = []
             for i, interpretation in enumerate(interpretations):
                 if not isinstance(interpretation, str):
                     raise ValueError(f"{i+1}번째 해석이 문자열이 아닙니다.")
-                
+
                 cleaned = interpretation.strip()
                 if len(cleaned) < 5:
                     raise ValueError(f"{i+1}번째 해석이 너무 짧습니다: {cleaned}")
-                
+
                 validated_interpretations.append(cleaned)
-            
+
             return validated_interpretations
-            
+
         except json.JSONDecodeError as e:
             raise ValueError(f"JSON 파싱 실패: {str(e)}")
         except Exception as e:
             raise ValueError(f"해석 추출 중 오류 발생: {str(e)}")
 
-    def generate_card_interpretations(self, persona: Dict[str, Any], context: Dict[str, Any],
-                                    cards: List[str], past_interpretation: str = "") -> List[str]:
+    def generate_card_interpretations(
+        self,
+        persona: Dict[str, Any],
+        context: Dict[str, Any],
+        cards: List[str],
+        past_interpretation: str = "",
+    ) -> List[str]:
         """카드 해석 생성 (card_interpreter에서 사용).
 
         Args:
@@ -196,16 +213,14 @@ class LLMFactory:
                 "자폐스펙트럼장애": """당신은 AAC(보완대체의사소통) 해석 전문가입니다.
 현재 AAC 사용자는 자폐스펙트럼 장애를 가지고 있습니다. 자폐스펙트럼 장애의 특징으로는 반복하려는 경향, 특정 대상에 대한 강한 집착,
 비유적인 표현에 대한 이해 부족 등이 있습니다.""",
-
                 "지적장애": """당신은 AAC(보완대체의사소통) 해석 전문가입니다.
 현재 AAC 사용자는 지적장애를 가지고 있습니다. 지적장애의 특징으로는 지능지수가 IQ 70 이하로 낮고, 개인이 처해있는 환경과 그 연령에 따른
 자립성과 사회적 책임감의 기준에 미달하고, 사회적 상호작용 능력이 부족합니다.""",
-
                 "의사소통장애": """당신은 AAC(보완대체의사소통) 해석 전문가입니다.
 현재 AAC 사용자는 의사소통장애를 가지고 있습니다. 의사소통장애의 특징으로는 다른 사람의 말을 이해하는 능력은 비교적 정상이지만 간단한 단어나
-문장 표현을 어려워해 몸짓이나 손짓으로 대체하려 합니다. 자신의 생각을 언어로 표현하는 능력의 장애를 보입니다."""
+문장 표현을 어려워해 몸짓이나 손짓으로 대체하려 합니다. 자신의 생각을 언어로 표현하는 능력의 장애를 보입니다.""",
             }
-            
+
             # 기본 해석 원칙 프롬프트
             base_prompt = """사용자의 장애 유형의 특징, 페르소나, 상황을 고려해 선택된 AAC 카드 이미지들을 해석해주세요.
 
@@ -224,13 +239,13 @@ class LLMFactory:
 {
   "interpretations": [
     "첫 번째 해석 내용",
-    "두 번째 해석 내용", 
+    "두 번째 해석 내용",
     "세 번째 해석 내용"
   ]
 }"""
 
             # 장애 유형에 따른 시스템 프롬프트 구성
-            disability_type = persona.get('disability_type')
+            disability_type = persona.get("disability_type")
             disability_specific = disability_specific_prompts.get(disability_type, "")
 
             if disability_specific:
@@ -242,9 +257,10 @@ class LLMFactory:
             image_content = self.prepare_card_images_content(cards)
 
             # 사용자 콘텐츠 구성
-            user_content = [{
-                "type": "text",
-                "text": f"""페르소나:
+            user_content = [
+                {
+                    "type": "text",
+                    "text": f"""페르소나:
 - 나이: {persona.get('age')}
 - 성별: {persona.get('gender')}
 - 장애 유형: {persona.get('disability_type')}
@@ -258,16 +274,18 @@ class LLMFactory:
 - 현재 활동: {context.get('current_activity')}
 
 {f"과거 해석 패턴: {past_interpretation}" if past_interpretation else ""}
-"""
-            }]
+""",
+                }
+            ]
 
             # 카드 이미지 콘텐츠 추가
             user_content.extend(image_content)
-            
+
             # 해석 요청 메시지 추가
-            user_content.append({
-                "type": "text",
-                "text": """
+            user_content.append(
+                {
+                    "type": "text",
+                    "text": """
 위 이미지들을 보고 이 사용자가 전달하고자 하는 의도를 3가지 관점에서 해석해주세요.
 이미지의 시각적 내용과 순서를 반드시 고려하세요.
 
@@ -275,29 +293,29 @@ class LLMFactory:
 {
   "interpretations": [
     "첫 번째 해석 내용",
-    "두 번째 해석 내용", 
+    "두 번째 해석 내용",
     "세 번째 해석 내용"
   ]
-}"""
-            })
+}""",
+                }
+            )
 
             # API 호출 (JSON 형식 요청)
             content = self.call_vision_api(
-                system_prompt, 
-                user_content, 
-                use_json_format=True
+                system_prompt, user_content, use_json_format=True
             )
-            
+
             # JSON에서 해석 추출
             interpretations = self.parse_json_interpretations(content)
 
             return interpretations
-            
+
         except (ValueError, Exception) as e:
             raise e
 
-    def analyze_card_interpretation_connection(self, cards: List[str], context: Dict[str, Any],
-                                             final_interpretation: str) -> str:
+    def analyze_card_interpretation_connection(
+        self, cards: List[str], context: Dict[str, Any], final_interpretation: str
+    ) -> str:
         """카드 이미지와 해석의 연결성 분석 (conversation_memory에서 사용).
 
         Args:
@@ -313,9 +331,10 @@ class LLMFactory:
         """
         try:
             # 분석 요청 콘텐츠 구성
-            content = [{
-                "type": "text",
-                "text": f"""다음 AAC 카드 이미지들을 보고, 주어진 상황에서 어떤 시각적 특징이 최종 해석으로 연결되었는지 분석해주세요.
+            content = [
+                {
+                    "type": "text",
+                    "text": f"""다음 AAC 카드 이미지들을 보고, 주어진 상황에서 어떤 시각적 특징이 최종 해석으로 연결되었는지 분석해주세요.
 
 상황 정보:
 - 시간: {context.get('time', '알 수 없음')}
@@ -325,8 +344,9 @@ class LLMFactory:
 
 최종 해석: {final_interpretation}
 
-이미지들:"""
-            }]
+이미지들:""",
+                }
+            ]
 
             # 각 카드 이미지 추가
             for i, card_filename in enumerate(cards, 1):
@@ -334,28 +354,34 @@ class LLMFactory:
 
                 if image_path.exists():
                     base64_image = self.encode_image(image_path)
-                    content.extend([
-                        {"type": "text", "text": f"\n카드 {i}:"},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{base64_image}",
-                                "detail": "low"
-                            }
-                        }
-                    ])
+                    content.extend(
+                        [
+                            {"type": "text", "text": f"\n카드 {i}:"},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/png;base64,{base64_image}",
+                                    "detail": "low",
+                                },
+                            },
+                        ]
+                    )
                 else:
-                    content.append({
-                        "type": "text",
-                        "text": f"\n카드 {i}: {card_filename} (이미지 파일 없음)"
-                    })
+                    content.append(
+                        {
+                            "type": "text",
+                            "text": f"\n카드 {i}: {card_filename} (이미지 파일 없음)",
+                        }
+                    )
 
-            content.append({
-                "type": "text",
-                "text": "\n위 이미지들의 어떤 시각적 요소(객체, 색깔, 행동, 표정 등)가 최종 해석으로 연결되었는지 50자 이내로 분석해주세요."
-            })
+            content.append(
+                {
+                    "type": "text",
+                    "text": "\n위 이미지들의 어떤 시각적 요소(객체, 색깔, 행동, 표정 등)가 최종 해석으로 연결되었는지 50자 이내로 분석해주세요.",
+                }
+            )
 
             return self.call_vision_api("", content, temperature=0.3, max_tokens=100)
-            
+
         except Exception as e:
             raise Exception(f"카드-해석 연결성 분석 실패: {str(e)}")

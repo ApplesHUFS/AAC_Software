@@ -1,7 +1,6 @@
-import json
-from typing import Dict, List, Optional, Any
 import uuid
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 
 class ContextManager:
@@ -25,16 +24,17 @@ class ContextManager:
         self.config = config
         self.contexts = {}
 
-    def create_context(self,
-                      place: str,
-                      interaction_partner: str,
-                      user_id: str,
-                      current_activity: Optional[str] = None
-                      ) -> Dict[str, Any]:
+    def create_context(
+        self,
+        place: str,
+        interaction_partner: str,
+        user_id: str,
+        current_activity: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """새로운 대화 상황 컨텍스트 생성.
 
         Partner가 대화 상황 정보를 입력하여 컨텍스트를 생성합니다.
-        
+
         Args:
             place: 장소 정보 (직접 입력, 필수)
             interaction_partner: 대화 상대 관계 (직접 입력, 필수)
@@ -51,26 +51,26 @@ class ContextManager:
         # 필수 필드 검증
         if not place or not place.strip():
             return {
-                'status': 'error',
-                'context_id': '',
-                'context': {},
-                'message': '장소 정보는 필수 입력사항입니다. 구체적인 장소를 입력해주세요.'
+                "status": "error",
+                "context_id": "",
+                "context": {},
+                "message": "장소 정보는 필수 입력사항입니다. 구체적인 장소를 입력해주세요.",
             }
 
         if not interaction_partner or not interaction_partner.strip():
             return {
-                'status': 'error',
-                'context_id': '',
-                'context': {},
-                'message': '대화 상대 정보는 필수 입력사항입니다. 대화 상대와의 관계를 입력해주세요.'
+                "status": "error",
+                "context_id": "",
+                "context": {},
+                "message": "대화 상대 정보는 필수 입력사항입니다. 대화 상대와의 관계를 입력해주세요.",
             }
 
         if not user_id or not user_id.strip():
             return {
-                'status': 'error',
-                'context_id': '',
-                'context': {},
-                'message': '사용자 ID가 누락되었습니다. 올바른 사용자 ID를 제공해주세요.'
+                "status": "error",
+                "context_id": "",
+                "context": {},
+                "message": "사용자 ID가 누락되었습니다. 올바른 사용자 ID를 제공해주세요.",
             }
 
         try:
@@ -86,11 +86,11 @@ class ContextManager:
 
             # 컨텍스트 데이터 구성
             context = {
-                'time': time_str,
-                'place': place.strip(),
-                'interaction_partner': interaction_partner.strip(),
-                'current_activity': current_activity,
-                'created_at': current_time.isoformat()
+                "time": time_str,
+                "place": place.strip(),
+                "interaction_partner": interaction_partner.strip(),
+                "current_activity": current_activity,
+                "created_at": current_time.isoformat(),
             }
 
             # 컨텍스트 저장 (조회를 위해)
@@ -98,18 +98,18 @@ class ContextManager:
 
             activity_info = f" (활동: {current_activity})" if current_activity else ""
             return {
-                'status': 'success',
-                'context_id': context_id,
-                'context': context,
-                'message': f'{time_str} {place}에서 {interaction_partner}와의 대화 상황이 설정되었습니다{activity_info}'
+                "status": "success",
+                "context_id": context_id,
+                "context": context,
+                "message": f"{time_str} {place}에서 {interaction_partner}와의 대화 상황이 설정되었습니다{activity_info}",
             }
-            
+
         except Exception as e:
             return {
-                'status': 'error',
-                'context_id': '',
-                'context': {},
-                'message': f'컨텍스트 생성 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+                "status": "error",
+                "context_id": "",
+                "context": {},
+                "message": f"컨텍스트 생성 처리 중 시스템 오류가 발생했습니다: {str(e)}",
             }
 
     def get_context(self, context_id: str) -> Dict[str, Any]:
@@ -127,9 +127,9 @@ class ContextManager:
         # 컨텍스트 존재 여부 확인 (비즈니스 로직)
         if context_id not in self.contexts:
             return {
-                'status': 'error',
-                'context': {},
-                'message': f'컨텍스트 ID {context_id}에 해당하는 대화 상황을 찾을 수 없습니다.'
+                "status": "error",
+                "context": {},
+                "message": f"컨텍스트 ID {context_id}에 해당하는 대화 상황을 찾을 수 없습니다.",
             }
 
         try:
@@ -138,25 +138,29 @@ class ContextManager:
 
             # 조회용 컨텍스트 정보 구성
             display_context = {
-                'id': context_id,
-                'time': context['time'],
-                'place': context['place'],
-                'interaction_partner': context['interaction_partner'],
-                'current_activity': context['current_activity'],
-                'created_at': context['created_at'],
-                'status': 'active'
+                "id": context_id,
+                "time": context["time"],
+                "place": context["place"],
+                "interaction_partner": context["interaction_partner"],
+                "current_activity": context["current_activity"],
+                "created_at": context["created_at"],
+                "status": "active",
             }
 
-            activity_info = f" (활동: {context['current_activity']})" if context['current_activity'] else ""
+            activity_info = (
+                f" (활동: {context['current_activity']})"
+                if context["current_activity"]
+                else ""
+            )
             return {
-                'status': 'success',
-                'context': display_context,
-                'message': f'{context["time"]} {context["place"]}에서 {context["interaction_partner"]}와의 대화 상황을 조회했습니다{activity_info}'
+                "status": "success",
+                "context": display_context,
+                "message": f'{context["time"]} {context["place"]}에서 {context["interaction_partner"]}와의 대화 상황을 조회했습니다{activity_info}',
             }
-            
+
         except Exception as e:
             return {
-                'status': 'error',
-                'context': {},
-                'message': f'컨텍스트 조회 처리 중 시스템 오류가 발생했습니다: {str(e)}'
+                "status": "error",
+                "context": {},
+                "message": f"컨텍스트 조회 처리 중 시스템 오류가 발생했습니다: {str(e)}",
             }

@@ -53,7 +53,7 @@ class ApiClient {
       return response;
     } catch (error) {
       clearTimeout(timeoutId);
-      
+
       if (error.name === 'AbortError') {
         throw new Error(ERROR_MESSAGES.TIMEOUT_ERROR);
       }
@@ -71,15 +71,15 @@ class ApiClient {
     try {
       return await requestFn();
     } catch (error) {
-      const shouldRetry = retryCount < MAX_RETRIES && 
+      const shouldRetry = retryCount < MAX_RETRIES &&
                          (error.name === 'TypeError' || error.status >= 500);
-      
+
       if (shouldRetry) {
         console.warn(`API 요청 실패, ${retryCount + 1}번째 재시도:`, error.message);
         await this.delay(1000 * (retryCount + 1));
         return this.executeWithRetry(requestFn, retryCount + 1);
       }
-      
+
       throw error;
     }
   }
@@ -94,9 +94,9 @@ class ApiClient {
         responseData = await response.json();
       } else {
         const text = await response.text();
-        responseData = { 
-          success: false, 
-          error: `예상치 못한 응답 형식: ${text.substring(0, 100)}...` 
+        responseData = {
+          success: false,
+          error: `예상치 못한 응답 형식: ${text.substring(0, 100)}...`
         };
       }
     } catch (parseError) {
@@ -104,10 +104,10 @@ class ApiClient {
     }
 
     if (!response.ok) {
-      const errorMessage = responseData.error || 
-                          ERROR_MESSAGES[response.status] || 
+      const errorMessage = responseData.error ||
+                          ERROR_MESSAGES[response.status] ||
                           `HTTP ${response.status} 오류가 발생했습니다.`;
-      
+
       const error = new Error(errorMessage);
       error.status = response.status;
       error.response = responseData;
@@ -128,7 +128,7 @@ class ApiClient {
   // HTTP 요청 메서드
   async request(endpoint, options = {}) {
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseURL}${endpoint}`;
-    
+
     const config = {
       method: 'GET',
       headers: {
@@ -145,19 +145,19 @@ class ApiClient {
     const requestFn = async () => {
       try {
         console.log(`API 요청: ${config.method} ${url}`);
-        
+
         const response = await this.fetchWithTimeout(url, config);
         const data = await this.processResponse(response);
-        
+
         console.log(`API 응답: ${config.method} ${url} - 성공`);
         return data;
       } catch (error) {
         console.error(`API 오류: ${config.method} ${url}`, error);
-        
+
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
           throw new Error(ERROR_MESSAGES.NETWORK_ERROR);
         }
-        
+
         throw error;
       }
     };
@@ -174,10 +174,10 @@ class ApiClient {
           searchParams.append(key, options.params[key]);
         }
       });
-      
+
       const separator = endpoint.includes('?') ? '&' : '?';
       endpoint = `${endpoint}${separator}${searchParams.toString()}`;
-      
+
       delete options.params;
     }
 

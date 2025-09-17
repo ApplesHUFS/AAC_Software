@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { feedbackService } from '../../services/feedbackService';
 
 // 통합된 해석 표시 및 선택 컴포넌트
-const InterpretationDisplay = ({ 
-  interpretations, 
-  selectedCards, 
-  contextInfo, 
+const InterpretationDisplay = ({
+  interpretations,
+  selectedCards,
+  contextInfo,
   method = 'ai',
   userId,
   confirmationId,
@@ -22,7 +22,7 @@ const InterpretationDisplay = ({
   const handleFeedbackTypeChange = (type) => {
     setFeedbackType(type);
     setError('');
-    
+
     if (type === 'interpretation') {
       setDirectFeedback('');
     } else {
@@ -68,7 +68,7 @@ const InterpretationDisplay = ({
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     const validationError = validateFeedback();
     if (validationError) {
       setError(validationError);
@@ -79,7 +79,7 @@ const InterpretationDisplay = ({
 
     try {
       const feedbackData = {};
-      
+
       if (feedbackType === 'interpretation' && selectedInterpretationIndex !== null) {
         feedbackData.selectedInterpretationIndex = selectedInterpretationIndex;
       } else if (feedbackType === 'direct' && directFeedback.trim()) {
@@ -87,7 +87,7 @@ const InterpretationDisplay = ({
       }
 
       const response = await feedbackService.submitPartnerFeedback(confirmationId, feedbackData);
-      
+
       if (response.success) {
         onFeedbackSubmit(response);
       } else {
@@ -162,9 +162,9 @@ const InterpretationDisplay = ({
           {selectedCards.map((card, index) => (
             <div key={card.filename || index} className="card-preview">
               <div className="card-image-container">
-                <img 
-                  src={`http://localhost:8000${card.imagePath || `/api/images/${card.filename}`}`} 
-                  alt={card.name} 
+                <img
+                  src={`http://localhost:8000${card.imagePath || `/api/images/${card.filename}`}`}
+                  alt={card.name}
                   loading="lazy"
                 />
                 <div className="card-order communicator-order">{index + 1}</div>
@@ -185,7 +185,7 @@ const InterpretationDisplay = ({
           <p className="interpretation-instruction">
             다음 중에서 소통이가 실제로 표현하고 싶었던 의미와 가장 가까운 해석을 선택해주세요:
           </p>
-          
+
           {/* 피드백 타입 선택 */}
           <div className="feedback-type-selection partner-selection">
             <div className="feedback-option">
@@ -281,7 +281,7 @@ const InterpretationDisplay = ({
 
           {/* 제출 버튼 */}
           <div className="feedback-actions">
-            <button 
+            <button
               type="submit"
               className="primary-button partner-button large"
               disabled={loading}
@@ -324,26 +324,26 @@ const InterpretationDisplay = ({
 };
 
 // 해석 완료 결과 컴포넌트 (최종 결과 표시)
-const InterpretationResult = ({ 
-  feedbackResult, 
-  selectedCards, 
-  contextInfo, 
+const InterpretationResult = ({
+  feedbackResult,
+  selectedCards,
+  contextInfo,
   interpretations,
-  onStartNewSession 
+  onStartNewSession
 }) => {
   const getFinalInterpretation = () => {
-    return feedbackResult?.selected_interpretation || 
-           feedbackResult?.direct_feedback || 
+    return feedbackResult?.selected_interpretation ||
+           feedbackResult?.direct_feedback ||
            feedbackResult?.selectedInterpretation ||
            feedbackResult?.directFeedback ||
            '해석 결과를 찾을 수 없습니다.';
   };
 
   const getFeedbackType = () => {
-    if (feedbackResult?.feedback_type === 'interpretation_selected' || 
+    if (feedbackResult?.feedback_type === 'interpretation_selected' ||
         feedbackResult?.selectedInterpretation) {
       return '제시된 해석 선택';
-    } else if (feedbackResult?.feedback_type === 'direct_feedback' || 
+    } else if (feedbackResult?.feedback_type === 'direct_feedback' ||
                feedbackResult?.directFeedback) {
       return '직접 피드백';
     }
@@ -351,8 +351,8 @@ const InterpretationResult = ({
   };
 
   const getCompletionTime = () => {
-    const timestamp = feedbackResult?.confirmed_at || 
-                     feedbackResult?.timestamp || 
+    const timestamp = feedbackResult?.confirmed_at ||
+                     feedbackResult?.timestamp ||
                      new Date().toISOString();
     return new Date(timestamp).toLocaleString('ko-KR');
   };
@@ -429,7 +429,7 @@ const InterpretationResult = ({
         <div className="cards-grid result-cards">
           {selectedCards.map((card, index) => (
             <div key={card.filename || index} className="card-item-result">
-              <img 
+              <img
                 src={`http://localhost:8000${card.imagePath || `/api/images/${card.filename}`}`}
                 alt={card.name}
                 loading="lazy"
@@ -471,7 +471,7 @@ const InterpretationResult = ({
 
       {/* 액션 버튼 */}
       <div className="result-actions">
-        <button 
+        <button
           onClick={onStartNewSession}
           className="primary-button partner-button large"
         >
@@ -483,11 +483,11 @@ const InterpretationResult = ({
       <div className="completion-message partner-completion">
         <div className="completion-content">
           <p>
-            이번 대화에서 사용된 카드와 해석 정보가 시스템에 학습되어 
+            이번 대화에서 사용된 카드와 해석 정보가 시스템에 학습되어
             다음번에는 더 정확한 추천을 받을 수 있습니다.
           </p>
           <small>
-            소통이의 카드 선택과 최종 해석이 메모리에 저장되어 
+            소통이의 카드 선택과 최종 해석이 메모리에 저장되어
             향후 개인화 추천에 활용됩니다.
           </small>
         </div>

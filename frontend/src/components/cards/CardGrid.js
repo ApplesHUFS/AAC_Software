@@ -75,7 +75,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
   }, []);
 
   return (
-    <div 
+    <div
       className={`card-item communicator-card ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''} ${imageError ? 'error' : ''}`}
       onClick={handleClick}
       onKeyPress={handleKeyPress}
@@ -90,7 +90,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
             <small>이미지 로딩 중...</small>
           </div>
         )}
-        
+
         {imageError ? (
           <div className="image-error communicator-error">
             <img src="/images/error.png" alt="로고" width="32" height="32" className="error-icon" />
@@ -98,7 +98,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
             <small>{card.name}</small>
           </div>
         ) : (
-          <img 
+          <img
             src={`http://localhost:8000${card.imagePath}`}
             alt={card.name}
             loading="lazy"
@@ -107,14 +107,14 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
             style={{ visibility: imageLoaded ? 'visible' : 'hidden' }}
           />
         )}
-        
+
         {/* 선택 표시 */}
         {isSelected && !imageError && (
           <div className="selection-indicator communicator-selected">
             <span className="checkmark">선택됨</span>
           </div>
         )}
-        
+
         {/* 비활성화 상태 표시 */}
         {disabled && !isSelected && (
           <div className="disabled-overlay">
@@ -122,7 +122,7 @@ const CardItem = ({ card, isSelected, onSelect, disabled = false }) => {
           </div>
         )}
       </div>
-      
+
       <div className="card-name">{card.name}</div>
     </div>
   );
@@ -155,26 +155,26 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
         <img src="/images/selected_card.png" alt="로고" width="24" height="24" className="title-icon" />
         선택한 카드 ({selectedCards.length}/{maxCards})
       </h3>
-      
+
       <div className="selected-cards-list">
         {selectedCards.map((card, index) => (
           <div key={`selected-${card.filename}-${index}`} className="selected-card-item communicator-selected-item">
             <div className="card-preview">
-              <img 
+              <img
                 src={`http://localhost:8000${card.imagePath}`}
                 alt={card.name}
                 loading="lazy"
               />
               <div className="card-order communicator-order">{index + 1}</div>
             </div>
-            
+
             <div className="card-details">
               <span className="card-name">{card.name}</span>
               <br />
               <small className="card-position">{index + 1}번째 카드</small>
             </div>
-            
-            <button 
+
+            <button
               className="remove-card-btn communicator-remove"
               onClick={() => onRemoveCard(card)}
               title={`${card.name} 카드 제거`}
@@ -184,7 +184,7 @@ const SelectedCardsDisplay = ({ selectedCards, onRemoveCard, maxCards = 4 }) => 
           </div>
         ))}
       </div>
-      
+
       <div className="selection-summary communicator-summary">
         <p>
           {maxCards - selectedCards.length > 0 ? (
