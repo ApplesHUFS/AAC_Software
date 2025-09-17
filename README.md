@@ -23,7 +23,8 @@ AAC_Software/
 ├── frontend/           # React 웹 애플리케이션
 ├── backend/            # Flask API 서버
 ├── data_processing/    # 데이터 처리 파이프라인
-└── dataset/            # AAC 카드 데이터셋 (별도 다운로드)
+├── user_data/         # 사용자 데이터 저장
+└── dataset/            # AAC 카드 데이터셋
 ```
 
 ### 컴포넌트 구성
