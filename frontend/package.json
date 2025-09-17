@@ -1,7 +1,12 @@
 {
   "name": "aac-interpreter-frontend",
   "version": "1.0.0",
-  "description": "AAC 카드 해석 시스템 - 프론트엔드",
+  "description": "AAC 카드 해석 시스템 - 프론트엔드 (Uses ARASAAC pictograms)",
+  "license": "CC-BY-NC-SA-4.0",
+  "author": "APPLES",
+  "contributors": [
+    "Sergio Palao (ARASAAC pictograms)"
+  ],
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
@@ -43,5 +48,20 @@
   "engines": {
     "node": ">=16.0.0",
     "npm": ">=8.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ApplesHUFS/AAC_Software.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ApplesHUFS/AAC_Software/issues"
+  },
+  "keywords": [
+    "aac",
+    "communication",
+    "accessibility",
+    "arasaac",
+    "pictograms",
+    "react"
+  ]
 }
