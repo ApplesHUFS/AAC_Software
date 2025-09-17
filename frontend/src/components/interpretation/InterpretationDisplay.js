@@ -350,7 +350,7 @@ const InterpretationDisplay = ({
                   확인 중...
                 </>
               ) : (
-                <>해석 선택ㄴ</>
+                <>해석 선택</>
               )}
             </button>
           </div>
