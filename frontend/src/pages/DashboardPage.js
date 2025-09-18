@@ -378,6 +378,13 @@ const DashboardPage = ({
             </div>
             <div className="ad partner-section">
               <h4>광고</h4>
+              <a href="https://simplistic-bugle-82e.notion.site/APPLES-1a42880953e681658098da15fe8af285?source=copy_link" target="_blank" rel="noopener noreferrer">
+                <img src="/images/ad-banner.jpg" 
+                    alt="광고" 
+                    className="ad-banner"
+                    loading="lazy" 
+                    decoding="async" />
+              </a>
             </div>
           </div>
         )}
