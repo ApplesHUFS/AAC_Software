@@ -79,6 +79,28 @@
     flex-direction: column;
     text-align: center;
   }
+
+  .ad-slider-wrapper {
+    height: 800px;
+  }
+
+  .ad-banner {
+    height: 800px;
+  }
+
+  .ad-nav-btn {
+    width: 15px;
+    height: 15px;
+    font-size: 1.0rem;
+  }
+
+  .ad-prev-btn {
+    left: 6px;
+  }
+
+  .ad-next-btn {
+    right: 6px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -120,5 +142,27 @@
 
   .user-stats {
     padding: 1.5rem;
+  }
+
+    .ad-slider-wrapper {
+    height: 300px;
+  }
+
+  .ad-banner {
+    height: 300px;
+  }
+
+  .ad-nav-btn {
+    width: 15px;
+    height: 15px;
+    font-size: 1.0rem;
+  }
+
+  .ad-prev-btn {
+    left: 6px;
+  }
+
+  .ad-next-btn {
+    right: 6px;
   }
 }
