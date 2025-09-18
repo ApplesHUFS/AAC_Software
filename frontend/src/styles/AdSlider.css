@@ -145,21 +145,21 @@
   .ad-slider-wrapper {
     height: 150px;
   }
-  
+
   .ad-banner {
     height: 150px;
   }
-  
+
   .ad-nav-btn {
     width: 35px;
     height: 35px;
     font-size: 1.2rem;
   }
-  
+
   .ad-prev-btn {
     left: 8px;
   }
-  
+
   .ad-next-btn {
     right: 8px;
   }

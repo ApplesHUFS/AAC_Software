@@ -219,8 +219,8 @@ const InterpretationPage = ({
             </div>
             <p style={{ whiteSpace: "pre-line" }}>
               <strong>{contextData.place}</strong>에서{" "}
-              <strong>{contextData.interactionPartner}</strong>와(과)의 대화 상황을
-              고려해서{"\n"}가장 적절한 해석 3가지를 만들어드릴게요!
+              <strong>{contextData.interactionPartner}</strong>와(과)의 대화
+              상황을 고려해서{"\n"}가장 적절한 해석 3가지를 만들어드릴게요!
             </p>
           </div>
           <div className="loading-spinner"></div>

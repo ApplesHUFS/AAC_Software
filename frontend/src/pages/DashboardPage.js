@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import ContextForm from "../components/context/ContextForm";
 import ProfileEditForm from "../components/profile/ProfileEditForm";
-import AdSlider from "../components/ads/AdSlider"; 
+import AdSlider from "../components/ads/AdSlider";
 
 const DashboardPage = ({
   user,
@@ -87,7 +87,10 @@ const DashboardPage = ({
             <span>대시보드</span>
           </div>
           <h2>{user.name}님의 소통 도우미</h2>
-          <p ><strong style={{ color: '#b49cf7' }}>소통, 이룸</strong>과 함께하는 AAC 카드 의사소통을 시작해보세요☺️</p>
+          <p>
+            <strong style={{ color: "#b49cf7" }}>소통, 이룸</strong>과 함께하는
+            AAC 카드 의사소통을 시작해보세요☺️
+          </p>
         </div>
         <div className="header-actions">
           {currentView !== "main" && (
@@ -379,8 +382,8 @@ const DashboardPage = ({
             </div>
             <AdSlider />
           </div>
-        )} {/*https://simplistic-bugle-82e.notion.site/APPLES-1a42880953e681658098da15fe8af285?source=copy_link*/}
-
+        )}{" "}
+        {/*https://simplistic-bugle-82e.notion.site/APPLES-1a42880953e681658098da15fe8af285?source=copy_link*/}
         {/* 컨텍스트 입력 화면 */}
         {currentView === "context" && (
           <ContextForm
@@ -388,7 +391,6 @@ const DashboardPage = ({
             onContextCreated={handleContextCreated}
           />
         )}
-
         {/* 프로필 편집 화면 */}
         {currentView === "profile" && (
           <ProfileEditForm
