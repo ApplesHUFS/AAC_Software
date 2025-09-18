@@ -53,25 +53,7 @@ const AdSlider = () => {
   // 광고가 없으면 렌더링하지 않음
   if (!ads.length) return null;
 
-  // 광고가 1개면 기존 스타일로 렌더링
-  if (ads.length === 1) {
-    return (
-      <div className="ad partner-section">
-        <h4>광고</h4>
-        <a href={ads[0].link} target="_blank" rel="noopener noreferrer">
-          <img 
-            src={ads[0].image} 
-            alt={ads[0].alt} 
-            className="ad-banner"
-            loading="lazy" 
-            decoding="async" 
-          />
-        </a>
-      </div>
-    );
-  }
-
-  // 광고가 여러 개면 슬라이더로 렌더링
+  // 모든 경우에 슬라이더로 렌더링 (단일 광고도 포함)
   return (
     <div className="ad partner-section">
       <h4>광고</h4>
@@ -86,12 +68,11 @@ const AdSlider = () => {
             {ads.map((ad) => (
               <div key={ad.id} className="ad-slide">
                 <a href={ad.link} target="_blank" rel="noopener noreferrer">
-                  <img 
-                    src={ad.image} 
-                    alt={ad.alt} 
-                    className="ad-banner"
-                    loading="lazy" 
-                    decoding="async" 
+                  <div 
+                    className="ad-banner-bg"
+                    style={{ backgroundImage: `url(${ad.image})` }}
+                    role="img"
+                    aria-label={ad.alt}
                   />
                 </a>
               </div>
@@ -99,7 +80,7 @@ const AdSlider = () => {
           </div>
         </div>
 
-        {/* 네비게이션 버튼 */}
+        {/* 네비게이션 버튼 - 광고가 2개 이상일 때만 */}
         {ads.length > 1 && (
           <>
             <button className="ad-nav-btn ad-prev-btn" onClick={goToPrevious}>
@@ -110,20 +91,20 @@ const AdSlider = () => {
             </button>
           </>
         )}
-
-        {/* 인디케이터 점들 */}
-        {ads.length > 1 && (
-          <div className="ad-indicators">
-            {ads.map((_, index) => (
-              <button
-                key={index}
-                className={`ad-indicator ${index === currentIndex ? 'active' : ''}`}
-                onClick={() => goToSlide(index)}
-              />
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* 인디케이터 점들 - 광고가 2개 이상일 때만 */}
+      {ads.length > 1 && (
+        <div className="ad-indicators">
+          {ads.map((_, index) => (
+            <button
+              key={index}
+              className={`ad-indicator ${index === currentIndex ? 'active' : ''}`}
+              onClick={() => goToSlide(index)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
