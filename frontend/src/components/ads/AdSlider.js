@@ -19,10 +19,11 @@ const AdSlider = () => {
     },
     {
       id: 3,
-      image: '/images/ad-banner.jpg',
-      link: 'https://simplistic-bugle-82e.notion.site/APPLES-1a42880953e681658098da15fe8af285?source=copy_link',
+      image: '/images/fake-ad-banner3.png',
+      link: 'https://www.instagram.com/p/DH1DszXzVTb/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==',
       alt: '광고 3'
     }
+    
   ];
 
   // 자동 슬라이드 (5초마다)
