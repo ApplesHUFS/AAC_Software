@@ -1,30 +1,30 @@
 // src/components/profile/ProfileEditForm.js
-import React, { useState } from 'react';
-import { authService } from '../../services/authService';
+import React, { useState } from "react";
+import { authService } from "../../services/authService";
 
 // 선택지 옵션들
-const GENDER_OPTIONS = ['남성', '여성'];
-const DISABILITY_OPTIONS = ['지적장애', '자폐스펙트럼장애', '의사소통장애'];
+const GENDER_OPTIONS = ["남성", "여성"];
+const DISABILITY_OPTIONS = ["지적장애", "자폐스펙트럼장애", "의사소통장애"];
 
 const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
   const [formData, setFormData] = useState({
-    name: user.name || '',
-    age: user.age || '',
-    gender: user.gender || '',
-    disabilityType: user.disabilityType || '',
-    communicationCharacteristics: user.communicationCharacteristics || '',
-    interestingTopics: [...(user.interestingTopics || [])]
+    name: user.name || "",
+    age: user.age || "",
+    gender: user.gender || "",
+    disabilityType: user.disabilityType || "",
+    communicationCharacteristics: user.communicationCharacteristics || "",
+    interestingTopics: [...(user.interestingTopics || [])],
   });
-  const [topicInput, setTopicInput] = useState('');
+  const [topicInput, setTopicInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError('');
-    if (success) setSuccess('');
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
+    if (success) setSuccess("");
   };
 
   // 관심 주제 추가
@@ -34,28 +34,30 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
     if (!topic) return;
 
     if (formData.interestingTopics.includes(topic)) {
-      setError('이미 추가된 관심 주제입니다.');
+      setError("이미 추가된 관심 주제입니다.");
       return;
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      interestingTopics: [...prev.interestingTopics, topic]
+      interestingTopics: [...prev.interestingTopics, topic],
     }));
-    setTopicInput('');
-    setError('');
+    setTopicInput("");
+    setError("");
   };
 
   // 관심 주제 제거
   const handleRemoveTopic = (topicToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      interestingTopics: prev.interestingTopics.filter(topic => topic !== topicToRemove)
+      interestingTopics: prev.interestingTopics.filter(
+        (topic) => topic !== topicToRemove
+      ),
     }));
   };
 
   const handleTopicKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddTopic();
     }
@@ -68,19 +70,24 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
       formData.age !== user.age ||
       formData.gender !== user.gender ||
       formData.disabilityType !== user.disabilityType ||
-      formData.communicationCharacteristics !== user.communicationCharacteristics ||
-      JSON.stringify(formData.interestingTopics.sort()) !== JSON.stringify((user.interestingTopics || []).sort())
+      formData.communicationCharacteristics !==
+        user.communicationCharacteristics ||
+      JSON.stringify(formData.interestingTopics.sort()) !==
+        JSON.stringify((user.interestingTopics || []).sort())
     );
   };
 
   // 유효성 검증
   const validateForm = () => {
-    if (!formData.name.trim()) return '이름을 입력해주세요.';
-    if (!formData.age || formData.age < 1 || formData.age > 100) return '나이는 1~100세 사이로 입력해주세요.';
-    if (!formData.gender) return '성별을 선택해주세요.';
-    if (!formData.disabilityType) return '장애 유형을 선택해주세요.';
-    if (!formData.communicationCharacteristics.trim()) return '의사소통 특징을 입력해주세요.';
-    if (formData.interestingTopics.length === 0) return '관심 주제를 최소 1개 이상 입력해주세요.';
+    if (!formData.name.trim()) return "이름을 입력해주세요.";
+    if (!formData.age || formData.age < 1 || formData.age > 100)
+      return "나이는 1~100세 사이로 입력해주세요.";
+    if (!formData.gender) return "성별을 선택해주세요.";
+    if (!formData.disabilityType) return "장애 유형을 선택해주세요.";
+    if (!formData.communicationCharacteristics.trim())
+      return "의사소통 특징을 입력해주세요.";
+    if (formData.interestingTopics.length === 0)
+      return "관심 주제를 최소 1개 이상 입력해주세요.";
 
     return null;
   };
@@ -95,13 +102,13 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
     }
 
     if (!hasChanges()) {
-      setError('변경된 내용이 없습니다.');
+      setError("변경된 내용이 없습니다.");
       return;
     }
 
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const updateData = {
@@ -109,26 +116,27 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         age: parseInt(formData.age),
         gender: formData.gender,
         disabilityType: formData.disabilityType,
-        communicationCharacteristics: formData.communicationCharacteristics.trim(),
-        interestingTopics: formData.interestingTopics
+        communicationCharacteristics:
+          formData.communicationCharacteristics.trim(),
+        interestingTopics: formData.interestingTopics,
       };
 
       const response = await authService.updateProfile(user.userId, updateData);
 
       if (response.success) {
-        setSuccess('소통이 정보가 성공적으로 업데이트되었습니다.');
+        setSuccess("소통이 정보가 성공적으로 업데이트되었습니다.");
 
         // 업데이트된 사용자 정보 생성
         const updatedUser = {
           ...user,
-          ...updateData
+          ...updateData,
         };
 
         setTimeout(() => {
           onProfileUpdated(updatedUser);
         }, 1500);
       } else {
-        setError(response.error || '정보 업데이트에 실패했습니다.');
+        setError(response.error || "정보 업데이트에 실패했습니다.");
       }
     } catch (error) {
       setError(error.message);
@@ -140,17 +148,23 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
   return (
     <div className="profile-edit-form partner-theme">
       <div className="form-header">
-        <h2>
-          정보 수정
-        </h2>
-        <p>정보를 업데이트하면, 소통이에게 더 맞춤화된 서비스를 드릴 수 있어요.</p>
+        <h2>정보 수정</h2>
+        <p>
+          정보를 업데이트하면, 소통이에게 더 맞춤화된 서비스를 드릴 수 있어요!
+        </p>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* 기본 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/basic_info2.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img
+              src="/images/basic_info2.png"
+              alt="로고"
+              width="20"
+              height="20"
+              className="section-icon"
+            />
             기본 정보
           </h4>
 
@@ -193,8 +207,10 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
                 disabled={loading}
               >
                 <option value="">선택해주세요</option>
-                {GENDER_OPTIONS.map(option => (
-                  <option key={option} value={option}>{option}</option>
+                {GENDER_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </select>
             </div>
@@ -204,7 +220,13 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         {/* 장애 및 의사소통 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/communication_characteristics.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img
+              src="/images/communication_characteristics.png"
+              alt="로고"
+              width="20"
+              height="20"
+              className="section-icon"
+            />
             의사소통 정보
           </h4>
 
@@ -218,14 +240,18 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
               disabled={loading}
             >
               <option value="">선택해주세요</option>
-              {DISABILITY_OPTIONS.map(option => (
-                <option key={option} value={option}>{option}</option>
+              {DISABILITY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="form-group">
-            <label htmlFor="communicationCharacteristics">의사소통 특징 *</label>
+            <label htmlFor="communicationCharacteristics">
+              의사소통 특징 *
+            </label>
             <textarea
               id="communicationCharacteristics"
               name="communicationCharacteristics"
@@ -241,7 +267,13 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         {/* 관심 주제 */}
         <div className="form-section">
           <h4>
-            <img src="/images/interest_topic.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img
+              src="/images/interest_topic.png"
+              alt="로고"
+              width="20"
+              height="20"
+              className="section-icon"
+            />
             소통이의 관심 주제 *
           </h4>
 
@@ -288,14 +320,26 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
         {/* 메시지 */}
         {error && (
           <div className="error-message partner-error">
-            <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
+            <img
+              src="/images/error.png"
+              alt="로고"
+              width="16"
+              height="16"
+              className="error-icon"
+            />
             {error}
           </div>
         )}
 
         {success && (
           <div className="success-message partner-success">
-            <img src="/images/success.png" alt="로고" width="16" height="16" className="success-icon" />
+            <img
+              src="/images/success.png"
+              alt="로고"
+              width="16"
+              height="16"
+              className="success-icon"
+            />
             {success}
           </div>
         )}
@@ -315,14 +359,20 @@ const ProfileEditForm = ({ user, onProfileUpdated, onCancel }) => {
             className="primary-button partner-button"
             disabled={loading || !hasChanges()}
           >
-            {loading ? '저장 중...' : '변경사항 저장'}
+            {loading ? "저장 중..." : "변경사항 저장"}
           </button>
         </div>
 
         {/* 변경 사항 알림 */}
         {hasChanges() && !loading && (
           <div className="changes-notice partner-notice">
-            <img src="/images/save.png" alt="로고" width="16" height="16" className="notice-icon" />
+            <img
+              src="/images/save.png"
+              alt="로고"
+              width="16"
+              height="16"
+              className="notice-icon"
+            />
             변경된 내용이 있습니다. 저장하시겠습니까?
           </div>
         )}

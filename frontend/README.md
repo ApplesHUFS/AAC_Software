@@ -42,6 +42,7 @@ frontend/
 │   │   ├── cards/                 # 카드 관련
 │   │   ├── context/               # 상황 설정
 │   │   ├── interpretation/        # 해석 관련
+│   │   ├── ads/                   # 광고 관련
 │   │   └── profile/               # 프로필 관련
 │   ├── services/                  # 서비스 레이어
 │   │   ├── api.js                 # API 클라이언트
@@ -58,6 +59,7 @@ frontend/
 │       ├── cards.css              # 카드 관련 스타일
 │       ├── interpretation.css     # 해석 페이지 스타일
 │       ├── context.css            # 상황 설정 스타일
+│       ├── AdSlider.css           # 광고 슬라이더 스타일
 │       └── responsive.css         # 반응형 디자인
 └── package.json                   # 프로젝트 설정 및 의존성
 ```

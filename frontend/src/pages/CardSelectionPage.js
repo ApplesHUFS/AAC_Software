@@ -1,23 +1,28 @@
 // src/pages/CardSelectionPage.js
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { cardService } from '../services/cardService';
-import CardGrid, { SelectedCardsDisplay } from '../components/cards/CardGrid';
-import CardHistoryNavigation from '../components/cards/CardHistoryNavigation';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { cardService } from "../services/cardService";
+import CardGrid, { SelectedCardsDisplay } from "../components/cards/CardGrid";
+import CardHistoryNavigation from "../components/cards/CardHistoryNavigation";
 
-const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackToDashboard }) => {
+const CardSelectionPage = ({
+  user,
+  contextData,
+  onCardSelectionComplete,
+  onBackToDashboard,
+}) => {
   // 카드 관련 상태
   const [cards, setCards] = useState([]);
   const [selectedCards, setSelectedCards] = useState([]);
   const [allRecommendedCards, setAllRecommendedCards] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // 히스토리 관련 상태 (단일 소스)
   const [historyState, setHistoryState] = useState({
     currentPage: 1,
     totalPages: 1,
     isLoading: false,
-    error: null
+    error: null,
   });
 
   // UI 상태
@@ -28,7 +33,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
 
   // 히스토리 상태 업데이트 함수
   const updateHistoryState = useCallback((updates) => {
-    setHistoryState(prev => ({ ...prev, ...updates }));
+    setHistoryState((prev) => ({ ...prev, ...updates }));
   }, []);
 
   // 히스토리 정보 로드
@@ -37,12 +42,14 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
 
     try {
       updateHistoryState({ isLoading: true, error: null });
-      const response = await cardService.getHistorySummary(contextData.contextId);
+      const response = await cardService.getHistorySummary(
+        contextData.contextId
+      );
 
       if (response.success && response.data) {
         updateHistoryState({
           totalPages: response.data.totalPages || 1,
-          isLoading: false
+          isLoading: false,
         });
         return response.data;
       }
@@ -57,9 +64,11 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
   const addToRecommendedCards = useCallback((newCards) => {
     if (!newCards?.length) return;
 
-    setAllRecommendedCards(prev => {
-      const existingFilenames = new Set(prev.map(card => card.filename));
-      const uniqueNewCards = newCards.filter(card => !existingFilenames.has(card.filename));
+    setAllRecommendedCards((prev) => {
+      const existingFilenames = new Set(prev.map((card) => card.filename));
+      const uniqueNewCards = newCards.filter(
+        (card) => !existingFilenames.has(card.filename)
+      );
       return [...prev, ...uniqueNewCards];
     });
   }, []);
@@ -67,38 +76,49 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
   // 초기 카드 추천 로드
   const loadInitialCards = useCallback(async () => {
     if (!user?.userId || !contextData?.contextId) {
-      setError('사용자 정보 또는 컨텍스트 정보가 없습니다.');
+      setError("사용자 정보 또는 컨텍스트 정보가 없습니다.");
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       // 카드 추천과 히스토리 정보를 병렬로 로드
       const [cardResponse, historyInfo] = await Promise.all([
         cardService.getRecommendations(user.userId, contextData.contextId),
-        loadHistoryInfo()
+        loadHistoryInfo(),
       ]);
 
       if (cardResponse.success && cardResponse.data) {
-        const normalizedCards = cardService.normalizeCardData(cardResponse.data.cards || []);
+        const normalizedCards = cardService.normalizeCardData(
+          cardResponse.data.cards || []
+        );
         setCards(normalizedCards);
         addToRecommendedCards(normalizedCards);
 
         // 현재 페이지 설정
-        const latestPage = cardResponse.data.pagination?.totalPages || historyInfo?.totalPages || 1;
+        const latestPage =
+          cardResponse.data.pagination?.totalPages ||
+          historyInfo?.totalPages ||
+          1;
         updateHistoryState({ currentPage: latestPage });
       } else {
-        setError(cardResponse.error || '카드 추천을 받을 수 없습니다.');
+        setError(cardResponse.error || "카드 추천을 받을 수 없습니다.");
       }
     } catch (error) {
-      setError(error.message || '카드 로딩 중 오류가 발생했습니다.');
+      setError(error.message || "카드 로딩 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
-  }, [user?.userId, contextData?.contextId, addToRecommendedCards, loadHistoryInfo, updateHistoryState]);
+  }, [
+    user?.userId,
+    contextData?.contextId,
+    addToRecommendedCards,
+    loadHistoryInfo,
+    updateHistoryState,
+  ]);
 
   // 컴포넌트 마운트 시 초기 로드
   useEffect(() => {
@@ -109,119 +129,165 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
   }, [loadInitialCards]);
 
   // 히스토리 페이지 변경 처리
-  const handlePageChange = useCallback(async (pageNumber) => {
-    if (!contextData?.contextId || pageNumber === historyState.currentPage || loading) return;
+  const handlePageChange = useCallback(
+    async (pageNumber) => {
+      if (
+        !contextData?.contextId ||
+        pageNumber === historyState.currentPage ||
+        loading
+      )
+        return;
 
-    try {
-      setLoading(true);
-      setError('');
-      updateHistoryState({ isLoading: true });
+      try {
+        setLoading(true);
+        setError("");
+        updateHistoryState({ isLoading: true });
 
-      const response = await cardService.getHistoryPage(contextData.contextId, pageNumber);
+        const response = await cardService.getHistoryPage(
+          contextData.contextId,
+          pageNumber
+        );
 
-      if (response.success && response.data) {
-        const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
-        setCards(normalizedCards);
-        updateHistoryState({
-          currentPage: pageNumber,
-          isLoading: false
-        });
-        addToRecommendedCards(normalizedCards);
-      } else {
-        setError(response.error || '히스토리 페이지를 불러올 수 없습니다.');
+        if (response.success && response.data) {
+          const normalizedCards = cardService.normalizeCardData(
+            response.data.cards || []
+          );
+          setCards(normalizedCards);
+          updateHistoryState({
+            currentPage: pageNumber,
+            isLoading: false,
+          });
+          addToRecommendedCards(normalizedCards);
+        } else {
+          setError(response.error || "히스토리 페이지를 불러올 수 없습니다.");
+          updateHistoryState({ isLoading: false });
+        }
+      } catch (error) {
+        setError(
+          error.message || "히스토리 페이지 로딩 중 오류가 발생했습니다."
+        );
         updateHistoryState({ isLoading: false });
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      setError(error.message || '히스토리 페이지 로딩 중 오류가 발생했습니다.');
-      updateHistoryState({ isLoading: false });
-    } finally {
-      setLoading(false);
-    }
-  }, [contextData?.contextId, historyState.currentPage, loading, addToRecommendedCards, updateHistoryState]);
+    },
+    [
+      contextData?.contextId,
+      historyState.currentPage,
+      loading,
+      addToRecommendedCards,
+      updateHistoryState,
+    ]
+  );
 
   // 카드 재추천 처리 (근본적 해결)
   const handleRerollCards = useCallback(async () => {
     if (isRerolling || !user?.userId || !contextData?.contextId) return;
 
     setIsRerolling(true);
-    setError('');
+    setError("");
 
     try {
       // 새 카드 추천 요청
-      const response = await cardService.getRecommendations(user.userId, contextData.contextId);
+      const response = await cardService.getRecommendations(
+        user.userId,
+        contextData.contextId
+      );
 
       if (response.success && response.data) {
-        const normalizedCards = cardService.normalizeCardData(response.data.cards || []);
+        const normalizedCards = cardService.normalizeCardData(
+          response.data.cards || []
+        );
         setCards(normalizedCards);
         addToRecommendedCards(normalizedCards);
 
         // 새 페이지 정보로 상태 업데이트
-        const newPageNumber = response.data.pagination?.totalPages || historyState.totalPages + 1;
+        const newPageNumber =
+          response.data.pagination?.totalPages || historyState.totalPages + 1;
         updateHistoryState({
           currentPage: newPageNumber,
-          totalPages: newPageNumber
+          totalPages: newPageNumber,
         });
 
         // 히스토리 정보 새로고침 (비동기로 백그라운드에서 실행)
         setTimeout(() => {
           loadHistoryInfo();
         }, 100);
-
       } else {
-        setError(response.error || '카드 재추천에 실패했습니다.');
+        setError(response.error || "카드 재추천에 실패했습니다.");
       }
     } catch (error) {
-      setError(error.message || '카드 재추천 중 오류가 발생했습니다.');
+      setError(error.message || "카드 재추천 중 오류가 발생했습니다.");
     } finally {
       setIsRerolling(false);
     }
-  }, [isRerolling, user?.userId, contextData?.contextId, historyState.totalPages, addToRecommendedCards, updateHistoryState, loadHistoryInfo]);
+  }, [
+    isRerolling,
+    user?.userId,
+    contextData?.contextId,
+    historyState.totalPages,
+    addToRecommendedCards,
+    updateHistoryState,
+    loadHistoryInfo,
+  ]);
 
   // 카드 선택/해제 처리
-  const handleCardSelection = useCallback((card) => {
-    if (loading) return;
+  const handleCardSelection = useCallback(
+    (card) => {
+      if (loading) return;
 
-    const isSelected = selectedCards.some(selected => selected.filename === card.filename);
+      const isSelected = selectedCards.some(
+        (selected) => selected.filename === card.filename
+      );
 
-    if (isSelected) {
-      setSelectedCards(prev => prev.filter(selected => selected.filename !== card.filename));
-    } else if (selectedCards.length < 4) {
-      setSelectedCards(prev => [...prev, card]);
-    }
+      if (isSelected) {
+        setSelectedCards((prev) =>
+          prev.filter((selected) => selected.filename !== card.filename)
+        );
+      } else if (selectedCards.length < 4) {
+        setSelectedCards((prev) => [...prev, card]);
+      }
 
-    if (error) setError('');
-  }, [selectedCards, loading, error]);
+      if (error) setError("");
+    },
+    [selectedCards, loading, error]
+  );
 
   // 선택된 카드 개별 제거
   const handleRemoveSelectedCard = useCallback((cardToRemove) => {
-    setSelectedCards(prev => prev.filter(card => card.filename !== cardToRemove.filename));
+    setSelectedCards((prev) =>
+      prev.filter((card) => card.filename !== cardToRemove.filename)
+    );
   }, []);
 
   // 카드 선택 완료 및 해석 단계로 진행
   const handleProceedToInterpretation = useCallback(async () => {
     if (selectedCards.length === 0) {
-      setError('최소 1개의 카드를 선택해주세요.');
+      setError("최소 1개의 카드를 선택해주세요.");
       return;
     }
 
     if (selectedCards.length > 4) {
-      setError('최대 4개까지만 선택할 수 있습니다.');
+      setError("최대 4개까지만 선택할 수 있습니다.");
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
-      const validationResponse = await cardService.validateSelection(selectedCards, allRecommendedCards);
+      const validationResponse = await cardService.validateSelection(
+        selectedCards,
+        allRecommendedCards
+      );
 
       if (validationResponse.success && validationResponse.data?.valid) {
         onCardSelectionComplete(selectedCards);
       } else {
-        setError('선택한 카드가 유효하지 않습니다. 다시 선택해주세요.');
+        setError("선택한 카드가 유효하지 않습니다. 다시 선택해주세요.");
       }
     } catch (error) {
-      setError(error.message || '카드 검증 중 오류가 발생했습니다.');
+      setError(error.message || "카드 검증 중 오류가 발생했습니다.");
     } finally {
       setLoading(false);
     }
@@ -242,13 +308,19 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
           <div className="loading-header">
             <h2>소통이를 위한 카드를 준비하고 있어요!</h2>
           </div>
-          <p style={{ whiteSpace: 'pre-line' }}>
-            소통이의 관심사와 현재 상황을 분석해서{'\n'}딱 맞는 카드들을 골라드릴게요😄
+          <p style={{ whiteSpace: "pre-line" }}>
+            소통이의 관심사와 현재 상황을 분석해서{"\n"}딱 맞는 카드들을
+            골라드릴게요😄
           </p>
           <div className="loading-spinner"></div>
-          <div className="loading-tips" style={{ textAlign: 'center' }}>
-            <p><strong>{user.name}</strong>님이 좋아하는 주제를 고려하고 있어요.</p>
-            <p><strong>{contextData.place}</strong>에서 쓰기 좋은 카드들을 찾고 있어요.</p>
+          <div className="loading-tips" style={{ textAlign: "center" }}>
+            <p>
+              <strong>{user.name}</strong>님이 좋아하는 주제를 고려하고 있어요.
+            </p>
+            <p>
+              <strong>{contextData.place}</strong>에서 쓰기 좋은 카드들을 찾고
+              있어요.
+            </p>
           </div>
         </div>
       </div>
@@ -276,9 +348,13 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
         <h2>어떤 카드로 소통할까요?</h2>
         <div className="context-info">
           <span className="context-item">위치: {contextData.place}</span>
-          <span className="context-item">대화상대: {contextData.interactionPartner}와 함께</span>
+          <span className="context-item">
+            대화상대: {contextData.interactionPartner}와(과) 함께
+          </span>
           {contextData.currentActivity && (
-            <span className="context-item">활동: {contextData.currentActivity} 중</span>
+            <span className="context-item">
+              활동: {contextData.currentActivity} 중
+            </span>
           )}
         </div>
       </header>
@@ -298,7 +374,7 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
               onClick={handleRerollCards}
               disabled={loading || isRerolling}
             >
-              {isRerolling ? '새 카드 찾는 중...' : '다른 카드 보기'}
+              {isRerolling ? "새 카드 찾는 중..." : "다른 카드 보기"}
             </button>
 
             <button
@@ -312,7 +388,13 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
 
           {error && (
             <div className="error-message communicator-error">
-              <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
+              <img
+                src="/images/error.png"
+                alt="로고"
+                width="16"
+                height="16"
+                className="error-icon"
+              />
               {error}
             </div>
           )}
@@ -353,7 +435,13 @@ const CardSelectionPage = ({ user, contextData, onCardSelectionComplete, onBackT
             />
           ) : (
             <div className="no-cards-message communicator-message">
-              <img src="/images/error.png" alt="로고" width="48" height="48" className="message-icon" />
+              <img
+                src="/images/error.png"
+                alt="로고"
+                width="48"
+                height="48"
+                className="message-icon"
+              />
               <h3>아! 카드를 불러올 수 없어요</h3>
               <p>잠깐만 기다렸다가 다시 시도해주세요.</p>
               <button

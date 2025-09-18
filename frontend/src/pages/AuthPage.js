@@ -1,7 +1,7 @@
 // src/pages/AuthPage.js
-import React, { useState } from 'react';
-import LoginForm from '../components/auth/LoginForm';
-import RegisterForm from '../components/auth/RegisterForm';
+import React, { useState } from "react";
+import LoginForm from "../components/auth/LoginForm";
+import RegisterForm from "../components/auth/RegisterForm";
 
 const AuthPage = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,8 +21,13 @@ const AuthPage = ({ onAuthSuccess }) => {
       <div className="auth-container">
         <div className="auth-header">
           <div className="service-logo">
-            <img src="/images/logo_red.png" alt="로고" width="32" height="32" />
-            <h1>소통이룸</h1>
+            <img
+              src="/images/basic_logo.png"
+              alt="로고"
+              width="48"
+              height="48"
+            />
+            <h1>소통<span style={{ marginRight: '2px' }}>,</span>이룸</h1>
           </div>
           <p className="service-description">
             개인화된 AAC 의사소통을 지원하는 <strong>소통 도우미</strong> 서비스

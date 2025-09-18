@@ -1,40 +1,43 @@
 // src/components/auth/LoginForm.js
-import React, { useState } from 'react';
-import { authService } from '../../services/authService';
+import React, { useState } from "react";
+import { authService } from "../../services/authService";
 
 const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
   const [formData, setFormData] = useState({
-    userId: '',
-    password: ''
+    userId: "",
+    password: "",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.userId.trim() || !formData.password) {
-      setError('사용자 ID와 비밀번호를 모두 입력해주세요.');
+      setError("사용자 ID와 비밀번호를 모두 입력해주세요.");
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await authService.login(formData.userId.trim(), formData.password);
+      const response = await authService.login(
+        formData.userId.trim(),
+        formData.password
+      );
 
       if (response.success && response.data.authenticated) {
         onLoginSuccess(response.data);
       } else {
-        setError('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
+        setError("로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.");
       }
     } catch (error) {
       setError(error.message);
@@ -45,14 +48,17 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
 
   return (
     <div className="auth-form partner-form">
-      <h2>
-        로그인
-      </h2>
+      <h2>로그인</h2>
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="userId">
-            <img src="/images/basic_info.png" alt="로고" width="16" height="16" />
+            <img
+              src="/images/basic_info.png"
+              alt="로고"
+              width="16"
+              height="16"
+            />
             사용자 ID
           </label>
           <input
@@ -69,7 +75,12 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
 
         <div className="form-group">
           <label htmlFor="password">
-            <img src="/images/account_info.png" alt="로고" width="16" height="16" />
+            <img
+              src="/images/account_info.png"
+              alt="로고"
+              width="16"
+              height="16"
+            />
             비밀번호
           </label>
           <input
@@ -86,19 +97,29 @@ const LoginForm = ({ onLoginSuccess, switchToRegister }) => {
 
         {error && (
           <div className="error-message partner-error">
-            <img src="/images/logo_red.png" alt="로고" width="16" height="16" className="error-icon" />
+            <img
+              src="/images/error.png"
+              alt="로고"
+              width="16"
+              height="16"
+              className="error-icon"
+            />
             {error}
           </div>
         )}
 
-        <button type="submit" className="primary-button partner-button" disabled={loading}>
-          {loading ? '로그인 중...' : '로그인'}
+        <button
+          type="submit"
+          className="primary-button partner-button"
+          disabled={loading}
+        >
+          {loading ? "로그인 중..." : "로그인"}
         </button>
       </form>
 
       <div className="auth-switch">
         <p>
-          아직 계정이 없으신가요?{' '}
+          아직 계정이 없으신가요?{" "}
           <button
             type="button"
             className="link-button partner-link"

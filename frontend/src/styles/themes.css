@@ -15,7 +15,11 @@
 
 .partner-theme .primary-button,
 .partner-button {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-dark) 100%
+  );
   box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
 }
 
@@ -164,7 +168,11 @@
 }
 
 .communicator-theme .primary-button {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--primary-dark) 100%
+  );
   box-shadow: 0 2px 8px rgba(6, 182, 212, 0.2);
 }
 
