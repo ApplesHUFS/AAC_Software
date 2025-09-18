@@ -6,7 +6,6 @@ if ! command -v gdown &> /dev/null; then
     echo "Installing gdown..."
     pip install gdown
 fi
-
 mkdir -p dataset
 
 echo "Downloading images.tar..."

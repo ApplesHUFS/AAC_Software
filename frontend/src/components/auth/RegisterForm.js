@@ -1,32 +1,32 @@
 // src/components/auth/RegisterForm.js
-import React, { useState } from 'react';
-import { authService } from '../../services/authService';
+import React, { useState } from "react";
+import { authService } from "../../services/authService";
 
 // 선택지 옵션들
-const GENDER_OPTIONS = ['남성', '여성'];
-const DISABILITY_OPTIONS = ['지적장애', '자폐스펙트럼장애', '의사소통장애'];
+const GENDER_OPTIONS = ["남성", "여성"];
+const DISABILITY_OPTIONS = ["지적장애", "자폐스펙트럼장애", "의사소통장애"];
 
 const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
   const [formData, setFormData] = useState({
-    userId: '',
-    name: '',
-    age: '',
-    gender: '',
-    disabilityType: '',
-    communicationCharacteristics: '',
+    userId: "",
+    name: "",
+    age: "",
+    gender: "",
+    disabilityType: "",
+    communicationCharacteristics: "",
     interestingTopics: [],
-    password: '',
-    confirmPassword: ''
+    password: "",
+    confirmPassword: "",
   });
-  const [topicInput, setTopicInput] = useState('');
+  const [topicInput, setTopicInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // 폼 입력 변경 처리
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (error) setError('');
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError("");
   };
 
   // 관심 주제 추가
@@ -36,29 +36,31 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     if (!topic) return;
 
     if (formData.interestingTopics.includes(topic)) {
-      setError('이미 추가된 관심 주제입니다.');
+      setError("이미 추가된 관심 주제입니다.");
       return;
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      interestingTopics: [...prev.interestingTopics, topic]
+      interestingTopics: [...prev.interestingTopics, topic],
     }));
-    setTopicInput('');
-    setError('');
+    setTopicInput("");
+    setError("");
   };
 
   // 관심 주제 제거
   const handleRemoveTopic = (topicToRemove) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      interestingTopics: prev.interestingTopics.filter(topic => topic !== topicToRemove)
+      interestingTopics: prev.interestingTopics.filter(
+        (topic) => topic !== topicToRemove
+      ),
     }));
   };
 
   // 엔터키로 주제 추가
   const handleTopicKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddTopic();
     }
@@ -66,17 +68,23 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
   // 폼 유효성 검증
   const validateForm = () => {
-    if (!formData.userId.trim()) return '사용자 ID를 입력해주세요.';
-    if (formData.userId.length < 3) return '사용자 ID는 3글자 이상이어야 합니다.';
-    if (!formData.name.trim()) return '이름을 입력해주세요.';
-    if (!formData.age || formData.age < 1 || formData.age > 100) return '나이는 1~100세 사이로 입력해주세요.';
-    if (!formData.gender) return '성별을 선택해주세요.';
-    if (!formData.disabilityType) return '장애 유형을 선택해주세요.';
-    if (!formData.communicationCharacteristics.trim()) return '의사소통 특징을 입력해주세요.';
-    if (formData.interestingTopics.length === 0) return '관심 주제를 최소 1개 이상 입력해주세요.';
-    if (!formData.password) return '비밀번호를 입력해주세요.';
-    if (formData.password.length < 6) return '비밀번호는 6글자 이상이어야 합니다.';
-    if (formData.password !== formData.confirmPassword) return '비밀번호가 일치하지 않습니다.';
+    if (!formData.userId.trim()) return "사용자 ID를 입력해주세요.";
+    if (formData.userId.length < 3)
+      return "사용자 ID는 3글자 이상이어야 합니다.";
+    if (!formData.name.trim()) return "이름을 입력해주세요.";
+    if (!formData.age || formData.age < 1 || formData.age > 100)
+      return "나이는 1~100세 사이로 입력해주세요.";
+    if (!formData.gender) return "성별을 선택해주세요.";
+    if (!formData.disabilityType) return "장애 유형을 선택해주세요.";
+    if (!formData.communicationCharacteristics.trim())
+      return "의사소통 특징을 입력해주세요.";
+    if (formData.interestingTopics.length === 0)
+      return "관심 주제를 최소 1개 이상 입력해주세요.";
+    if (!formData.password) return "비밀번호를 입력해주세요.";
+    if (formData.password.length < 6)
+      return "비밀번호는 6글자 이상이어야 합니다.";
+    if (formData.password !== formData.confirmPassword)
+      return "비밀번호가 일치하지 않습니다.";
 
     return null;
   };
@@ -92,7 +100,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const registrationData = {
@@ -101,9 +109,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         age: parseInt(formData.age),
         gender: formData.gender,
         disabilityType: formData.disabilityType,
-        communicationCharacteristics: formData.communicationCharacteristics.trim(),
+        communicationCharacteristics:
+          formData.communicationCharacteristics.trim(),
         interestingTopics: formData.interestingTopics,
-        password: formData.password
+        password: formData.password,
       };
 
       const response = await authService.register(registrationData);
@@ -111,7 +120,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
       if (response.success) {
         onRegisterSuccess();
       } else {
-        setError(response.error || '회원가입에 실패했습니다.');
+        setError(response.error || "회원가입에 실패했습니다.");
       }
     } catch (error) {
       setError(error.message);
@@ -122,24 +131,27 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
   return (
     <div className="auth-form partner-form">
-      <h2>
-        <img src="/images/logo_black.png" alt="로고" width="32" height="32" />
-        회원가입
-      </h2>
-      <p className="form-description">소통이(AAC 사용자)를 위한 새 계정 만들기</p>
+      <h2>회원가입</h2>
+      <p className="form-description">
+        소통이(AAC 사용자)를 위한 새 계정 만들기
+      </p>
 
       <form onSubmit={handleSubmit}>
         {/* 계정 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/account_info.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img
+              src="/images/account_info.png"
+              alt="로고"
+              width="20"
+              height="20"
+              className="section-icon"
+            />
             계정 정보
           </h4>
 
           <div className="form-group">
-            <label htmlFor="userId">
-              사용자 ID *
-            </label>
+            <label htmlFor="userId">사용자 ID *</label>
             <input
               type="text"
               id="userId"
@@ -154,9 +166,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="password">
-                비밀번호 *
-              </label>
+              <label htmlFor="password">비밀번호 *</label>
               <input
                 type="password"
                 id="password"
@@ -170,9 +180,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="confirmPassword">
-                비밀번호 확인 *
-              </label>
+              <label htmlFor="confirmPassword">비밀번호 확인 *</label>
               <input
                 type="password"
                 id="confirmPassword"
@@ -190,7 +198,13 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 소통이 기본 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/basic_info.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img
+              src="/images/basic_info.png"
+              alt="로고"
+              width="20"
+              height="20"
+              className="section-icon"
+            />
             소통이(AAC 사용자) 기본 정보
           </h4>
 
@@ -233,8 +247,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 disabled={loading}
               >
                 <option value="">성별 선택</option>
-                {GENDER_OPTIONS.map(option => (
-                  <option key={option} value={option}>{option}</option>
+                {GENDER_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
                 ))}
               </select>
             </div>
@@ -244,7 +260,13 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 의사소통 정보 */}
         <div className="form-section">
           <h4>
-            <img src="/images/communication_characteristics.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img
+              src="/images/communication_characteristics.png"
+              alt="로고"
+              width="20"
+              height="20"
+              className="section-icon"
+            />
             의사소통 정보
           </h4>
 
@@ -258,8 +280,10 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               disabled={loading}
             >
               <option value="">장애 유형 선택</option>
-              {DISABILITY_OPTIONS.map(option => (
-                <option key={option} value={option}>{option}</option>
+              {DISABILITY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </div>
@@ -268,7 +292,14 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
             <label htmlFor="communicationCharacteristics">
               의사소통 특징 *
             </label>
-            <p className="section-description" style={{margin: '8px 0 16px 0', color: '#64748b', fontSize: '14px'}}>
+            <p
+              className="section-description"
+              style={{
+                margin: "8px 0 16px 0",
+                color: "#64748b",
+                fontSize: "14px",
+              }}
+            >
               소통이(AAC 사용자)가 좋아하는 것들을 입력하세요
             </p>
             <textarea
@@ -279,7 +310,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
               placeholder="예) 간단한 단어나 소리로 의사표현 (응, 아니야, 엄마 등)"
               rows="3"
               disabled={loading}
-              style={{ resize: 'none' }}
+              style={{ resize: "none" }}
             />
           </div>
         </div>
@@ -287,10 +318,23 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 관심 주제 */}
         <div className="form-section">
           <h4>
-            <img src="/images/interest_topic.png" alt="로고" width="20" height="20" className="section-icon" />
+            <img
+              src="/images/interest_topic.png"
+              alt="로고"
+              width="20"
+              height="20"
+              className="section-icon"
+            />
             관심 주제 *
           </h4>
-          <p className="section-description" style={{margin: '8px 0 16px 0', color: '#64748b', fontSize: '14px'}}>
+          <p
+            className="section-description"
+            style={{
+              margin: "8px 0 16px 0",
+              color: "#64748b",
+              fontSize: "14px",
+            }}
+          >
             소통이(AAC 사용자)가 좋아하는 것들을 입력하세요
           </p>
 
@@ -337,21 +381,31 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
         {/* 에러 메시지 */}
         {error && (
           <div className="error-message partner-error">
-            <img src="/images/error.png" alt="로고" width="16" height="16" className="error-icon" />
+            <img
+              src="/images/error.png"
+              alt="로고"
+              width="16"
+              height="16"
+              className="error-icon"
+            />
             {error}
           </div>
         )}
 
         {/* 회원가입 버튼 */}
-        <button type="submit" className="primary-button partner-button" disabled={loading}>
-          {loading ? '회원가입 중...' : '계정 만들기'}
+        <button
+          type="submit"
+          className="primary-button partner-button"
+          disabled={loading}
+        >
+          {loading ? "회원가입 중..." : "계정 만들기"}
         </button>
       </form>
 
       {/* 로그인 전환 */}
       <div className="auth-switch">
         <p>
-          이미 계정이 있으신가요?{' '}
+          이미 계정이 있으신가요?{" "}
           <button
             type="button"
             className="link-button partner-link"

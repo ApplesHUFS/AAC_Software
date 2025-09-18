@@ -1,46 +1,47 @@
 /*
  * AAC Interpreter Frontend
  * Copyright (c) 2024 [귀하 이름]
- * 
+ *
  * This program is licensed under CC BY-NC-SA 4.0
  * https://creativecommons.org/licenses/by-nc-sa/4.0/
- * 
+ *
  * Contains pictograms from ARASAAC (http://www.arasaac.org)
  * Pictograms author: Sergio Palao
  * Pictograms license: CC BY-NC-SA
  */
 
-import React, { useState, useEffect } from 'react';
-import AuthPage from './pages/AuthPage';
-import DashboardPage from './pages/DashboardPage';
-import CardSelectionPage from './pages/CardSelectionPage';
-import InterpretationPage from './pages/InterpretationPage';
+import React, { useState, useEffect } from "react";
+import AuthPage from "./pages/AuthPage";
+import DashboardPage from "./pages/DashboardPage";
+import CardSelectionPage from "./pages/CardSelectionPage";
+import InterpretationPage from "./pages/InterpretationPage";
 
 // css 파일들
-import './styles/globals.css';
-import './styles/common.css';
-import './styles/themes.css';
-import './styles/auth.css';
-import './styles/dashboard.css';
-import './styles/cards.css';
-import './styles/interpretation.css';
-import './styles/context.css';
-import './styles/responsive.css';
+import "./styles/globals.css";
+import "./styles/common.css";
+import "./styles/themes.css";
+import "./styles/auth.css";
+import "./styles/dashboard.css";
+import "./styles/cards.css";
+import "./styles/interpretation.css";
+import "./styles/context.css";
+import "./styles/responsive.css";
+import "./styles/AdSlider.css";
 
 // 애플리케이션 진행 단계
 const APP_STEPS = {
-  AUTH: 'auth',
-  DASHBOARD: 'dashboard',
-  CARDS: 'cards',
-  INTERPRETATION: 'interpretation'
+  AUTH: "auth",
+  DASHBOARD: "dashboard",
+  CARDS: "cards",
+  INTERPRETATION: "interpretation",
 };
 
 // 세션 저장 키 (React state 기반, localStorage 최소 사용)
 const SESSION_KEYS = {
-  USER: 'aac_user',
-  CONTEXT: 'aac_context',
-  SELECTED_CARDS: 'aac_selected_cards',
-  CURRENT_STEP: 'aac_current_step'
+  USER: "aac_user",
+  CONTEXT: "aac_context",
+  SELECTED_CARDS: "aac_selected_cards",
+  CURRENT_STEP: "aac_current_step",
 };
 
 const App = () => {
@@ -69,7 +70,7 @@ const App = () => {
   };
 
   const clearSession = () => {
-    Object.values(SESSION_KEYS).forEach(key => {
+    Object.values(SESSION_KEYS).forEach((key) => {
       sessionStorage.removeItem(key);
     });
   };
@@ -106,7 +107,7 @@ const App = () => {
     const userData = {
       userId: loginResponse.userId,
       authenticated: loginResponse.authenticated,
-      ...loginResponse.user
+      ...loginResponse.user,
     };
 
     setCurrentUser(userData);
@@ -181,7 +182,7 @@ const App = () => {
         ) : null;
 
       case APP_STEPS.CARDS:
-        return (currentUser && contextData) ? (
+        return currentUser && contextData ? (
           <CardSelectionPage
             user={currentUser}
             contextData={contextData}
@@ -191,7 +192,7 @@ const App = () => {
         ) : null;
 
       case APP_STEPS.INTERPRETATION:
-        return (currentUser && contextData && selectedCards.length > 0) ? (
+        return currentUser && contextData && selectedCards.length > 0 ? (
           <InterpretationPage
             user={currentUser}
             contextData={contextData}
@@ -205,11 +206,7 @@ const App = () => {
     }
   };
 
-  return (
-    <div className="app">
-      {renderCurrentStep()}
-    </div>
-  );
+  return <div className="app">{renderCurrentStep()}</div>;
 };
 
 export default App;

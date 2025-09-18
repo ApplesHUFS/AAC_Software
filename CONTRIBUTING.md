@@ -37,4 +37,4 @@ cd ../data_processing && pip install -r requirements.txt
 2. 명확한 제목과 설명 작성
 3. 관련 이슈 번호 연결 (`Closes #123`)
 
-기여해 주셔서 감사합니다! 🎉
+기여해 주셔서 감사합니다!
