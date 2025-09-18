@@ -212,7 +212,7 @@ const InterpretationDisplay = ({
               width="24"
               height="24"
               className="list-icon"
-              style={{ marginRight: '8px' }}
+              style={{ marginRight: "8px" }}
             />
             AI가 제안한 해석 ({interpretations.length}가지)
           </h3>
@@ -307,7 +307,7 @@ const InterpretationDisplay = ({
                 value={directFeedback}
                 onChange={handleDirectFeedbackChange}
                 placeholder={`소통이가 카드로 표현하고 싶었던 정확한 의미를 구체적으로 써주세요.
-예: '배가 고파서 밥을 먹고 싶어요', '친구와 같이 놀고 싶어요' 등`}  
+예: '배가 고파서 밥을 먹고 싶어요', '친구와 같이 놀고 싶어요' 등`}
                 rows="4"
                 disabled={loading}
                 maxLength="500"
@@ -368,7 +368,8 @@ const InterpretationDisplay = ({
         <div className="note-content">
           <p>- 제시된 해석이 모두 부정확하다면 '직접 입력'을 선택해주세요.</p>
           <p>
-            - AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로 분석했습니다.
+            - AI는 소통이의 과거 대화 기록과 현재 상황을 종합적으로
+            분석했습니다.
           </p>
           <p>
             - 정확한 피드백을 주시면 다음번에는 더 정확한 해석을 제공할 수
@@ -438,7 +439,7 @@ const InterpretationResult = ({
           />
           소통이의 마음을 확인했어요!
         </h2>
-        <span style={{ color: '#10b981' }}>성공적으로 완료되었습니다</span>
+        <span style={{ color: "#10b981" }}>성공적으로 완료되었습니다</span>
       </div>
 
       {/* 최종 해석 */}
@@ -455,8 +456,14 @@ const InterpretationResult = ({
         </h3>
         <div className="interpretation-content">
           <div className="final-message">"{getFinalInterpretation()}"</div>
-          <div className="interpretation-meta" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <span className="completion-time" style={{fontSize: '12px', color: '#6b7280'}}>
+          <div
+            className="interpretation-meta"
+            style={{ display: "flex", justifyContent: "flex-end" }}
+          >
+            <span
+              className="completion-time"
+              style={{ fontSize: "12px", color: "#6b7280" }}
+            >
               {getCompletionTime()}
             </span>
           </div>
@@ -495,7 +502,7 @@ const InterpretationResult = ({
         </div>
       </div>
 
-            {/* 사용된 카드 표시 */}
+      {/* 사용된 카드 표시 */}
       <div className="cards-used">
         <h3>
           <img
@@ -569,9 +576,7 @@ const InterpretationResult = ({
               height="16"
               className="step-icon"
             />
-            <span className="step-description">
-              AI 해석 생성
-            </span>
+            <span className="step-description">AI 해석 생성</span>
           </div>
           <div className="process-step completed">
             <img

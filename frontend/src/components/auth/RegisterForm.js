@@ -131,9 +131,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
 
   return (
     <div className="auth-form partner-form">
-      <h2>
-        회원가입
-      </h2>
+      <h2>회원가입</h2>
       <p className="form-description">
         소통이(AAC 사용자)를 위한 새 계정 만들기
       </p>

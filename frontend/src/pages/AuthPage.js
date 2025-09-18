@@ -27,7 +27,9 @@ const AuthPage = ({ onAuthSuccess }) => {
               width="48"
               height="48"
             />
-            <h1>소통<span style={{ marginRight: '2px' }}>,</span>이룸</h1>
+            <h1>
+              소통<span style={{ marginRight: "2px" }}>,</span>이룸
+            </h1>
           </div>
           <p className="service-description">
             개인화된 AAC 의사소통을 지원하는 <strong>소통 도우미</strong> 서비스

@@ -1,37 +1,36 @@
 // src/components/ads/AdSlider.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const AdSlider = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  
+
   const ads = [
     {
       id: 1,
-      image: '/images/fake-ad-banner.png',
-      link: 'https://www.instagram.com/yh._official?utm_source=ig_web_button_share_sheet&igsh=bHFlcHV1djFzdWt3',
-      alt: '광고 1'
+      image: "/images/fake-ad-banner.png",
+      link: "https://www.instagram.com/yh._official?utm_source=ig_web_button_share_sheet&igsh=bHFlcHV1djFzdWt3",
+      alt: "광고 1",
     },
     {
       id: 2,
-      image: '/images/fake-ad-banner2.jpg',
-      link: 'https://www.instagram.com/kimu.ys_1118/',
-      alt: '광고 2'
+      image: "/images/fake-ad-banner2.jpg",
+      link: "https://www.instagram.com/kimu.ys_1118/",
+      alt: "광고 2",
     },
     {
       id: 3,
-      image: '/images/fake-ad-banner3.png',
-      link: 'https://www.instagram.com/p/DH1DszXzVTb/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==',
-      alt: '광고 3'
-    }
-    
+      image: "/images/fake-ad-banner3.png",
+      link: "https://www.instagram.com/p/DH1DszXzVTb/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==",
+      alt: "광고 3",
+    },
   ];
 
   // 자동 슬라이드 (5초마다)
   useEffect(() => {
     if (ads.length <= 1) return; // 광고가 1개면 자동 슬라이드 안함
-    
+
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => 
+      setCurrentIndex((prevIndex) =>
         prevIndex === ads.length - 1 ? 0 : prevIndex + 1
       );
     }, 5000);
@@ -58,18 +57,18 @@ const AdSlider = () => {
   return (
     <div className="ad partner-section">
       <h4>광고</h4>
-      
+
       <div className="ad-slider-wrapper">
         {/* 슬라이더 컨테이너 */}
         <div className="ad-slider-container">
-          <div 
+          <div
             className="ad-slider-track"
             style={{ transform: `translateX(-${currentIndex * 100}%)` }}
           >
             {ads.map((ad) => (
               <div key={ad.id} className="ad-slide">
                 <a href={ad.link} target="_blank" rel="noopener noreferrer">
-                  <div 
+                  <div
                     className="ad-banner-bg"
                     style={{ backgroundImage: `url(${ad.image})` }}
                     role="img"
@@ -100,7 +99,9 @@ const AdSlider = () => {
           {ads.map((_, index) => (
             <button
               key={index}
-              className={`ad-indicator ${index === currentIndex ? 'active' : ''}`}
+              className={`ad-indicator ${
+                index === currentIndex ? "active" : ""
+              }`}
               onClick={() => goToSlide(index)}
             />
           ))}
