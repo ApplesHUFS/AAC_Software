@@ -205,41 +205,6 @@
   line-height: 1.5;
 }
 
-.ad {
-  background: white;
-  padding: 2rem;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-  margin-bottom: 2rem;
-  border: 1px solid #f1f5f9;
-}
-
-.ad h4 {
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-weight: 500;
-}
-
-.ad-banner {
-  width: 100%;
-  height: auto;
-  border-radius: 12px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  display: block;
-}
-
-.ad-banner:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.ad a {
-  text-decoration: none;
-  display: block;
-}
-
 /* 프로필 편집 스타일 */
 .profile-edit-form {
   background: white;

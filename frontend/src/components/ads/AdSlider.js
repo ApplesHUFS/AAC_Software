@@ -13,14 +13,14 @@ const AdSlider = () => {
     },
     {
       id: 2,
-      image: 'https://via.placeholder.com/400x200/3b82f6/white?text=광고+2',
-      link: 'https://example2.com',
+      image: '/images/fake-ad-banner2.jpg',
+      link: 'https://www.instagram.com/kimu.ys_1118/',
       alt: '광고 2'
     },
     {
       id: 3,
-      image: 'https://via.placeholder.com/400x200/ef4444/white?text=광고+3',
-      link: 'https://example3.com',
+      image: '/images/ad-banner.jpg',
+      link: 'https://simplistic-bugle-82e.notion.site/APPLES-1a42880953e681658098da15fe8af285?source=copy_link',
       alt: '광고 3'
     }
   ];
