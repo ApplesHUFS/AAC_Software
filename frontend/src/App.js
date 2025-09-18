@@ -26,6 +26,7 @@ import "./styles/cards.css";
 import "./styles/interpretation.css";
 import "./styles/context.css";
 import "./styles/responsive.css";
+import './styles/AdSlider.css';
 
 // 애플리케이션 진행 단계
 const APP_STEPS = {

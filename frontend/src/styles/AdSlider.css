@@ -1,0 +1,130 @@
+/* src/components/ads/AdSlider.css */
+
+/* 슬라이더 래퍼 */
+.ad-slider-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* 슬라이더 컨테이너 */
+.ad-slider-container {
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* 슬라이더 트랙 */
+.ad-slider-track {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+/* 개별 슬라이드 */
+.ad-slide {
+  min-width: 100%;
+  flex-shrink: 0;
+}
+
+/* 네비게이션 버튼 */
+.ad-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+
+.ad-nav-btn:hover {
+  background: white;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.ad-prev-btn {
+  left: 12px;
+}
+
+.ad-next-btn {
+  right: 12px;
+}
+
+/* 인디케이터 */
+.ad-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.ad-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ad-indicator.active {
+  background: #3b82f6;
+  transform: scale(1.2);
+}
+
+.ad-indicator:hover {
+  background: #64748b;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .ad-nav-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
+  }
+  
+  .ad-prev-btn {
+    left: 8px;
+  }
+  
+  .ad-next-btn {
+    right: 8px;
+  }
+}
+
+/* 터치 디바이스를 위한 추가 스타일 */
+@media (hover: none) and (pointer: coarse) {
+  .ad-nav-btn {
+    background: rgba(255, 255, 255, 0.8);
+  }
+  
+  .ad-nav-btn:active {
+    background: white;
+    transform: translateY(-50%) scale(0.95);
+  }
+}
+
+/* 접근성을 위한 포커스 스타일 */
+.ad-nav-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.ad-indicator:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 1px;
+}
