@@ -1,5 +1,10 @@
 <div align="center">
-    ![alt text](image\logo.png)
+  <img src="image.png" width="300" height="300">
+</div>
+
+<div align="center">
+  <h1>소통,이룸</h1>
+  <h3>AAC Software - 개인화된 보완대체의사소통 시스템</h3>
 </div>
 
 # 소통,이룸 (AAC Software) - 개인화된 보완대체의사소통 시스템
