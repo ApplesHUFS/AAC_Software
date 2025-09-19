@@ -1,12 +1,10 @@
 <div align="center">
-    ![alt text](image.png)
+    ![alt text](image\logo.png)
 </div>
 
 # 소통,이룸 (AAC Software) - 개인화된 보완대체의사소통 시스템
 
 AAC(Augmentative and Alternative Communication) 카드를 활용한 개인화된 의사소통 지원 시스템입니다. 의사소통장애, 자폐스펙트럼장애, 지적장애를 가진 사용자들이 효과적으로 의사소통할 수 있도록 AI 기반 카드 추천 및 해석 서비스를 제공합니다.
-
-![alt text](image.png)
 
 ## 프로젝트 개요
 
