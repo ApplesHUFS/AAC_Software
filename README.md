@@ -17,7 +17,7 @@ AAC Software는 의사소통에 어려움을 겪는 **소통이**와 이를 돕�
 ### 핵심 기능 및 용례
 
 - **회원가입**: 사용자 ID와 비밀번호를 포함한 계정 정보뿐만 아니라, 소통이의 의사소통 특징 및 관심 주제 등의 정보 입력 과정도 포함되어 있습니다. 이를 통해 프로그램은 소통이의 정보를 기억한 뒤, 개인화된 카드 추천 및 해석에 사용합니다.
-![Image](https://github.com/user-attachments/assets/26ee1e38-68ce-4b04-93ac-27cc453cd782)
+![Image](https://github.com/user-attachments/assets/f7affc4f-1945-4e34-aaaf-53d13011b8a9)
 
 - **로그인 및 정보 수정**: 회원가입 시 입력한 정보로 로그인 및 정보 수정을 진행할 수 있습니다.
 ![Image](https://github.com/user-attachments/assets/198623d7-af1c-4eba-919b-1fa2cfabc33a)
@@ -26,7 +26,7 @@ AAC Software는 의사소통에 어려움을 겪는 **소통이**와 이를 돕�
 ![Image](https://github.com/user-attachments/assets/f0e214b3-eed5-4de2-a7c3-41b8764c6680)
 
 - **개인화된 추천 카드 선택**: 시스템이 소통이의 정보를 분석하여 맞춤형 AAC 카드를 추천해줍니다. 소통이는 추천된 20개의 카드 중 최대 4개의 카드까지 자유로이 선택이 가능하며, 카드 묶음이 마음에 들지 않을 경우 다른 카드들을 추가로 추천받을 수 있습니다.
-![Image](https://github.com/user-attachments/assets/5a8d3cd6-740d-4cd8-931c-f5f0a88a62bd)
+![Image](https://github.com/user-attachments/assets/b03d9469-8d78-4c94-a9d5-b202b5ff1dc3)
 
 - **개인화된 카드 해석**: GPT-4o가 현재 대화 상황과 과거 대화 기록, 선택된 카드를 바탕으로 세 가지의 서로 다른 해석을 생성하여 도움이에게 보여줍니다. 도움이는 세 개의 해석 중 옳다고 생각되는 해석 하나를 선택하거나, 직접 올바른 의미를 입력할 수 있습니다.
 *제시된 해석
