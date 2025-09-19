@@ -52,8 +52,12 @@ GPT-4o가 현재 대화 상황과 과거 대화 기록, 선택된 카드를 바�
 
 <img width="80%" src="https://github.com/user-attachments/assets/a75d017b-63c5-425b-b662-282935959a5b"/>
 
-- **총 정리 및 피드백 저장**: 도움이가 선택한 해석 혹은 직접 적은 올바른 의미, 대화 요약, 사용 카드를 화면에 제시합니다. 이번 대화에서 사용된 카드와 해석 정보는 피드백으로써 저장되고, 다음 대화에 추가 맥락으로써 사용되어 지속적으로 해석 정확도를 개선합니다.
-<img width="80%" src="https://github.com/user-attachments/assets/17e350e9-d65b-4eb5-8266-7251dc0fee98"/><br />
+
+### 6. **총 정리 및 피드백 저장**
+도움이가 선택한 해석 혹은 직접 적은 올바른 의미, 대화 요약, 사용 카드를 화면에 제시합니다. 이번 대화에서 사용된 카드와 해석 정보는 피드백으로써 저장되고, 다음 대화에 추가 맥락으로써 사용되어 지속적으로 해석 정확도를 개선합니다.
+
+<img width="80%" src="https://github.com/user-attachments/assets/17e350e9-d65b-4eb5-8266-7251dc0fee98"/>
+
 
 ## 시스템 아키텍처
 
@@ -66,26 +70,28 @@ AAC_Software/
 └── dataset/            # AAC 카드 데이터셋
 ```
 
-### 컴포넌트 구성
 
-#### 🌐 Frontend (React)
+## 컴포넌트 구성
+
+### 🌐 Frontend (React)
 - 사용자 인증 및 소통이 프로필 관리
 - AAC 카드 선택 인터페이스
 - AI 해석 결과 표시 및 피드백 수집
 - **포트**: 3000 (개발), 빌드 후 정적 배포
 
-#### 🚀 Backend (Flask)
+### 🚀 Backend (Flask)
 - RESTful API 서버
 - 사용자 관리 및 인증
 - 카드 추천 알고리즘
 - OpenAI API 기반 카드 해석
 - **포트**: 8000
 
-#### 🔬 Data Processing (Python)
+### 🔬 Data Processing (Python)
 - AAC 카드 이미지 필터링 및 분류
 - CLIP 기반 멀티모달 임베딩 생성
 - 계층적 클러스터링 및 자동 태깅
 - **실행**: 배치 처리 파이프라인
+
 
 ## 빠른 시작
 
@@ -136,6 +142,7 @@ npm start
 ### 6. 애플리케이션 접속
 브라우저에서 `http://localhost:3000`에 접속하여 시스템을 사용할 수 있습니다.
 
+
 ## 기술 스택
 
 - **Frontend**: React 18.2, JavaScript ES6+, CSS3
@@ -143,9 +150,11 @@ npm start
 - **Data Processing**: PyTorch, CLIP, scikit-learn, OpenAI Vision API
 - **Data Storage**: JSON 파일, 파일 시스템
 
+
 ## 환경 변수 설정
 - `OPENAI_API_KEY`: OpenAI API 키 (필수)
 - `REACT_APP_API_URL`: API 서버 URL (기본: http://localhost:8000)
+
 
 ## 문제 해결
 
@@ -154,6 +163,7 @@ npm start
 2. **포트 충돌**: 백엔드(8000), 프론트엔드(3000) 포트 사용 가능 여부 확인
 3. **CORS 오류**: 백엔드 CORS 설정에서 프론트엔드 URL 허용 확인
 4. **데이터셋 파일 누락**: `dataset/` 디렉토리에 필수 파일 존재 여부 확인
+
 
 ## 라이센스
 
