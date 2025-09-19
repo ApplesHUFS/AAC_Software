@@ -32,6 +32,7 @@ AAC Software는 의사소통에 어려움을 겪는 **소통이**와 이를 돕�
 <제시된 해석>
 <img width="80%" src="https://github.com/user-attachments/assets/e3205696-15fb-4390-9593-01e4d7068cce"/>
 
+<br />
 
 <직접 입력>
 <img width="80%" src="https://github.com/user-attachments/assets/a75d017b-63c5-425b-b662-282935959a5b"/>
