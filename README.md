@@ -17,7 +17,7 @@ AAC Software는 의사소통에 어려움을 겪는 **소통이**와 이를 돕�
 ### 핵심 기능 및 용례
 
 - **회원가입**: 사용자 ID와 비밀번호를 포함한 계정 정보뿐만 아니라, 소통이의 의사소통 특징 및 관심 주제 등의 정보 입력 과정도 포함되어 있습니다. 이를 통해 프로그램은 소통이의 정보를 기억한 뒤, 개인화된 카드 추천 및 해석에 사용합니다.
-![Image](https://github.com/user-attachments/assets/26ee1e38-68ce-4b04-93ac-27cc453cd782)
+![Image](https://github.com/user-attachments/assets/f7affc4f-1945-4e34-aaaf-53d13011b8a9)
 
 - **로그인 및 정보 수정**: 회원가입 시 입력한 정보로 로그인 및 정보 수정을 진행할 수 있습니다.
 ![Image](https://github.com/user-attachments/assets/198623d7-af1c-4eba-919b-1fa2cfabc33a)
