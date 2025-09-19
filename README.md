@@ -30,11 +30,11 @@ AAC Software는 의사소통에 어려움을 겪는 **소통이**와 이를 돕�
 
 - **개인화된 카드 해석**: GPT-4o가 현재 대화 상황과 과거 대화 기록, 선택된 카드를 바탕으로 세 가지의 서로 다른 해석을 생성하여 도움이에게 보여줍니다. 도움이는 세 개의 해석 중 옳다고 생각되는 해석 하나를 선택하거나, 직접 올바른 의미를 입력할 수 있습니다.
 
-*제시된 해석
+<제시된 해석>
 
 <img width="80%" src="https://github.com/user-attachments/assets/e3205696-15fb-4390-9593-01e4d7068cce"/>
 
-*직접 입력
+<직접 입력>
 
 <img width="80%" src="https://github.com/user-attachments/assets/a75d017b-63c5-425b-b662-282935959a5b"/>
 
