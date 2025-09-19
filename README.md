@@ -1,5 +1,5 @@
 <div align="center">
-    <image src="" width="300" height="300">
+    ![alt text](image.png)
 </div>
 
 # 소통,이룸 (AAC Software) - 개인화된 보완대체의사소통 시스템
