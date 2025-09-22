@@ -7,12 +7,11 @@
   padding: 1.5rem;
   max-width: 1000px;
   margin: 0 auto;
-  min-height: 100vh;
+  min-height: 100vh
 }
 
 .interpretation-page.partner-theme {
   background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  min-height: 100vh;
 }
 
 .interpretation-page.loading,
@@ -20,7 +19,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 70vh;
 }
 
 .error-content {
