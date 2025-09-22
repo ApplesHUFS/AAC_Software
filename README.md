@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="image/logo.png" width="300" height="300">
+  <img src="image/readme_logo.png" width="300" height="300">
 </div>
 
 <div align="center">
@@ -14,7 +14,7 @@
   <h3>AAC Software - 개인화된 보완대체의사소통 시스템</h3>
 </div>
 
-## 소통,이룸이란?
+## 소통, 이룸이란?
 AAC(Augmentative and Alternative Communication) 카드를 활용한 개인화된 의사소통 지원 시스템입니다. 의사소통장애, 자폐스펙트럼장애, 지적장애를 가진 사용자들이 효과적으로 의사소통할 수 있도록 AI 기반 카드 추천 및 해석 서비스를 제공합니다.
 
 ## 프로젝트 개요
