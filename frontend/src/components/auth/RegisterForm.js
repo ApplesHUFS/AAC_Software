@@ -300,7 +300,7 @@ const RegisterForm = ({ onRegisterSuccess, switchToLogin }) => {
                 fontSize: "14px",
               }}
             >
-              소통이(AAC 사용자)가 좋아하는 것들을 입력하세요
+              소통이(AAC 사용자)의 평소 의사소통 방식을 설명해주세요.
             </p>
             <textarea
               id="communicationCharacteristics"

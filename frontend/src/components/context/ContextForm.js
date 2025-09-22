@@ -215,7 +215,7 @@ const ContextForm = ({ userId, onContextCreated }) => {
               height="20"
               className="label-icon"
             />
-            현재 활동 (선택사항)
+            현재 활동 (자세히 적을 수록 카드 추천이 정확해져요)
           </label>
           <input
             type="text"
