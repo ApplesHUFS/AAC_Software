@@ -534,7 +534,11 @@ def recommend_cards():
                     if "_" in card_filename
                     else card_filename.replace(".png", "")
                 )
-                card_name = card_filename.replace(".png", "").replace("_", " ")
+                name_without_extension = card_filename.replace(".png", "")
+                if "_" in name_without_extension:
+                    card_name = "_".join(name_without_extension.split("_")[1:])
+                else:
+                    card_name = name_without_extension
 
                 formatted_cards.append(
                     {
@@ -642,7 +646,11 @@ def get_card_history_page(context_id, page_number):
                     if "_" in card_filename
                     else card_filename.replace(".png", "")
                 )
-                card_name = card_filename.replace(".png", "").replace("_", " ")
+                name_without_extension = card_filename.replace(".png", "")
+                if "_" in name_without_extension:
+                    card_name = "_".join(name_without_extension.split("_")[1:])
+                else:
+                    card_name = name_without_extension
 
                 formatted_cards.append(
                     {
