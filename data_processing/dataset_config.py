@@ -8,7 +8,7 @@ DATASET_CONFIG = {
     "images_folder": str(PROJECT_ROOT / "dataset" / "images"),
     "output_folder": str(PROJECT_ROOT / "dataset" / "processed"),
     # 임베딩 설정
-    "image_weight": 0.6,  # 이미지 가중치 (AAC 카드는 시각적 요소가 중요)
+    "image_weight": 0.8,  # 이미지 가중치 (AAC 카드는 시각적 요소가 중요)
     "clip_model": "openai/clip-vit-large-patch14",
     # 계층적 클러스터링 설정
     "macro_min_clusters": 70,  # 대분류 최소 개수
