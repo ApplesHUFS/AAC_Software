@@ -216,7 +216,7 @@ class Clusterer:
         Returns:
             int: 최적 클러스터 수
         """
-        sample_size = min(len(X), 2000)
+        sample_size = min(len(X), 5000)
         if len(X) > sample_size:
             indices = np.random.choice(len(X), sample_size, replace=False)
             X_sample = X[indices]
