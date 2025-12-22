@@ -9,7 +9,7 @@ fi
 mkdir -p dataset
 
 echo "Downloading images.tar..."
-gdown 13wFrhP7PbozGnBqIo9Uy4usiK8Ujq42q -O dataset/images.tar
+gdown 1H47PcdrRCFw0-Jdhmrw-uzT184EJ2__h -O dataset/images.tar
 
 echo "Extracting images..."
 cd dataset
