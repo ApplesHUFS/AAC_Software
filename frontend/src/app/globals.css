@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 기본 스타일 */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply antialiased;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded hover:bg-gray-400;
+}
+
+/* 입력 필드 포커스 스타일 */
+input:focus,
+textarea:focus,
+select:focus {
+  @apply outline-none ring-2 ring-partner-500 border-transparent;
+}
+
+/* 버튼 활성화 애니메이션 */
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* 카드 호버 효과 */
+.card-hover {
+  @apply transition-all duration-200;
+}
+
+.card-hover:hover {
+  @apply shadow-lg -translate-y-0.5;
+}

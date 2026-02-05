@@ -1,18 +1,14 @@
-# Web Framework
-flask>=3.0.0
-flask-cors>=4.0.0
-
-# AI/ML Core
-openai>=1.0.0
-langchain>=0.1.0
-langchain-openai>=0.1.0
-sentence-transformers>=2.2.0
-
-# Scientific Computing
-numpy>=1.24.0
-torch>=2.0.0
-
-# Utilities
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.3
+pydantic-settings>=2.1.0
 python-dotenv>=1.0.0
-tqdm>=4.64.0
-Pillow>=9.0.0
+openai>=1.6.1
+langchain>=0.1.0
+langchain-openai>=0.0.2
+sentence-transformers>=2.2.2
+torch>=2.1.2
+numpy>=1.26.3
+pillow>=10.2.0
+python-multipart>=0.0.6
+aiofiles>=23.2.1

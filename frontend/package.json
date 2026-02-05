@@ -1,73 +1,30 @@
 {
   "name": "aac-interpreter-frontend",
-  "version": "1.0.0",
-  "description": "AAC 카드 해석 시스템 - 프론트엔드 (Uses ARASAAC pictograms)",
-  "license": "CC-BY-NC-SA-4.0",
-  "author": "APPLES",
-  "contributors": [
-    "Sergio Palao (ARASAAC pictograms)"
-  ],
+  "version": "2.0.0",
   "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\""
+  },
   "dependencies": {
+    "next": "14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "^0.0.0"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "lint": "eslint src --ext .js,.jsx",
-    "lint:fix": "eslint src --ext .js,.jsx --fix",
-    "format": "prettier --write src/**/*.{js,jsx,css}",
-    "analyze": "npm run build && npx serve -s build"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "@eslint/css": "^0.11.0",
-    "@eslint/js": "^9.35.0",
-    "@eslint/json": "^0.13.2",
-    "@eslint/markdown": "^7.2.0",
-    "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.3.0",
-    "@testing-library/user-event": "^13.5.0",
-    "eslint": "^8.57.1",
-    "eslint-config-react-app": "^7.0.1",
-    "eslint-plugin-react": "^7.37.5",
-    "globals": "^16.4.0",
-    "prettier": "^2.7.1"
-  },
-  "proxy": "http://localhost:8000",
-  "homepage": ".",
-  "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ApplesHUFS/AAC_Software.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ApplesHUFS/AAC_Software/issues"
-  },
-  "keywords": [
-    "aac",
-    "communication",
-    "accessibility",
-    "arasaac",
-    "pictograms",
-    "react"
-  ]
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.1.0",
+    "postcss": "^8",
+    "prettier": "^3.2.4",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
+  }
 }
