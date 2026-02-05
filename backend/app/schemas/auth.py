@@ -41,7 +41,6 @@ class UserResponse(BaseModel):
     disability_type: str = Field(..., alias="disabilityType")
     communication_characteristics: str = Field(..., alias="communicationCharacteristics")
     interesting_topics: List[str] = Field(..., alias="interestingTopics")
-    preferred_category_types: List[int] = Field(..., alias="preferredCategoryTypes")
     created_at: Optional[datetime] = Field(None, alias="createdAt")
     updated_at: Optional[datetime] = Field(None, alias="updatedAt")
 

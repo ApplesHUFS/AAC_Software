@@ -116,7 +116,6 @@ async def update_profile(
     return success_response(
         data={
             "updatedFields": result.updated_fields,
-            "categoryRecalculated": result.category_recalculated,
         },
         message=result.message,
     )

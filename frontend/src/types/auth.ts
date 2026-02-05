@@ -10,7 +10,6 @@ export interface User {
   disabilityType: string;
   communicationCharacteristics: string;
   interestingTopics: string[];
-  preferredCategoryTypes: number[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -48,5 +47,4 @@ export interface ProfileUpdateRequest {
 
 export interface ProfileUpdateResponse {
   updatedFields: string[];
-  categoryRecalculated: boolean;
 }

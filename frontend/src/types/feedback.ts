@@ -5,7 +5,7 @@
 export interface ContextSummary {
   time: string;
   place: string;
-  interactionPartner: string;
+  interactionPartner?: string;
   currentActivity: string;
 }
 
