@@ -69,72 +69,39 @@ class JsonUserRepository(UserRepository):
 
 
 class JsonCardRepository(CardRepository):
-    """JSON 파일 기반 카드 저장소"""
+    """이미지 파일 기반 카드 저장소"""
 
     def __init__(self, settings):
         self._settings = settings
-        self._cluster_tags: Optional[Dict[str, str]] = None
-        self._clustering_results: Optional[Dict[str, int]] = None
-        self._cards_by_cluster: Optional[Dict[int, List[Card]]] = None
+        self._cards_cache: Optional[List[Card]] = None
 
-    def _load_cluster_tags(self) -> Dict[str, str]:
-        """클러스터 태그 로드"""
-        if self._cluster_tags is None:
-            try:
-                path = self._settings.cluster_tags_path
-                data = json.loads(path.read_text(encoding="utf-8"))
-                self._cluster_tags = data
-            except (FileNotFoundError, json.JSONDecodeError):
-                self._cluster_tags = {}
-        return self._cluster_tags
+    def _load_cards(self) -> List[Card]:
+        """이미지 폴더에서 카드 목록 로드"""
+        if self._cards_cache is None:
+            self._cards_cache = []
+            images_folder = self._settings.images_folder
 
-    def _load_clustering_results(self) -> Dict[str, int]:
-        """클러스터링 결과 로드"""
-        if self._clustering_results is None:
-            try:
-                path = self._settings.clustering_results_path
-                data = json.loads(path.read_text(encoding="utf-8"))
-                self._clustering_results = data
-            except (FileNotFoundError, json.JSONDecodeError):
-                self._clustering_results = {}
-        return self._clustering_results
+            if images_folder.exists():
+                for image_file in images_folder.glob("*.png"):
+                    card = Card.from_filename(image_file.name)
+                    self._cards_cache.append(card)
 
-    def _build_cards_by_cluster(self) -> Dict[int, List[Card]]:
-        """클러스터별 카드 목록 구축"""
-        if self._cards_by_cluster is None:
-            self._cards_by_cluster = {}
-            clustering_results = self._load_clustering_results()
-
-            for filename, cluster_id in clustering_results.items():
-                if cluster_id not in self._cards_by_cluster:
-                    self._cards_by_cluster[cluster_id] = []
-
-                card = Card.from_filename(filename)
-                card.cluster_id = cluster_id
-                self._cards_by_cluster[cluster_id].append(card)
-
-        return self._cards_by_cluster
+        return self._cards_cache
 
     def get_all_cards(self) -> List[Card]:
         """모든 카드 조회"""
-        cards_by_cluster = self._build_cards_by_cluster()
-        all_cards = []
-        for cards in cards_by_cluster.values():
-            all_cards.extend(cards)
-        return all_cards
+        return self._load_cards()
 
-    def get_cards_by_cluster(self, cluster_id: int) -> List[Card]:
-        """클러스터별 카드 조회"""
-        cards_by_cluster = self._build_cards_by_cluster()
-        return cards_by_cluster.get(cluster_id, [])
+    def get_all_filenames(self) -> List[str]:
+        """모든 카드 파일명 조회"""
+        return [card.filename for card in self._load_cards()]
 
-    def get_cluster_tags(self) -> Dict[str, str]:
-        """클러스터 태그 조회"""
-        return self._load_cluster_tags()
-
-    def get_clustering_results(self) -> Dict[str, int]:
-        """클러스터링 결과 조회"""
-        return self._load_clustering_results()
+    def get_card_by_filename(self, filename: str) -> Optional[Card]:
+        """파일명으로 카드 조회"""
+        for card in self._load_cards():
+            if card.filename == filename:
+                return card
+        return None
 
 
 class JsonFeedbackRepository:

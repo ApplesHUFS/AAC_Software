@@ -1,8 +1,7 @@
 """카드 저장소 인터페이스"""
 
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import List, Optional, Set
 
 from app.domain.card.entity import Card, CardHistory
 
@@ -16,18 +15,13 @@ class CardRepository(ABC):
         pass
 
     @abstractmethod
-    def get_cards_by_cluster(self, cluster_id: int) -> List[Card]:
-        """클러스터별 카드 조회"""
+    def get_all_filenames(self) -> List[str]:
+        """모든 카드 파일명 조회"""
         pass
 
     @abstractmethod
-    def get_cluster_tags(self) -> Dict[str, str]:
-        """클러스터 태그 조회"""
-        pass
-
-    @abstractmethod
-    def get_clustering_results(self) -> Dict[str, int]:
-        """클러스터링 결과 조회 (파일명 -> 클러스터 ID)"""
+    def get_card_by_filename(self, filename: str) -> Optional[Card]:
+        """파일명으로 카드 조회"""
         pass
 
 

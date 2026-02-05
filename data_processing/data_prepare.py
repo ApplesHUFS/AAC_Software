@@ -1,14 +1,24 @@
+"""AAC 카드 데이터 전처리 파이프라인
+
+CLIP 임베딩 기반 순수 벡터 검색을 위한 간소화된 파이프라인
+- 단계 1: 부적절한 이미지 필터링
+- 단계 2: CLIP 멀티모달 임베딩 생성
+"""
+
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
-from data_source import ClusterTagger, Clusterer, CLIPEncoder, ImageFilter
-
+from data_source import CLIPEncoder, ImageFilter
 from dataset_config import DATASET_CONFIG
 from tqdm import tqdm
 
 
 class DataPreparationPipeline:
-    """AAC 클러스터링 데이터 준비 파이프라인"""
+    """AAC 카드 데이터 전처리 파이프라인
+
+    이미지 필터링 → CLIP 임베딩 생성의 2단계 파이프라인
+    클러스터링 없이 순수 벡터 검색을 위한 임베딩만 생성
+    """
 
     def __init__(self, config: dict):
         self.config = config
@@ -29,11 +39,16 @@ class DataPreparationPipeline:
         self.output_folder.mkdir(parents=True, exist_ok=True)
 
         self.embeddings_path = self.output_folder / "embeddings.json"
-        self.clustering_path = self.output_folder / "clustering_results.json"
-        self.cluster_tags_path = self.output_folder / "cluster_tags.json"
 
     def step1_filter_images(self, confirm: Optional[bool] = None) -> int:
-        """부적절한 이미지 필터링"""
+        """부적절한 이미지 필터링
+
+        Args:
+            confirm: 대화형 확인 여부
+
+        Returns:
+            필터링된 이미지 수
+        """
         if confirm is None:
             confirm = self.config.get("filter_confirm", True)
 
@@ -43,59 +58,41 @@ class DataPreparationPipeline:
     def step2_generate_embeddings(
         self,
     ) -> Tuple[List[str], Tuple[int, int], Tuple[int, int]]:
-        """CLIP 임베딩 생성"""
-        model_name = self.config.get("clip_model", "openai/clip-vit-base-patch32")
+        """CLIP 멀티모달 임베딩 생성
+
+        이미지와 텍스트(파일명에서 추출)를 동시에 인코딩하여
+        통합 CLIP 임베딩 공간에 매핑
+
+        Returns:
+            (파일명 목록, 이미지 임베딩 shape, 텍스트 임베딩 shape)
+        """
+        model_name = self.config.get("clip_model", "openai/clip-vit-large-patch14")
         encoder = CLIPEncoder(model_name=model_name, config=self.config)
         return encoder.process_and_save(
             str(self.images_folder), str(self.embeddings_path)
         )
 
-    def step3_perform_clustering(self, visualize: Optional[bool] = None) -> dict:
-        """계층적 Spherical K-means 클러스터링"""
-        if visualize is None:
-            visualize = self.config.get("visualize_clusters", True)
-
-        clusterer = Clusterer(
-            embeddings_path=str(self.embeddings_path), config=self.config
-        )
-        return clusterer.cluster_and_save(
-            n_clusters=self.config.get("n_clusters"),
-            output_folder=str(self.output_folder),
-            visualize=visualize,
-        )
-
-    def step4_tag_clusters(self) -> Dict[int, List[str]]:
-        """클러스터 태깅"""
-        tagger = ClusterTagger(
-            embeddings_path=str(self.embeddings_path),
-            clustering_results_path=str(self.clustering_path),
-            images_folder=str(self.images_folder),
-            config=self.config,
-        )
-
-        cluster_tags = tagger.tag_all_clusters()
-        tagger.save_cluster_tags(cluster_tags, str(self.cluster_tags_path))
-        return cluster_tags
-
     def run_pipeline(
         self,
         steps: Optional[List[str]] = None,
         confirm_filter: Optional[bool] = None,
-        visualize: Optional[bool] = None,
     ) -> None:
-        """파이프라인 실행"""
+        """파이프라인 실행
+
+        Args:
+            steps: 실행할 단계 목록 (기본: ["1", "2"])
+            confirm_filter: 필터링 확인 여부
+        """
         if steps is None:
-            steps = ["1", "2", "3", "4"]
+            steps = ["1", "2"]
 
         step_methods = {
             "1": self.step1_filter_images,
             "2": self.step2_generate_embeddings,
-            "3": self.step3_perform_clustering,
-            "4": self.step4_tag_clusters,
         }
 
         try:
-            print("AAC 클러스터링 파이프라인 시작")
+            print("AAC 카드 임베딩 파이프라인 시작")
 
             with tqdm(total=len(steps), desc="진행") as pbar:
                 for step in steps:
@@ -108,21 +105,12 @@ class DataPreparationPipeline:
                         print(f"단계 1: {result}개 이미지 필터링")
                     elif step == "2":
                         filenames, img_emb, txt_emb = step_methods[step]()
-                        print(f"단계 2: {len(filenames)}개 이미지 인코딩")
-                    elif step == "3":
-                        cluster_results = step_methods[step](visualize)
-                        print(
-                            f"단계 3: {cluster_results['n_clusters']}개 클러스터 생성"
-                        )
-                    elif step == "4":
-                        cluster_tags = step_methods[step]()
-                        tagged_count = sum(1 for tags in cluster_tags.values() if tags)
-                        print(f"단계 4: {tagged_count}개 클러스터 태깅")
+                        print(f"단계 2: {len(filenames)}개 이미지 CLIP 임베딩 완료")
 
                     pbar.update(1)
 
             print("파이프라인 완료")
-            print(f"출력: {self.output_folder}")
+            print(f"출력: {self.embeddings_path}")
 
         except Exception as e:
             print(f"파이프라인 실패: {e}")
@@ -133,16 +121,15 @@ def main() -> None:
     """메인 함수"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="AAC 클러스터링 파이프라인")
+    parser = argparse.ArgumentParser(description="AAC 카드 임베딩 파이프라인")
     parser.add_argument(
         "--steps",
         nargs="+",
         type=str,
-        default=["1", "2", "3", "4"],
-        help="실행할 단계 (1-4)",
+        default=["1", "2"],
+        help="실행할 단계 (1: 필터링, 2: 임베딩)",
     )
-    parser.add_argument("--no-confirm", action="store_true", help="확인 생략")
-    parser.add_argument("--no-visualize", action="store_true", help="시각화 생략")
+    parser.add_argument("--no-confirm", action="store_true", help="필터링 확인 생략")
     parser.add_argument("--overwrite", action="store_true", help="기존 파일 덮어쓰기")
 
     args = parser.parse_args()
@@ -151,18 +138,17 @@ def main() -> None:
     if args.overwrite:
         config["overwrite_mode"] = True
 
-    valid_steps = ["1", "2", "3", "4"]
+    valid_steps = ["1", "2"]
     args.steps = [s for s in args.steps if s in valid_steps]
 
     if not args.steps:
-        print("유효한 단계 없음. 사용 가능: 1, 2, 3, 4")
+        print("유효한 단계 없음. 사용 가능: 1 (필터링), 2 (임베딩)")
         return
 
     pipeline = DataPreparationPipeline(config)
     pipeline.run_pipeline(
         steps=args.steps,
         confirm_filter=not args.no_confirm,
-        visualize=not args.no_visualize,
     )
 
 

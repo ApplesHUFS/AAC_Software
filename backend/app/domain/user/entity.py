@@ -17,7 +17,6 @@ class User:
     disability_type: str
     communication_characteristics: str
     interesting_topics: List[str]
-    preferred_category_types: List[int]
     password_hash: str = ""
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
@@ -40,7 +39,6 @@ class User:
             "disability_type": self.disability_type,
             "communication_characteristics": self.communication_characteristics,
             "interesting_topics": self.interesting_topics,
-            "preferred_category_types": self.preferred_category_types,
             "password": self.password_hash,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
@@ -55,7 +53,6 @@ class User:
             "disabilityType": self.disability_type,
             "communicationCharacteristics": self.communication_characteristics,
             "interestingTopics": self.interesting_topics,
-            "preferredCategoryTypes": self.preferred_category_types,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }
@@ -73,8 +70,7 @@ class User:
             gender=data["gender"],
             disability_type=data["disability_type"],
             communication_characteristics=data["communication_characteristics"],
-            interesting_topics=data["interesting_topics"],
-            preferred_category_types=data["preferred_category_types"],
+            interesting_topics=data.get("interesting_topics", []),
             password_hash=data.get("password", ""),
             created_at=datetime.fromisoformat(created_at) if created_at else datetime.now(),
             updated_at=datetime.fromisoformat(updated_at) if updated_at else datetime.now(),

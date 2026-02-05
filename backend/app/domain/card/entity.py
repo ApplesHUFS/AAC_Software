@@ -15,7 +15,6 @@ class Card:
     image_path: str
     index: int = 0
     selected: bool = False
-    cluster_id: Optional[int] = None
 
     def to_dict(self) -> dict:
         """딕셔너리 변환"""

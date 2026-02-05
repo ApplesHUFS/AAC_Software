@@ -1,60 +1,35 @@
-"""AAC 클러스터링 시스템 설정"""
+"""AAC 카드 임베딩 시스템 설정
+
+CLIP 기반 순수 벡터 검색을 위한 간소화된 설정
+"""
 
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 DATASET_CONFIG = {
+    # 경로 설정
     "images_folder": str(PROJECT_ROOT / "dataset" / "images"),
     "output_folder": str(PROJECT_ROOT / "dataset" / "processed"),
-    # 임베딩 설정
-    "image_weight": 0.8,  # 이미지 가중치 (AAC 카드는 시각적 요소가 중요)
+    # CLIP 임베딩 설정
     "clip_model": "openai/clip-vit-large-patch14",
-    # 계층적 클러스터링 설정
-    "macro_min_clusters": 70,  # 대분류 최소 개수
-    "macro_max_clusters": 100,  # 대분류 최대 개수
-    "min_cluster_size": 20,  # 분할 가능한 최소 크기
-    "max_micro_clusters": 6,  # 대분류당 최대 세분화 수
+    "image_weight": 0.8,  # 이미지-텍스트 임베딩 융합 가중치
     # 이미지 필터링
     "filter_confirm": True,
-    # 파이프라인 옵션
-    "visualize_clusters": True,
-    "overwrite_mode": False,
-    # OpenAI API (태깅용)
-    "openai_model": "gpt-4o-2024-08-06",
-    "openai_temperature": 0.2,  # 일관된 태깅을 위해 낮게 설정
-    "request_delay": 1.0,
     # GPU/CPU 설정
     "device": "auto",
-    # 클러스터 태깅
-    "cluster_medoid_count": 5,  # 더 정확한 태깅 위함.
-    # 유사도 모델
-    "similarity_model": "Snowflake/snowflake-arctic-embed-l",
-    # 선호 카테고리 할당
-    "similarity_threshold": 0.45,  # 더 엄격한 유사도 기준
-    "required_cluster_count": 6,  # AAC 사용자 관리 가능한 카테고리 수
-    # 레거시 호환성
-    "n_clusters": None,  # None이면 자동 결정
+    # 파이프라인 옵션
+    "overwrite_mode": False,
 }
 
 
 def get_project_root() -> Path:
-    """프로젝트 루트 디렉토리 반환.
-
-    현재 파일의 위치에 관계없이 프로젝트 루트를 찾습니다.
-
-    Returns:
-        Path: 프로젝트 루트 경로
-    """
+    """프로젝트 루트 디렉토리 반환"""
     return PROJECT_ROOT
 
 
 def get_data_paths() -> dict:
-    """데이터 관련 경로들을 반환.
-
-    Returns:
-        dict: 주요 데이터 경로들
-    """
+    """데이터 관련 경로들을 반환"""
     return {
         "project_root": PROJECT_ROOT,
         "dataset_folder": PROJECT_ROOT / "dataset",
@@ -66,20 +41,7 @@ def get_data_paths() -> dict:
 
 
 def validate_config(config: dict) -> bool:
-    """설정 유효성 검사.
-
-    필수 설정 항목들이 모두 존재하는지 확인하고,
-    데이터 크기와 하이퍼파라미터 관계의 일관성을 검증합니다.
-
-    Args:
-        config: 검증할 설정 딕셔너리
-
-    Returns:
-        bool: 설정이 유효한 경우 True
-
-    Raises:
-        ValueError: 필수 설정이 누락되거나 값이 부적절한 경우
-    """
+    """설정 유효성 검사"""
     required_keys = ["images_folder", "output_folder", "clip_model"]
 
     for key in required_keys:
@@ -90,16 +52,6 @@ def validate_config(config: dict) -> bool:
     if not images_path.parent.exists():
         print(f"경고: 데이터셋 폴더가 존재하지 않습니다: {images_path.parent}")
 
-    # 클러스터링 설정 검증
-    if config["macro_min_clusters"] >= config["macro_max_clusters"]:
-        raise ValueError("macro_min_clusters는 macro_max_clusters보다 작아야 합니다")
-
-    if config["min_cluster_size"] < 10:
-        raise ValueError("min_cluster_size는 통계적 안정성을 위해 10 이상이어야 합니다")
-
-    if config["similarity_threshold"] < 0.0 or config["similarity_threshold"] > 1.0:
-        raise ValueError("similarity_threshold는 0.0과 1.0 사이 값이어야 합니다")
-
     if config["image_weight"] < 0.0 or config["image_weight"] > 1.0:
         raise ValueError("image_weight는 0.0과 1.0 사이 값이어야 합니다")
 
@@ -109,10 +61,9 @@ def validate_config(config: dict) -> bool:
 if __name__ == "__main__":
     validate_config(DATASET_CONFIG)
 
-    # 경로 정보 출력
     paths = get_data_paths()
     print("프로젝트 경로 정보:")
     for name, path in paths.items():
         print(f"  {name}: {path}")
 
-    print("\n설정 검증 완료 - 백엔드 폴더 이동 대응")
+    print("\n설정 검증 완료")

@@ -91,40 +91,57 @@ GPT-4o가 현재 대화 상황과 과거 대화 기록, 선택된 카드를 바�
 ```
 AAC_Software/
 ├── frontend/           # React 웹 애플리케이션
-├── backend/            # Flask API 서버
-├── data_processing/    # 데이터 처리 파이프라인
-├── user_data/         # 사용자 데이터 저장
+├── backend/            # FastAPI 서버
+├── data_processing/    # 데이터 전처리 파이프라인
+├── user_data/          # 사용자 데이터 저장
 └── dataset/            # AAC 카드 데이터셋
 ```
 
 
+## 카드 추천 시스템
+
+CLIP 기반 3단계 시맨틱 추천 파이프라인을 사용합니다:
+
+```
+사용자 컨텍스트 → CLIP 텍스트 인코딩 → FAISS 벡터 검색 → MMR 다양성 선택 → 키워드 부스트 → 추천 카드
+                                              ↑
+                              사전 계산된 CLIP 이미지 임베딩 (5,901개)
+```
+
+| 단계 | 알고리즘 | 목적 |
+|------|----------|------|
+| 1. 시맨틱 검색 | FAISS Inner Product | 컨텍스트와 시각적으로 일치하는 카드 검색 |
+| 2. 다양성 선택 | MMR (Maximum Marginal Relevance) | 중복 방지, 다양한 카드 포함 |
+| 3. 페르소나 부스트 | CLIP 텍스트 유사도 | 사용자 관심 키워드 반영 |
+
+
 ## 컴포넌트 구성
 
-### 🌐 Frontend (React)
+### 🌐 Frontend (React + Next.js)
 - 사용자 인증 및 소통이 프로필 관리
 - AAC 카드 선택 인터페이스
 - AI 해석 결과 표시 및 피드백 수집
-- **포트**: 3000 (개발), 빌드 후 정적 배포
+- **포트**: 3001
 
-### 🚀 Backend (Flask)
-- RESTful API 서버
-- 사용자 관리 및 인증
-- 카드 추천 알고리즘
-- OpenAI API 기반 카드 해석
-- **포트**: 8000
+### 🚀 Backend (FastAPI)
+- RESTful API 서버 (SOLID 원칙 기반)
+- CLIP 기반 시맨틱 카드 추천
+- FAISS 벡터 검색 엔진
+- OpenAI GPT-4o 기반 카드 해석
+- **포트**: 8001
 
 ### 🔬 Data Processing (Python)
-- AAC 카드 이미지 필터링 및 분류
-- CLIP 기반 멀티모달 임베딩 생성
-- 계층적 클러스터링 및 자동 태깅
+- AAC 카드 이미지 필터링
+- CLIP 멀티모달 임베딩 생성
 - **실행**: 배치 처리 파이프라인
 
 
 ## 빠른 시작
 
 ### 사전 요구사항
-- Python 3.8+
-- Node.js 16.0+
+- Python 3.11+
+- Poetry (Python 패키지 관리)
+- Node.js 18.0+
 - OpenAI API 키
 
 ### 1. 저장소 클론
@@ -135,9 +152,8 @@ cd AAC_Software
 
 ### 2. 환경 설정
 ```bash
-# 백엔드 및 데이터 처리용 .env 파일 생성
+# 백엔드 환경 변수 설정
 echo "OPENAI_API_KEY=your_openai_api_key_here" > backend/.env
-echo "OPENAI_API_KEY=your_openai_api_key_here" > data_processing/.env
 ```
 
 ### 3. 데이터셋 준비
@@ -146,7 +162,7 @@ echo "OPENAI_API_KEY=your_openai_api_key_here" > data_processing/.env
 chmod +x download_arasaac.sh
 ./download_arasaac.sh
 
-# 데이터 처리 파이프라인 실행
+# 데이터 전처리 파이프라인 실행
 cd data_processing
 pip install -r requirements.txt
 python data_prepare.py
@@ -155,41 +171,44 @@ python data_prepare.py
 ### 4. 백엔드 서버 실행
 ```bash
 cd backend
-pip install -r requirements.txt
-python app.py
+poetry install
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 8001
 ```
 
 ### 5. 프론트엔드 애플리케이션 실행
 ```bash
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
 ### 6. 애플리케이션 접속
-브라우저에서 `http://localhost:3000`에 접속하여 시스템을 사용할 수 있습니다.
+브라우저에서 `http://localhost:3001`에 접속하여 시스템을 사용할 수 있습니다.
 
 
 ## 기술 스택
 
-- **Frontend**: React 18.2, JavaScript ES6+, CSS3
-- **Backend**: Flask 3.0+, OpenAI GPT-4o, LangChain, Sentence Transformers
-- **Data Processing**: PyTorch, CLIP, scikit-learn, OpenAI Vision API
-- **Data Storage**: JSON 파일, 파일 시스템
+| 영역 | 기술 |
+|------|------|
+| **Frontend** | React 18, Next.js 15, TypeScript, TailwindCSS |
+| **Backend** | FastAPI, Pydantic, OpenAI GPT-4o |
+| **AI/ML** | CLIP (ViT-L/14), FAISS, PyTorch, Transformers |
+| **Storage** | JSON 파일 기반 |
 
 
 ## 환경 변수 설정
 - `OPENAI_API_KEY`: OpenAI API 키 (필수)
-- `REACT_APP_API_URL`: API 서버 URL (기본: http://localhost:8000)
+- `NEXT_PUBLIC_API_URL`: API 서버 URL (기본: http://localhost:8001)
 
 
 ## 문제 해결
 
 ### 일반적인 문제
 1. **OpenAI API 키 오류**: `.env` 파일에 올바른 API 키 설정 확인
-2. **포트 충돌**: 백엔드(8000), 프론트엔드(3000) 포트 사용 가능 여부 확인
+2. **포트 충돌**: 백엔드(8001), 프론트엔드(3001) 포트 사용 가능 여부 확인
 3. **CORS 오류**: 백엔드 CORS 설정에서 프론트엔드 URL 허용 확인
 4. **데이터셋 파일 누락**: `dataset/` 디렉토리에 필수 파일 존재 여부 확인
+5. **FAISS 설치 오류**: `poetry add faiss-cpu` 실행
 
 
 ## 라이센스

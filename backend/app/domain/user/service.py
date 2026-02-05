@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 from app.config.settings import Settings
 from app.domain.user.entity import User
 from app.domain.user.repository import UserRepository
-from app.infrastructure.external.embedding_client import EmbeddingClient
 
 
 @dataclass
@@ -43,7 +42,6 @@ class UpdateResult:
 
     success: bool
     updated_fields: List[str]
-    category_recalculated: bool
     message: str
 
 
@@ -53,11 +51,9 @@ class UserService:
     def __init__(
         self,
         repository: UserRepository,
-        embedding_client: EmbeddingClient,
         settings: Settings,
     ):
         self._repo = repository
-        self._embedding = embedding_client
         self._settings = settings
 
     async def register_user(
@@ -72,7 +68,6 @@ class UserService:
         password: str,
     ) -> RegisterResult:
         """새 사용자 등록"""
-        # 중복 검사
         if await self._repo.exists(user_id):
             return RegisterResult(
                 success=False,
@@ -80,7 +75,6 @@ class UserService:
                 message=f"사용자 ID '{user_id}'가 이미 존재합니다.",
             )
 
-        # 검증
         validation_error = self._validate_persona(
             age, gender, disability_type, interesting_topics
         )
@@ -89,14 +83,6 @@ class UserService:
                 success=False, user_id=user_id, message=validation_error
             )
 
-        # 선호 카테고리 계산
-        preferred_categories = await self._embedding.calculate_preferred_categories(
-            interesting_topics,
-            self._settings.similarity_threshold,
-            self._settings.required_cluster_count,
-        )
-
-        # 사용자 생성
         user = User(
             user_id=user_id,
             name=name,
@@ -105,7 +91,6 @@ class UserService:
             disability_type=disability_type,
             communication_characteristics=communication_characteristics,
             interesting_topics=interesting_topics,
-            preferred_category_types=preferred_categories,
             password_hash=User.hash_password(password),
             created_at=datetime.now(),
             updated_at=datetime.now(),
@@ -174,14 +159,11 @@ class UserService:
             return UpdateResult(
                 success=False,
                 updated_fields=[],
-                category_recalculated=False,
                 message="사용자를 찾을 수 없습니다.",
             )
 
         updated_fields: List[str] = []
-        category_recalculated = False
 
-        # 필드 매핑 (camelCase -> snake_case)
         field_mapping = {
             "name": "name",
             "age": "age",
@@ -200,24 +182,12 @@ class UserService:
                 setattr(user, field_name, value)
                 updated_fields.append(key)
 
-        # 관심 주제가 변경된 경우 선호 카테고리 재계산
-        if "interestingTopics" in updates or "interesting_topics" in updates:
-            user.preferred_category_types = (
-                await self._embedding.calculate_preferred_categories(
-                    user.interesting_topics,
-                    self._settings.similarity_threshold,
-                    self._settings.required_cluster_count,
-                )
-            )
-            category_recalculated = True
-
         user.updated_at = datetime.now()
         await self._repo.update(user)
 
         return UpdateResult(
             success=True,
             updated_fields=updated_fields,
-            category_recalculated=category_recalculated,
             message="프로필이 성공적으로 업데이트되었습니다.",
         )
 

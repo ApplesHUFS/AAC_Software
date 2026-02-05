@@ -45,11 +45,6 @@ class Settings(BaseSettings):
 
     # 카드 추천 설정
     display_cards_total: int = 20
-    context_similarity_threshold: float = 0.25
-    context_max_clusters: int = 8
-    persona_similarity_threshold: float = 0.3
-    persona_max_clusters: int = 8
-    context_persona_ratio: float = 0.5
 
     # 카드 선택 및 해석
     min_card_selection: int = 1
@@ -65,12 +60,22 @@ class Settings(BaseSettings):
     valid_disability_types: List[str] = ["의사소통장애", "자폐스펙트럼장애", "지적장애"]
     min_age: int = 1
     max_age: int = 100
-    required_cluster_count: int = 6
 
-    # 임베딩 모델 설정
-    similarity_model: str = "dragonkue/BGE-m3-ko"
-    similarity_threshold: float = 0.5
+    # GPU/CPU 설정
     device: str = "auto"
+
+    # CLIP 추천 시스템 설정
+    use_clip_recommendation: bool = True
+    clip_model: str = "openai/clip-vit-large-patch14"
+    clip_image_weight: float = 0.8  # 이미지-텍스트 임베딩 융합 가중치
+
+    # 추천 점수 가중치 (합계 = 1.0)
+    semantic_weight: float = 0.5   # CLIP 시맨틱 유사도
+    diversity_weight: float = 0.2  # MMR 다양성
+    persona_weight: float = 0.3    # 사용자 선호
+
+    # MMR 파라미터
+    mmr_lambda: float = 0.6  # 관련성(1.0) vs 다양성(0.0) 균형
 
     # 데이터 정리
     default_cleanup_days: int = 30
@@ -107,19 +112,9 @@ class Settings(BaseSettings):
         return self.user_data_root / "conversation_memory.json"
 
     @property
-    def cluster_tags_path(self) -> Path:
-        """클러스터 태그 파일 경로"""
-        return self.dataset_root / "processed" / "cluster_tags.json"
-
-    @property
     def embeddings_path(self) -> Path:
-        """임베딩 파일 경로"""
+        """CLIP 임베딩 파일 경로"""
         return self.dataset_root / "processed" / "embeddings.json"
-
-    @property
-    def clustering_results_path(self) -> Path:
-        """클러스터링 결과 파일 경로"""
-        return self.dataset_root / "processed" / "clustering_results.json"
 
     model_config = {
         "env_file": ".env",

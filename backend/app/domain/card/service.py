@@ -72,9 +72,9 @@ class CardService:
             context.context_id
         )
 
-        # 카드 추천
+        # 카드 추천 (사용자의 관심 주제를 선호 키워드로 전달)
         cards = self._recommender.recommend_cards(
-            user_preferred_clusters=user.preferred_category_types,
+            preferred_keywords=user.interesting_topics,
             place=context.place,
             interaction_partner=context.interaction_partner,
             current_activity=context.current_activity,

@@ -22,7 +22,10 @@ from app.infrastructure.persistence.memory_repository import (
     InMemoryFeedbackRequestRepository,
 )
 from app.infrastructure.external.openai_client import OpenAIClient
-from app.infrastructure.external.embedding_client import EmbeddingClient
+from app.infrastructure.external.clip_client import CLIPEmbeddingClient
+from app.domain.card.vector_searcher import FaissVectorIndex, create_vector_index
+from app.domain.card.interfaces import IVectorIndex
+from app.domain.card.diversity_selector import MMRDiversitySelector
 
 
 # 설정
@@ -38,10 +41,23 @@ def get_openai_client() -> OpenAIClient:
 
 
 @lru_cache
-def get_embedding_client() -> EmbeddingClient:
-    """임베딩 클라이언트 싱글톤"""
+def get_clip_client() -> CLIPEmbeddingClient:
+    """CLIP 임베딩 클라이언트 싱글톤"""
     settings = get_settings()
-    return EmbeddingClient(settings)
+    return CLIPEmbeddingClient(settings)
+
+
+@lru_cache
+def get_vector_index() -> IVectorIndex:
+    """FAISS 벡터 검색 인덱스 싱글톤"""
+    settings = get_settings()
+    return create_vector_index(settings)
+
+
+@lru_cache
+def get_diversity_selector() -> MMRDiversitySelector:
+    """MMR 다양성 선택기 싱글톤"""
+    return MMRDiversitySelector(get_vector_index())
 
 
 @lru_cache
@@ -87,10 +103,9 @@ def get_feedback_request_repository() -> InMemoryFeedbackRequestRepository:
 def get_user_service(
     settings: SettingsDep,
     user_repo: JsonUserRepository = Depends(get_user_repository),
-    embedding_client: EmbeddingClient = Depends(get_embedding_client),
 ) -> UserService:
     """사용자 서비스"""
-    return UserService(user_repo, embedding_client, settings)
+    return UserService(user_repo, settings)
 
 
 def get_context_service(
@@ -102,11 +117,9 @@ def get_context_service(
 
 def get_card_recommender(
     settings: SettingsDep,
-    embedding_client: EmbeddingClient = Depends(get_embedding_client),
-    card_repo: JsonCardRepository = Depends(get_card_repository),
 ) -> CardRecommender:
-    """카드 추천 엔진"""
-    return CardRecommender(settings, embedding_client, card_repo)
+    """CLIP 기반 카드 추천 엔진"""
+    return CardRecommender(settings)
 
 
 def get_card_service(
@@ -127,7 +140,6 @@ def get_feedback_service(
 ) -> FeedbackService:
     """피드백 서비스"""
 
-    # FeedbackService에 두 저장소 통합
     class CombinedFeedbackRepository:
         def __init__(self, feedback_repo, request_repo):
             self._feedback = feedback_repo
