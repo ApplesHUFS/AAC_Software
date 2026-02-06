@@ -117,9 +117,10 @@ def get_context_service(
 
 def get_card_recommender(
     settings: SettingsDep,
+    openai_client: OpenAIClient = Depends(get_openai_client),
 ) -> CardRecommender:
-    """CLIP 기반 카드 추천 엔진"""
-    return CardRecommender(settings)
+    """CLIP 기반 카드 추천 엔진 (LLM 필터 포함)"""
+    return CardRecommender(settings, openai_client)
 
 
 def get_card_service(

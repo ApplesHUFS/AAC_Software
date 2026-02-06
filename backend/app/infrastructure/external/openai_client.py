@@ -1,13 +1,17 @@
 """OpenAI API 클라이언트"""
 
+import asyncio
 import base64
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
 
 from app.config.settings import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
@@ -191,3 +195,100 @@ class OpenAIClient:
         except Exception as e:
             print(f"대화 요약 오류: {e}")
             return ""
+
+    async def filter_cards(
+        self,
+        prompt: str,
+        max_retries: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """카드 적합성 필터링 (JSON 응답)
+
+        GPT-4o를 사용하여 카드의 적합성을 평가하고
+        부적절한 카드를 필터링합니다.
+        """
+        retries = max_retries or self._settings.filter_max_retries
+
+        for attempt in range(retries):
+            try:
+                response = self._client.chat.completions.create(
+                    model=self._settings.openai_model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "당신은 AAC 카드 적합성 평가 전문가입니다. JSON 형식으로 응답해주세요.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=self._settings.filter_max_tokens,
+                    temperature=self._settings.filter_temperature,
+                    response_format={"type": "json_object"},
+                )
+
+                content = response.choices[0].message.content or "{}"
+                return json.loads(content)
+
+            except json.JSONDecodeError as e:
+                logger.warning(f"JSON 파싱 오류 (시도 {attempt + 1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    await asyncio.sleep(2**attempt)
+                continue
+
+            except Exception as e:
+                logger.warning(f"필터 API 오류 (시도 {attempt + 1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    await asyncio.sleep(2**attempt)
+                continue
+
+        # 폴백: 필터링 없이 원본 반환
+        logger.error("필터 API 재시도 횟수 초과, 폴백 응답 반환")
+        return {
+            "appropriate": [],
+            "inappropriate": [],
+            "highly_relevant": [],
+        }
+
+    async def rerank_cards(
+        self,
+        prompt: str,
+        max_retries: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """카드 재순위화 (JSON 응답)
+
+        GPT-4o를 사용하여 카드를 컨텍스트에 맞게 재순위화합니다.
+        """
+        retries = max_retries or self._settings.filter_max_retries
+
+        for attempt in range(retries):
+            try:
+                response = self._client.chat.completions.create(
+                    model=self._settings.openai_model,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "당신은 AAC 카드 순위 최적화 전문가입니다. JSON 형식으로 응답해주세요.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=self._settings.rerank_max_tokens,
+                    temperature=self._settings.rerank_temperature,
+                    response_format={"type": "json_object"},
+                )
+
+                content = response.choices[0].message.content or "{}"
+                return json.loads(content)
+
+            except json.JSONDecodeError as e:
+                logger.warning(f"JSON 파싱 오류 (시도 {attempt + 1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    await asyncio.sleep(2**attempt)
+                continue
+
+            except Exception as e:
+                logger.warning(f"재순위화 API 오류 (시도 {attempt + 1}/{retries}): {e}")
+                if attempt < retries - 1:
+                    await asyncio.sleep(2**attempt)
+                continue
+
+        # 폴백: 빈 순위 반환 (원본 순서 유지)
+        logger.error("재순위화 API 재시도 횟수 초과, 폴백 응답 반환")
+        return {"ranked": []}

@@ -66,19 +66,21 @@ class CardService:
         user: User,
         context: Context,
     ) -> RecommendResult:
-        """카드 추천"""
+        """카드 추천 (LLM 필터 포함)"""
         # 이미 추천된 카드 조회
         excluded_cards = await self._history_repo.get_all_recommended_cards(
             context.context_id
         )
 
-        # 카드 추천 (사용자의 관심 주제를 선호 키워드로 전달)
-        cards = self._recommender.recommend_cards(
+        # 비동기 카드 추천 (LLM 필터 + 재순위화)
+        cards = await self._recommender.recommend_cards_async(
             preferred_keywords=user.interesting_topics,
             place=context.place,
             interaction_partner=context.interaction_partner,
             current_activity=context.current_activity,
             excluded_cards=excluded_cards,
+            user=user,
+            context_entity=context,
         )
 
         # 히스토리 저장

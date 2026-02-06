@@ -1,11 +1,14 @@
 """CLIP 기반 멀티모달 카드 추천 엔진
 
-클러스터 없는 순수 CLIP 벡터 검색 기반 추천:
+클러스터 없는 순수 CLIP 벡터 검색 + LLM 필터링 기반 추천:
 1. 시맨틱 검색: CLIP 공간에서 컨텍스트-이미지 직접 유사도 검색
 2. 다양성 선택: MMR 알고리즘으로 중복 방지
-3. 페르소나 부스트: 선호 키워드와의 유사도로 가산점
+3. LLM 적합성 필터: GPT-4o 기반 부적절 카드 필터링
+4. LLM 재순위화: GPT-4o 기반 컨텍스트 맞춤 재순위
+5. 페르소나 부스트: 선호 키워드와의 유사도로 가산점
 """
 
+import logging
 import random
 from dataclasses import dataclass
 from typing import List, Optional, Set
@@ -14,6 +17,7 @@ import numpy as np
 
 from app.config.settings import Settings
 from app.domain.card.entity import Card
+from app.domain.card.filters.base import FilterContext, ICardFilter, ICardReranker
 from app.domain.card.interfaces import (
     IDiversitySelector,
     IEmbeddingProvider,
@@ -22,6 +26,10 @@ from app.domain.card.interfaces import (
     SearchContext,
     ScoredCard,
 )
+from app.domain.context.entity import Context
+from app.domain.user.entity import User
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,15 +43,17 @@ class RecommendationConfig:
 
 
 class CLIPCardRecommender(IRecommendationStrategy):
-    """CLIP 기반 순수 벡터 검색 추천기
+    """CLIP 기반 순수 벡터 검색 + LLM 필터링 추천기
 
     클러스터 없이 직접 CLIP 임베딩 유사도로 카드 추천
-    모든 매칭이 시맨틱 공간에서 직접 이루어짐
+    LLM(GPT-4o)을 활용한 적합성 필터링 및 재순위화
 
     Pipeline:
         1. 컨텍스트 → CLIP 인코딩 → 5,901개 이미지와 직접 유사도 검색
         2. MMR로 다양성 확보 (비슷한 이미지 중복 방지)
-        3. 선호 키워드 유사도로 개인화 부스트
+        3. [NEW] LLM 적합성 필터 (부적절 카드 제거)
+        4. [NEW] LLM 재순위화 (컨텍스트 맞춤 순위)
+        5. 선호 키워드 유사도로 개인화 부스트
     """
 
     def __init__(
@@ -53,6 +63,8 @@ class CLIPCardRecommender(IRecommendationStrategy):
         vector_index: IVectorIndex,
         diversity_selector: IDiversitySelector,
         config: Optional[RecommendationConfig] = None,
+        llm_filter: Optional[ICardFilter] = None,
+        llm_reranker: Optional[ICardReranker] = None,
     ):
         self._settings = settings
         self._embedding = embedding_provider
@@ -65,6 +77,10 @@ class CLIPCardRecommender(IRecommendationStrategy):
             mmr_lambda=settings.mmr_lambda,
         )
 
+        # LLM 필터 및 재순위화기
+        self._llm_filter = llm_filter
+        self._llm_reranker = llm_reranker
+
         # 선호 키워드 임베딩 캐시
         self._keyword_embedding_cache: dict = {}
 
@@ -76,28 +92,128 @@ class CLIPCardRecommender(IRecommendationStrategy):
         context: SearchContext,
         count: int,
     ) -> List[ScoredCard]:
-        """추천 파이프라인 실행
+        """동기 추천 파이프라인 (LLM 필터 없음)
 
-        Args:
-            context: 검색 컨텍스트 (장소, 상대, 활동, 선호 키워드)
-            count: 최종 추천 카드 수
-
-        Returns:
-            점수가 계산된 추천 카드 목록
+        LLM 필터가 필요한 경우 recommend_async 사용
         """
-        # Stage 1: 시맨틱 검색
         candidates = self._stage1_semantic_search(context, count)
 
         if not candidates:
             return self._fallback_random_selection(context, count)
 
-        # Stage 2: 다양성 선택
         diverse_candidates = self._stage2_diversity_selection(candidates, count)
-
-        # Stage 3: 페르소나 부스트
-        final_cards = self._stage3_persona_boost(diverse_candidates, context)
+        final_cards = self._stage5_persona_boost(diverse_candidates, context)
 
         return final_cards
+
+    async def recommend_async(
+        self,
+        context: SearchContext,
+        count: int,
+        user: Optional[User] = None,
+        context_entity: Optional[Context] = None,
+    ) -> List[ScoredCard]:
+        """비동기 추천 파이프라인 (LLM 필터 포함)
+
+        Args:
+            context: 검색 컨텍스트 (장소, 상대, 활동, 선호 키워드)
+            count: 최종 추천 카드 수
+            user: 사용자 정보 (LLM 필터에 사용)
+            context_entity: 컨텍스트 엔티티 (LLM 필터에 사용)
+
+        Returns:
+            점수가 계산된 추천 카드 목록
+        """
+        # Stage 1: 시맨틱 검색 (CLIP)
+        candidates = self._stage1_semantic_search(context, count)
+
+        if not candidates:
+            return self._fallback_random_selection(context, count)
+
+        # Stage 2: 다양성 선택 (MMR)
+        diverse_candidates = self._stage2_diversity_selection(candidates, count)
+
+        # Stage 3: LLM 적합성 필터 (GPT-4o)
+        filtered_candidates = await self._stage3_llm_filter(
+            diverse_candidates, user, context_entity
+        )
+
+        # Stage 4: LLM 재순위화 (GPT-4o)
+        reranked_candidates = await self._stage4_llm_rerank(
+            filtered_candidates, user, context_entity
+        )
+
+        # Stage 5: 페르소나 부스트
+        final_cards = self._stage5_persona_boost(reranked_candidates, context)
+
+        return final_cards
+
+    async def _stage3_llm_filter(
+        self,
+        candidates: List[ScoredCard],
+        user: Optional[User],
+        context_entity: Optional[Context],
+    ) -> List[ScoredCard]:
+        """Stage 3: LLM 적합성 필터
+
+        GPT-4o를 사용하여 사용자 나이, 장애유형, 상황에
+        부적절한 카드를 필터링합니다.
+        """
+        if not self._llm_filter or not user or not context_entity:
+            return candidates
+
+        try:
+            filter_ctx = FilterContext(
+                user=user,
+                context=context_entity,
+                excluded_filenames=set(),
+            )
+
+            result = await self._llm_filter.filter_cards(candidates, filter_ctx)
+
+            if result.appropriate_cards:
+                logger.info(
+                    f"LLM 필터: {result.remaining_count}개 적합, "
+                    f"{result.filtered_count}개 필터링됨"
+                )
+                return result.appropriate_cards
+
+        except Exception as e:
+            logger.warning(f"LLM 필터 오류, 원본 반환: {e}")
+
+        return candidates
+
+    async def _stage4_llm_rerank(
+        self,
+        candidates: List[ScoredCard],
+        user: Optional[User],
+        context_entity: Optional[Context],
+    ) -> List[ScoredCard]:
+        """Stage 4: LLM 재순위화
+
+        GPT-4o를 사용하여 현재 상황에 맞게
+        카드 순위를 최적화합니다.
+        """
+        if not self._llm_reranker or not user or not context_entity:
+            return candidates
+
+        try:
+            filter_ctx = FilterContext(
+                user=user,
+                context=context_entity,
+                excluded_filenames=set(),
+            )
+
+            reranked = await self._llm_reranker.rerank_cards(candidates, filter_ctx)
+
+            if reranked:
+                logger.info(f"LLM 재순위화: {len(reranked)}개 카드 순위 조정됨")
+                return reranked
+
+        except Exception as e:
+            logger.warning(f"LLM 재순위화 오류, 원본 반환: {e}")
+
+        return candidates
 
     def _stage1_semantic_search(
         self,
@@ -193,12 +309,12 @@ class CLIPCardRecommender(IRecommendationStrategy):
 
         return diverse_cards
 
-    def _stage3_persona_boost(
+    def _stage5_persona_boost(
         self,
         candidates: List[ScoredCard],
         context: SearchContext,
     ) -> List[ScoredCard]:
-        """Stage 3: 선호 키워드 기반 개인화 부스트
+        """Stage 5: 선호 키워드 기반 개인화 부스트
 
         사용자의 선호 키워드와 각 카드의 유사도를 계산하여 가산점
         """

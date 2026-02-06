@@ -77,6 +77,17 @@ class Settings(BaseSettings):
     # MMR 파라미터
     mmr_lambda: float = 0.6  # 관련성(1.0) vs 다양성(0.0) 균형
 
+    # LLM 필터 설정
+    enable_llm_filter: bool = True
+    enable_llm_reranker: bool = True
+    filter_batch_size: int = 40
+    rerank_batch_size: int = 30
+    filter_temperature: float = 0.3
+    rerank_temperature: float = 0.2
+    filter_max_tokens: int = 1000
+    rerank_max_tokens: int = 600
+    filter_max_retries: int = 3
+
     # 데이터 정리
     default_cleanup_days: int = 30
     feedback_cleanup_days: int = 7
