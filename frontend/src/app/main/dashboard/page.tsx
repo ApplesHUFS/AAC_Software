@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useContext } from "@/hooks/use-context";
 import { Button, Card, CardContent } from "@/components/ui";
 import { ContextForm } from "@/components/context/context-form";
+import { IMAGES } from "@/lib/images";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -21,11 +22,12 @@ export default function DashboardPage() {
     setShowContextForm(true);
   };
 
+  // 상황 설정 폼 화면
   if (showContextForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-partner-50 to-partner-100 p-4">
+      <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-md mx-auto pt-8">
-          <Card>
+          <Card variant="elevated">
             <CardContent className="p-6">
               <ContextForm onCancel={() => setShowContextForm(false)} />
             </CardContent>
@@ -36,49 +38,96 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-partner-50 to-partner-100">
+    <div className="min-h-screen bg-gray-50 pb-8">
       {/* 헤더 */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="app-header">
+        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 relative">
-              <Image
-                src="/images/logo.png"
-                alt="Logo"
-                fill
-                className="object-contain"
-              />
-            </div>
-            <span className="font-bold text-partner-700">소통, 이룸</span>
+            <Image
+              src={IMAGES.logo}
+              alt="로고"
+              width={36}
+              height={36}
+              className="object-contain"
+            />
+            <span className="font-bold text-gray-900">소통, 이룸</span>
           </div>
-          <Button variant="ghost" onClick={logout}>
+          <Button variant="ghost" size="sm" onClick={logout}>
             로그아웃
           </Button>
         </div>
       </header>
 
       {/* 메인 콘텐츠 */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* 환영 메시지 */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              안녕하세요, {user?.name}님!
-            </h1>
-            <p className="text-gray-600">
-              오늘도 소통이와 함께 즐거운 대화를 나눠보세요.
-            </p>
-          </CardContent>
-        </Card>
+      <main className="max-w-lg mx-auto px-4 py-6 space-y-5">
+        {/* 환영 카드 */}
+        <div className="app-card p-5 animate-fade-in-up">
+          <div className="flex items-center gap-4">
+            <div className="icon-container icon-container-lg icon-container-partner">
+              <Image src={IMAGES.heart} alt="" width={28} height={28} />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">
+                안녕하세요, {user?.name}님!
+              </h1>
+              <p className="text-gray-500 text-sm">
+                오늘도 즐거운 대화를 나눠보세요
+              </p>
+            </div>
+          </div>
+        </div>
 
-        {/* 세션 관리 */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* 새 세션 시작 */}
-          <Card className="card-hover cursor-pointer" onClick={handleNewSession}>
-            <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-partner-100 rounded-full flex items-center justify-center">
+        {/* 액션 카드들 */}
+        <div className="space-y-3">
+          {/* 새 대화 시작 */}
+          <Card
+            interactive
+            onClick={handleNewSession}
+            className="animate-fade-in-up delay-100"
+          >
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="icon-container icon-container-lg icon-container-partner">
+                <Image src={IMAGES.newChat} alt="" width={28} height={28} />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-semibold text-gray-900">새 대화 시작</h2>
+                <p className="text-sm text-gray-500">새로운 상황에서 대화하기</p>
+              </div>
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </CardContent>
+          </Card>
+
+          {/* 이어하기 */}
+          {context && (
+            <Card
+              interactive
+              onClick={continueSession}
+              className="animate-fade-in-up delay-200"
+            >
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="icon-container icon-container-lg icon-container-communicator">
+                  <Image src={IMAGES.message} alt="" width={28} height={28} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="font-semibold text-gray-900">대화 이어하기</h2>
+                  <p className="text-sm text-gray-500">
+                    {context.place}에서 {context.interactionPartner}와 대화 중
+                  </p>
+                </div>
                 <svg
-                  className="w-8 h-8 text-partner-600"
+                  className="w-5 h-5 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -87,93 +136,56 @@ export default function DashboardPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 4v16m8-8H4"
+                    d="M9 5l7 7-7 7"
                   />
                 </svg>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                새 대화 시작
-              </h2>
-              <p className="text-sm text-gray-600">
-                새로운 상황에서 대화를 시작합니다
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* 이어하기 */}
-          {context && (
-            <Card
-              className="card-hover cursor-pointer"
-              onClick={continueSession}
-            >
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-communicator-100 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-communicator-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                  대화 이어하기
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {context.place}에서 {context.interactionPartner}와(과) 대화 중
-                </p>
               </CardContent>
             </Card>
           )}
         </div>
 
         {/* 사용자 정보 */}
-        <Card className="mt-6">
-          <CardContent className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              소통이 정보
-            </h2>
-            <div className="grid gap-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">나이</span>
-                <span className="text-gray-900">{user?.age}세</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">성별</span>
-                <span className="text-gray-900">{user?.gender}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">장애 유형</span>
-                <span className="text-gray-900">{user?.disabilityType}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 block mb-1">관심 주제</span>
-                <div className="flex flex-wrap gap-1">
-                  {user?.interestingTopics.map((topic) => (
-                    <span
-                      key={topic}
-                      className="px-2 py-0.5 bg-partner-100 text-partner-700 rounded-full text-xs"
-                    >
-                      {topic}
-                    </span>
-                  ))}
-                </div>
+        <div className="app-card overflow-hidden animate-fade-in-up delay-300">
+          <div className="section-header">소통이 정보</div>
+          <div className="divide-y divide-gray-100">
+            {/* 나이 */}
+            <div className="list-item">
+              <Image src={IMAGES.basicInfo} alt="" width={20} height={20} className="opacity-60" />
+              <span className="flex-1 text-gray-700">나이</span>
+              <span className="text-gray-900 font-medium">{user?.age}세</span>
+            </div>
+
+            {/* 성별 */}
+            <div className="list-item">
+              <Image src={IMAGES.accountInfo2} alt="" width={20} height={20} className="opacity-60" />
+              <span className="flex-1 text-gray-700">성별</span>
+              <span className="text-gray-900 font-medium">{user?.gender}</span>
+            </div>
+
+            {/* 장애 유형 */}
+            <div className="list-item">
+              <Image src={IMAGES.type} alt="" width={20} height={20} className="opacity-60" />
+              <span className="flex-1 text-gray-700">장애 유형</span>
+              <span className="text-gray-900 font-medium">{user?.disabilityType}</span>
+            </div>
+
+            {/* 관심 주제 */}
+            <div className="list-item flex-wrap">
+              <Image src={IMAGES.interestTopic} alt="" width={20} height={20} className="opacity-60" />
+              <span className="flex-1 text-gray-700">관심 주제</span>
+              <div className="w-full mt-2 flex flex-wrap gap-1.5">
+                {user?.interestingTopics.map((topic) => (
+                  <span
+                    key={topic}
+                    className="tag tag-partner"
+                  >
+                    {topic}
+                  </span>
+                ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </main>
     </div>
   );

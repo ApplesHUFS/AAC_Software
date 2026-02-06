@@ -1,19 +1,32 @@
 /**
  * 카드 레이아웃 컴포넌트
+ * - 다양한 variant 지원
+ * - 인터랙티브 모드 지원
  */
 
 import { HTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {}
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: "default" | "elevated" | "outlined";
+  interactive?: boolean;
+}
+
+const cardVariants = {
+  default: "bg-white shadow-app-card border border-gray-100",
+  elevated: "bg-white shadow-app-lg",
+  outlined: "bg-white border-2 border-gray-200",
+};
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, variant = "default", interactive = false, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          "bg-white rounded-xl shadow-sm border border-gray-200",
+          "rounded-2xl",
+          cardVariants[variant],
+          interactive && "card-interactive",
           className
         )}
         {...props}
@@ -26,12 +39,15 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
 Card.displayName = "Card";
 
-export const CardHeader = forwardRef<HTMLDivElement, CardProps>(
+// CardHeader Props
+interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
+
+export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
-        className={cn("px-6 py-4 border-b border-gray-200", className)}
+        className={cn("px-5 py-4 border-b border-gray-100", className)}
         {...props}
       >
         {children}
@@ -42,10 +58,13 @@ export const CardHeader = forwardRef<HTMLDivElement, CardProps>(
 
 CardHeader.displayName = "CardHeader";
 
-export const CardContent = forwardRef<HTMLDivElement, CardProps>(
+// CardContent Props
+interface CardContentProps extends HTMLAttributes<HTMLDivElement> {}
+
+export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <div ref={ref} className={cn("px-6 py-4", className)} {...props}>
+      <div ref={ref} className={cn("px-5 py-4", className)} {...props}>
         {children}
       </div>
     );
@@ -54,12 +73,15 @@ export const CardContent = forwardRef<HTMLDivElement, CardProps>(
 
 CardContent.displayName = "CardContent";
 
-export const CardFooter = forwardRef<HTMLDivElement, CardProps>(
+// CardFooter Props
+interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}
+
+export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
-        className={cn("px-6 py-4 border-t border-gray-200", className)}
+        className={cn("px-5 py-4 border-t border-gray-100", className)}
         {...props}
       >
         {children}

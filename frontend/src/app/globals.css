@@ -2,39 +2,118 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 기본 스타일 */
+/* ========================================
+   디자인 토큰 - 중앙화된 값 관리
+   ======================================== */
+:root {
+  /* 색상 시스템 */
+  --color-background: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+
+  /* 그림자 시스템 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  /* 모션 시스템 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* 간격 시스템 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+/* ========================================
+   기본 스타일
+   ======================================== */
 html {
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  @apply antialiased;
+  @apply antialiased bg-background text-gray-900;
 }
 
-/* 스크롤바 스타일 */
+/* ========================================
+   스크롤바 스타일
+   ======================================== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 rounded;
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded hover:bg-gray-400;
+  @apply bg-gray-300 rounded-full hover:bg-gray-400;
 }
 
-/* 입력 필드 포커스 스타일 */
-input:focus,
-textarea:focus,
-select:focus {
-  @apply outline-none ring-2 ring-partner-500 border-transparent;
+/* ========================================
+   앱 스타일 레이아웃 클래스
+   ======================================== */
+
+/* 페이지 배경 */
+.page-background {
+  @apply bg-background min-h-screen;
+}
+
+/* 앱 스타일 헤더 */
+.app-header {
+  @apply sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-100;
+  box-shadow: var(--shadow-xs);
+  z-index: 40;
+}
+
+/* 앱 스타일 카드 */
+.app-card {
+  @apply bg-white rounded-2xl;
+  box-shadow: var(--shadow-card);
+}
+
+/* 섹션 헤더 */
+.section-header {
+  @apply px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50;
+}
+
+/* 리스트 아이템 */
+.list-item {
+  @apply flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 last:border-b-0;
+  @apply transition-colors duration-150;
+}
+
+.list-item:active {
+  @apply bg-gray-50;
+}
+
+/* ========================================
+   인터랙션 스타일
+   ======================================== */
+
+/* 터치 가능한 요소 */
+.touchable {
+  @apply cursor-pointer select-none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touchable:active {
+  @apply scale-[0.97];
+  transition: transform 100ms ease;
 }
 
 /* 버튼 활성화 애니메이션 */
 button:active:not(:disabled) {
   transform: scale(0.98);
+  transition: transform 100ms ease;
 }
 
 /* 카드 호버 효과 */
@@ -43,5 +122,123 @@ button:active:not(:disabled) {
 }
 
 .card-hover:hover {
-  @apply shadow-lg -translate-y-0.5;
+  @apply shadow-app-md -translate-y-0.5;
+}
+
+.card-hover:active {
+  @apply scale-[0.99] shadow-app-sm;
+}
+
+/* 인터랙티브 카드 */
+.card-interactive {
+  @apply cursor-pointer transition-all duration-200;
+  @apply hover:shadow-app-md hover:-translate-y-0.5;
+  @apply active:scale-[0.99] active:shadow-app-sm;
+}
+
+/* ========================================
+   아이콘 컨테이너 스타일
+   ======================================== */
+.icon-container {
+  @apply flex items-center justify-center rounded-xl bg-gray-100;
+}
+
+.icon-container-sm {
+  @apply w-10 h-10;
+}
+
+.icon-container-md {
+  @apply w-12 h-12;
+}
+
+.icon-container-lg {
+  @apply w-14 h-14;
+}
+
+.icon-container-partner {
+  @apply bg-partner-50;
+}
+
+.icon-container-communicator {
+  @apply bg-communicator-50;
+}
+
+/* ========================================
+   입력 필드 스타일
+   ======================================== */
+input:focus,
+textarea:focus,
+select:focus {
+  @apply outline-none ring-2 ring-partner-500 border-transparent;
+}
+
+/* 앱 스타일 입력 필드 */
+.input-app {
+  @apply w-full px-4 py-3 bg-gray-50 border-0 rounded-xl;
+  @apply text-gray-900 placeholder-gray-400;
+  @apply focus:bg-white focus:ring-2 focus:ring-partner-500;
+  @apply transition-all duration-200;
+}
+
+/* ========================================
+   태그 스타일
+   ======================================== */
+.tag {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+}
+
+.tag-partner {
+  @apply bg-partner-100 text-partner-700;
+}
+
+.tag-communicator {
+  @apply bg-communicator-100 text-communicator-700;
+}
+
+.tag-gray {
+  @apply bg-gray-100 text-gray-700;
+}
+
+/* ========================================
+   메시지 스타일
+   ======================================== */
+.message-error {
+  @apply flex items-center gap-2 p-3 bg-red-50 rounded-xl text-red-700 text-sm;
+}
+
+.message-success {
+  @apply flex items-center gap-2 p-3 bg-green-50 rounded-xl text-green-700 text-sm;
+}
+
+.message-info {
+  @apply flex items-center gap-2 p-3 bg-blue-50 rounded-xl text-blue-700 text-sm;
+}
+
+/* ========================================
+   하단 고정 바
+   ======================================== */
+.bottom-bar {
+  @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100;
+  box-shadow: var(--shadow-lg);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 50;
+}
+
+/* ========================================
+   애니메이션 딜레이 유틸리티
+   ======================================== */
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}
+
+.delay-400 {
+  animation-delay: 400ms;
 }

@@ -5,8 +5,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useContext } from "@/hooks/use-context";
 import { Button, Input, Textarea } from "@/components/ui";
+import { IMAGES } from "@/lib/images";
 
 interface ContextFormProps {
   onCancel?: () => void;
@@ -46,55 +48,77 @@ export function ContextForm({ onCancel }: ContextFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="text-center mb-6">
+      {/* 헤더 */}
+      <div className="text-center">
+        <div className="icon-container icon-container-lg icon-container-partner mx-auto mb-4">
+          <Image
+            src={IMAGES.communicationSituation}
+            alt=""
+            width={32}
+            height={32}
+          />
+        </div>
         <h2 className="text-xl font-bold text-gray-900">대화 상황 설정</h2>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-500 mt-1 text-sm">
           소통이가 어디서 누구와 대화하고 있나요?
         </p>
       </div>
 
-      <Input
-        label="장소"
-        value={formData.place}
-        onChange={(e) => setFormData({ ...formData, place: e.target.value })}
-        placeholder="예: 집, 학교, 병원, 놀이터"
-        required
-      />
+      {/* 입력 필드 */}
+      <div className="space-y-4">
+        <Input
+          label="장소"
+          leftIcon={IMAGES.place}
+          value={formData.place}
+          onChange={(e) => setFormData({ ...formData, place: e.target.value })}
+          placeholder="예: 집, 학교, 병원, 놀이터"
+          required
+        />
 
-      <Input
-        label="대화 상대"
-        value={formData.interactionPartner}
-        onChange={(e) =>
-          setFormData({ ...formData, interactionPartner: e.target.value })
-        }
-        placeholder="예: 엄마, 선생님, 친구"
-        required
-      />
+        <Input
+          label="대화 상대"
+          leftIcon={IMAGES.interactionPartner}
+          value={formData.interactionPartner}
+          onChange={(e) =>
+            setFormData({ ...formData, interactionPartner: e.target.value })
+          }
+          placeholder="예: 엄마, 선생님, 친구"
+          required
+        />
 
-      <Textarea
-        label="현재 활동 (선택)"
-        value={formData.currentActivity}
-        onChange={(e) =>
-          setFormData({ ...formData, currentActivity: e.target.value })
-        }
-        placeholder="예: 밥 먹기, 놀이하기, 수업 듣기"
-        rows={2}
-      />
+        <Textarea
+          label="현재 활동 (선택)"
+          value={formData.currentActivity}
+          onChange={(e) =>
+            setFormData({ ...formData, currentActivity: e.target.value })
+          }
+          placeholder="예: 밥 먹기, 놀이하기, 수업 듣기"
+          rows={2}
+        />
+      </div>
 
+      {/* 에러 메시지 */}
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-          {error}
+        <div className="message-error">
+          <Image src={IMAGES.error} alt="" width={18} height={18} />
+          <span>{error}</span>
         </div>
       )}
 
-      <div className="flex gap-3">
+      {/* 버튼 */}
+      <div className="flex gap-3 pt-2">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+            className="flex-shrink-0 min-w-[60px]"
+          >
             취소
           </Button>
         )}
-        <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? "설정 중..." : "카드 추천 받기"}
+        <Button type="submit" fullWidth isLoading={isLoading}>
+          카드 추천 받기
         </Button>
       </div>
     </form>

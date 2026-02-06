@@ -69,10 +69,14 @@ export function useFeedback() {
 
   /**
    * 해석 선택으로 피드백 제출
+   * @param selectedIndex 선택한 해석 인덱스
+   * @param overrideConfirmationId 직접 전달할 confirmationId (클로저 문제 방지)
    */
   const submitWithSelection = useCallback(
-    async (selectedIndex: number) => {
-      if (!confirmationId) {
+    async (selectedIndex: number, overrideConfirmationId?: string) => {
+      const idToUse = overrideConfirmationId || confirmationId;
+
+      if (!idToUse) {
         setError("확인 ID가 없습니다.");
         return null;
       }
@@ -82,7 +86,7 @@ export function useFeedback() {
 
       try {
         const response = await feedbackApi.submitWithSelection(
-          confirmationId,
+          idToUse,
           selectedIndex
         );
 
@@ -105,10 +109,14 @@ export function useFeedback() {
 
   /**
    * 직접 입력으로 피드백 제출
+   * @param directFeedback 직접 입력한 피드백
+   * @param overrideConfirmationId 직접 전달할 confirmationId (클로저 문제 방지)
    */
   const submitWithDirectFeedback = useCallback(
-    async (directFeedback: string) => {
-      if (!confirmationId) {
+    async (directFeedback: string, overrideConfirmationId?: string) => {
+      const idToUse = overrideConfirmationId || confirmationId;
+
+      if (!idToUse) {
         setError("확인 ID가 없습니다.");
         return null;
       }
@@ -118,7 +126,7 @@ export function useFeedback() {
 
       try {
         const response = await feedbackApi.submitWithDirectFeedback(
-          confirmationId,
+          idToUse,
           directFeedback
         );
 

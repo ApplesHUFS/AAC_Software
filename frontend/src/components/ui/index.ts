@@ -8,3 +8,4 @@ export { Textarea } from "./textarea";
 export { Select } from "./select";
 export { Spinner } from "./spinner";
 export { Card, CardHeader, CardContent, CardFooter } from "./card";
+export { Icon, IconContainer } from "./icon";
