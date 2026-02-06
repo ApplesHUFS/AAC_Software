@@ -1,4 +1,7 @@
-"""OpenAI API 클라이언트"""
+"""OpenAI Responses API 클라이언트
+
+Responses API를 사용하여 텍스트 생성, 이미지 분석, JSON 출력을 처리합니다.
+"""
 
 import asyncio
 import base64
@@ -15,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
-    """OpenAI API 통합 클라이언트"""
+    """OpenAI Responses API 통합 클라이언트"""
 
     def __init__(self, settings: Settings):
         self._settings = settings
@@ -46,31 +49,32 @@ class OpenAIClient:
         memory_summary: Optional[str] = None,
     ) -> List[str]:
         """선택된 카드들을 해석하여 3가지 가능한 의미 생성"""
-
-        # 시스템 프롬프트 구성
-        system_prompt = self._build_interpretation_system_prompt(
+        instructions = self._build_interpretation_system_prompt(
             user_persona, context, memory_summary
         )
-
-        # 사용자 메시지 구성
         user_content = self._build_interpretation_user_content(card_images)
 
         try:
-            response = self._client.chat.completions.create(
+            logger.info(f"[DEBUG] Calling Responses API with model: {self._settings.openai_model}")
+            logger.info(f"[DEBUG] User content structure: {type(user_content)}, len={len(user_content)}")
+
+            response = self._client.responses.create(
                 model=self._settings.openai_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content},
-                ],
-                max_tokens=self._settings.interpretation_max_tokens,
+                instructions=instructions,
+                input=user_content,
+                max_output_tokens=self._settings.interpretation_max_tokens,
                 temperature=self._settings.openai_temperature,
             )
 
-            content = response.choices[0].message.content or ""
+            content = response.output_text or ""
+            logger.info(f"[DEBUG] API Response output_text: {content[:500] if content else 'EMPTY'}")
             return self._parse_interpretations(content)
 
         except Exception as e:
-            print(f"OpenAI API 오류: {e}")
+            logger.error(f"[DEBUG] OpenAI Responses API 오류: {e}")
+            logger.error(f"[DEBUG] Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"[DEBUG] Traceback: {traceback.format_exc()}")
             return [
                 "해석을 생성할 수 없습니다.",
                 "다시 시도해주세요.",
@@ -120,10 +124,10 @@ class OpenAIClient:
     def _build_interpretation_user_content(
         self, card_images: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """해석용 사용자 메시지 구성"""
+        """해석용 사용자 메시지 구성 (Responses API 형식)"""
         content: List[Dict[str, Any]] = [
             {
-                "type": "text",
+                "type": "input_text",
                 "text": "다음 AAC 카드들을 선택했습니다. 이 카드들의 조합이 무엇을 의미하는지 3가지 해석을 제공해주세요.",
             }
         ]
@@ -131,21 +135,18 @@ class OpenAIClient:
         for card in card_images:
             content.append(
                 {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:{card['media_type']};base64,{card['base64']}",
-                        "detail": "high",
-                    },
+                    "type": "input_image",
+                    "image_url": f"data:{card['media_type']};base64,{card['base64']}",
                 }
             )
             content.append(
                 {
-                    "type": "text",
+                    "type": "input_text",
                     "text": f"카드 이름: {card['name']}",
                 }
             )
 
-        return content
+        return [{"role": "user", "content": content}]
 
     def _parse_interpretations(self, content: str) -> List[str]:
         """응답에서 해석 추출"""
@@ -163,7 +164,6 @@ class OpenAIClient:
                 if text:
                     interpretations.append(text)
 
-        # 3개가 안 되면 기본값 추가
         while len(interpretations) < 3:
             interpretations.append("해석을 생성할 수 없습니다.")
 
@@ -183,17 +183,17 @@ class OpenAIClient:
                 prompt += f"- 카드: {item.get('cards', [])}\n"
                 prompt += f"  해석: {item.get('interpretation', '')}\n"
 
-            response = self._client.chat.completions.create(
+            response = self._client.responses.create(
                 model=self._settings.openai_model,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=self._settings.summary_max_tokens,
+                input=prompt,
+                max_output_tokens=self._settings.summary_max_tokens,
                 temperature=0.5,
             )
 
-            return response.choices[0].message.content or ""
+            return response.output_text or ""
 
         except Exception as e:
-            print(f"대화 요약 오류: {e}")
+            logger.error(f"대화 요약 오류: {e}")
             return ""
 
     async def filter_cards(
@@ -203,28 +203,23 @@ class OpenAIClient:
     ) -> Dict[str, Any]:
         """카드 적합성 필터링 (JSON 응답)
 
-        GPT-4o를 사용하여 카드의 적합성을 평가하고
+        Responses API를 사용하여 카드의 적합성을 평가하고
         부적절한 카드를 필터링합니다.
         """
         retries = max_retries or self._settings.filter_max_retries
 
         for attempt in range(retries):
             try:
-                response = self._client.chat.completions.create(
-                    model=self._settings.openai_model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "당신은 AAC 카드 적합성 평가 전문가입니다. JSON 형식으로 응답해주세요.",
-                        },
-                        {"role": "user", "content": prompt},
-                    ],
-                    max_tokens=self._settings.filter_max_tokens,
+                response = self._client.responses.create(
+                    model=self._settings.openai_filter_model,
+                    instructions="당신은 AAC 카드 적합성 평가 전문가입니다. JSON 형식으로 응답해주세요.",
+                    input=prompt,
+                    max_output_tokens=self._settings.filter_max_tokens,
                     temperature=self._settings.filter_temperature,
-                    response_format={"type": "json_object"},
+                    text={"format": {"type": "json_object"}},
                 )
 
-                content = response.choices[0].message.content or "{}"
+                content = response.output_text or "{}"
                 return json.loads(content)
 
             except json.JSONDecodeError as e:
@@ -239,7 +234,6 @@ class OpenAIClient:
                     await asyncio.sleep(2**attempt)
                 continue
 
-        # 폴백: 필터링 없이 원본 반환
         logger.error("필터 API 재시도 횟수 초과, 폴백 응답 반환")
         return {
             "appropriate": [],
@@ -254,27 +248,22 @@ class OpenAIClient:
     ) -> Dict[str, Any]:
         """카드 재순위화 (JSON 응답)
 
-        GPT-4o를 사용하여 카드를 컨텍스트에 맞게 재순위화합니다.
+        Responses API를 사용하여 카드를 컨텍스트에 맞게 재순위화합니다.
         """
         retries = max_retries or self._settings.filter_max_retries
 
         for attempt in range(retries):
             try:
-                response = self._client.chat.completions.create(
-                    model=self._settings.openai_model,
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": "당신은 AAC 카드 순위 최적화 전문가입니다. JSON 형식으로 응답해주세요.",
-                        },
-                        {"role": "user", "content": prompt},
-                    ],
-                    max_tokens=self._settings.rerank_max_tokens,
+                response = self._client.responses.create(
+                    model=self._settings.openai_filter_model,
+                    instructions="당신은 AAC 카드 순위 최적화 전문가입니다. JSON 형식으로 응답해주세요.",
+                    input=prompt,
+                    max_output_tokens=self._settings.rerank_max_tokens,
                     temperature=self._settings.rerank_temperature,
-                    response_format={"type": "json_object"},
+                    text={"format": {"type": "json_object"}},
                 )
 
-                content = response.choices[0].message.content or "{}"
+                content = response.output_text or "{}"
                 return json.loads(content)
 
             except json.JSONDecodeError as e:
@@ -289,6 +278,5 @@ class OpenAIClient:
                     await asyncio.sleep(2**attempt)
                 continue
 
-        # 폴백: 빈 순위 반환 (원본 순서 유지)
         logger.error("재순위화 API 재시도 횟수 초과, 폴백 응답 반환")
         return {"ranked": []}

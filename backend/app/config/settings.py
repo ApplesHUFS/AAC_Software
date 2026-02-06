@@ -19,9 +19,10 @@ class Settings(BaseSettings):
         default_factory=lambda: Path(__file__).parent.parent.parent.parent
     )
 
-    # OpenAI API 설정
+    # OpenAI API 설정 (Responses API 사용)
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
-    openai_model: str = "gpt-4o-2024-08-06"
+    openai_model: str = "gpt-4.1"
+    openai_filter_model: str = "gpt-4.1-mini"
     openai_temperature: float = 0.8
     interpretation_max_tokens: int = 400
     summary_max_tokens: int = 200
@@ -84,8 +85,8 @@ class Settings(BaseSettings):
     rerank_batch_size: int = 30
     filter_temperature: float = 0.3
     rerank_temperature: float = 0.2
-    filter_max_tokens: int = 1000
-    rerank_max_tokens: int = 600
+    filter_max_tokens: int = 2000
+    rerank_max_tokens: int = 1200
     filter_max_retries: int = 3
 
     # 데이터 정리

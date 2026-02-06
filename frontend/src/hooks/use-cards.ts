@@ -30,6 +30,7 @@ export function useCards() {
     setFeedbackId,
     setConfirmationId,
     clearSelection,
+    clearInterpretations,
   } = useCardStore();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -99,6 +100,7 @@ export function useCards() {
       );
 
       if (validation.success && validation.data?.valid) {
+        clearInterpretations();
         router.push("/main/interpretation");
         return true;
       }
@@ -111,7 +113,7 @@ export function useCards() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCards, allRecommendedCards, router]);
+  }, [selectedCards, allRecommendedCards, router, clearInterpretations]);
 
   /**
    * 카드 해석 요청
@@ -161,6 +163,7 @@ export function useCards() {
     interpretCards,
     setSelectedCards,
     clearSelection,
+    clearInterpretations,
     setError,
     setConfirmationId,
   };

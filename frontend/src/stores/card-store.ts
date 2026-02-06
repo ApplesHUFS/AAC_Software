@@ -30,6 +30,7 @@ interface CardState {
   setConfirmationId: (id: string) => void;
   clearCards: () => void;
   clearSelection: () => void;
+  clearInterpretations: () => void;
 }
 
 export const useCardStore = create<CardState>()(
@@ -99,6 +100,13 @@ export const useCardStore = create<CardState>()(
         }),
 
       clearSelection: () => set({ selectedCards: [] }),
+
+      clearInterpretations: () =>
+        set({
+          interpretations: [],
+          feedbackId: null,
+          confirmationId: null,
+        }),
     }),
     {
       name: "aac-card-storage",
