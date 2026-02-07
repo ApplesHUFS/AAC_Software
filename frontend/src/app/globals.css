@@ -3,76 +3,90 @@
 @tailwind utilities;
 
 /* ========================================
-   디자인 토큰 (SSOT)
+   Design Tokens - Apple/Google Style
    ======================================== */
 :root {
-  /* Primary 컬러 */
+  /* Primary - Violet */
   --color-primary: #7c3aed;
-  --color-primary-light: #a855f7;
-  --color-primary-dark: #6b21a8;
+  --color-primary-light: #8b5cf6;
+  --color-primary-dark: #6d28d9;
+  --color-primary-bg: rgba(124, 58, 237, 0.08);
+  --color-primary-bg-hover: rgba(124, 58, 237, 0.12);
 
-  /* Secondary 컬러 */
-  --color-secondary: #06b6d4;
-  --color-secondary-light: #22d3ee;
-  --color-secondary-dark: #0891b2;
+  /* Secondary - Teal/Cyan */
+  --color-secondary: #0d9488;
+  --color-secondary-light: #14b8a6;
+  --color-secondary-dark: #0f766e;
+  --color-secondary-bg: rgba(13, 148, 136, 0.08);
 
-  /* Accent 컬러 */
-  --color-accent: #ec4899;
-  --color-accent-light: #f472b6;
-  --color-accent-dark: #db2777;
+  /* Accent - Slate Blue */
+  --color-accent: #6366f1;
+  --color-accent-light: #818cf8;
+  --color-accent-dark: #4f46e5;
 
-  /* 배경 */
-  --color-background: #f8fafc;
+  /* Background */
+  --color-background: #ffffff;
+  --color-background-secondary: #f9fafb;
   --color-surface: #ffffff;
-  --color-surface-secondary: #f1f5f9;
-  --color-surface-tertiary: #e2e8f0;
+  --color-surface-secondary: #f3f4f6;
+  --color-surface-tertiary: #e5e7eb;
 
-  /* 텍스트 */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #94a3b8;
+  /* Text */
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-text-tertiary: #9ca3af;
   --color-text-inverse: #ffffff;
 
-  /* 그라데이션 */
-  --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
-  --gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-  --gradient-accent: linear-gradient(135deg, #ec4899 0%, #f97316 100%);
-  --gradient-soft: linear-gradient(135deg, #e9d5ff 0%, #fbcfe8 100%);
+  /* Borders */
+  --color-border: #e5e7eb;
+  --color-border-light: #f3f4f6;
 
-  /* 레이어드 쉐도우 */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.03);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.03), 0 6px 20px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 16px 32px rgba(0, 0, 0, 0.06), 0 24px 48px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 4px 20px rgba(124, 58, 237, 0.25), 0 8px 32px rgba(124, 58, 237, 0.15);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  /* Gradient - Only for special elements */
+  --gradient-brand: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
 
-  /* 글래스모피즘 */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-bg-strong: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --glass-blur: 16px;
+  /* Shadows - Soft, layered */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.06), 0 4px 6px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.08), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-button-hover: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-primary: 0 4px 14px rgba(124, 58, 237, 0.25);
 
-  /* 반경 */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
-  --radius-3xl: 32px;
+  /* Glass - Subtle */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg-strong: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.06);
+  --glass-blur: 12px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 22px;
+  --radius-3xl: 28px;
   --radius-full: 9999px;
 
-  /* 모션 */
+  /* Motion */
   --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-slow: 400ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
   --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --easing-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Legacy support */
+  --gradient-primary: var(--gradient-brand);
+  --gradient-secondary: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+  --gradient-accent: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --gradient-soft: var(--color-primary-bg);
+  --shadow-glow: var(--shadow-primary);
 }
 
 /* ========================================
-   기본 스타일
+   Base Styles
    ======================================== */
 html {
   scroll-behavior: smooth;
@@ -86,41 +100,39 @@ body {
   font-feature-settings: "ss01" on, "ss02" on;
 }
 
-/* 한글 텍스트 최적화 */
 ::selection {
-  background: rgba(124, 58, 237, 0.2);
+  background: rgba(124, 58, 237, 0.15);
   color: inherit;
 }
 
 /* ========================================
-   스크롤바 스타일
+   Scrollbar - Solid colors
    ======================================== */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-surface-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #c4b5fd 0%, #f9a8d4 100%);
+  background: var(--color-text-tertiary);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #a78bfa 0%, #f472b6 100%);
+  background: var(--color-text-secondary);
 }
 
-/* Firefox 스크롤바 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #c4b5fd transparent;
+  scrollbar-color: var(--color-text-tertiary) transparent;
 }
 
 /* ========================================
-   글래스모피즘 컴포넌트
+   Glass Components - Subtle
    ======================================== */
 .glass {
   background: var(--glass-bg);
@@ -131,191 +143,183 @@ body {
 
 .glass-strong {
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-dark {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(17, 24, 39, 0.9);
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
-  @apply rounded-3xl;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
+  @apply rounded-2xl;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
 }
 
 /* ========================================
-   그라데이션 버튼
+   Buttons - Solid colors
    ======================================== */
 .btn-gradient {
-  @apply relative px-6 py-3 rounded-2xl font-semibold text-white overflow-hidden;
-  background: var(--gradient-primary);
-  box-shadow: var(--shadow-glow);
-  transition: all var(--duration-normal) var(--easing-smooth);
+  @apply relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden;
+  background: var(--color-primary);
+  box-shadow: var(--shadow-button);
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .btn-gradient::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 50%);
-  opacity: 0;
-  transition: opacity var(--duration-fast);
+  display: none;
 }
 
 .btn-gradient:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(124, 58, 237, 0.35), 0 12px 40px rgba(124, 58, 237, 0.2);
-}
-
-.btn-gradient:hover::before {
-  opacity: 1;
+  background: var(--color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-primary);
 }
 
 .btn-gradient:active {
   transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-button);
 }
 
 .btn-gradient-secondary {
-  background: var(--gradient-secondary);
-  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.25), 0 8px 32px rgba(6, 182, 212, 0.15);
+  background: var(--color-secondary);
+  box-shadow: var(--shadow-button);
 }
 
 .btn-gradient-secondary:hover {
-  box-shadow: 0 8px 28px rgba(6, 182, 212, 0.35), 0 12px 40px rgba(6, 182, 212, 0.2);
+  background: var(--color-secondary-dark);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
 }
 
 .btn-gradient-accent {
-  background: var(--gradient-accent);
-  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.25), 0 8px 32px rgba(236, 72, 153, 0.15);
+  background: var(--color-accent);
+  box-shadow: var(--shadow-button);
 }
 
 .btn-gradient-accent:hover {
-  box-shadow: 0 8px 28px rgba(236, 72, 153, 0.35), 0 12px 40px rgba(236, 72, 153, 0.2);
+  background: var(--color-accent-dark);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
 }
 
-/* 소프트 버튼 */
+/* Soft Button */
 .btn-soft {
-  @apply px-6 py-3 rounded-2xl font-medium;
-  background: var(--gradient-soft);
+  @apply px-6 py-3 rounded-xl font-medium;
+  background: var(--color-primary-bg);
   color: var(--color-primary);
-  transition: all var(--duration-normal) var(--easing-smooth);
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .btn-soft:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  background: var(--color-primary-bg-hover);
 }
 
 .btn-soft:active {
   transform: scale(0.98);
 }
 
-/* 글래스 버튼 */
+/* Glass Button - Now solid with subtle border */
 .btn-glass {
-  @apply px-6 py-3 rounded-2xl font-medium;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  transition: all var(--duration-normal) var(--easing-smooth);
+  @apply px-6 py-3 rounded-xl font-medium;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .btn-glass:hover {
-  background: var(--glass-bg-strong);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  background: var(--color-surface-secondary);
+  border-color: var(--color-border);
 }
 
 /* ========================================
-   카드 컴포넌트
+   Cards - Clean, minimal
    ======================================== */
 .app-card {
-  @apply bg-white rounded-3xl;
+  @apply bg-white rounded-2xl;
+  border: 1px solid var(--color-border-light);
   box-shadow: var(--shadow-card);
-  transition: all var(--duration-normal) var(--easing-smooth);
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .app-card-hover:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
 .app-card-interactive {
   @apply cursor-pointer;
-  transition: all var(--duration-normal) var(--easing-spring);
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .app-card-interactive:hover {
-  transform: translateY(-4px) scale(1.01);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
+  border-color: var(--color-border);
 }
 
 .app-card-interactive:active {
-  transform: scale(0.98);
+  transform: scale(0.99);
   box-shadow: var(--shadow-sm);
 }
 
-/* 그라데이션 보더 카드 */
+/* Gradient border card - Now subtle border */
 .card-gradient-border {
-  @apply relative rounded-3xl p-[1px] overflow-hidden;
-  background: var(--gradient-primary);
+  @apply relative rounded-2xl overflow-hidden;
+  border: 1px solid var(--color-primary);
+  background: var(--color-surface);
 }
 
 .card-gradient-border > * {
-  @apply bg-white rounded-[calc(1.5rem-1px)];
+  @apply bg-white;
 }
 
 /* ========================================
-   헤더 & 네비게이션
+   Header & Navigation
    ======================================== */
 .app-header {
   @apply sticky top-0 z-40;
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: var(--shadow-xs);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .nav-item {
-  @apply relative px-4 py-2 rounded-xl font-medium transition-all;
+  @apply relative px-4 py-2 rounded-lg font-medium transition-all;
   color: var(--color-text-secondary);
 }
 
 .nav-item:hover {
   color: var(--color-primary);
-  background: rgba(124, 58, 237, 0.08);
+  background: var(--color-primary-bg);
 }
 
 .nav-item.active {
   color: var(--color-primary);
-  background: rgba(124, 58, 237, 0.12);
+  background: var(--color-primary-bg);
 }
 
 /* ========================================
-   입력 필드
+   Input Fields
    ======================================== */
 .input-modern {
-  @apply w-full px-4 py-3.5 rounded-2xl;
+  @apply w-full px-4 py-3 rounded-xl;
   background: var(--color-surface-secondary);
-  border: 2px solid transparent;
-  transition: all var(--duration-normal) var(--easing-smooth);
+  border: 1px solid transparent;
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .input-modern:focus {
   @apply outline-none;
   background: var(--color-surface);
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 .input-modern::placeholder {
@@ -323,50 +327,46 @@ body {
 }
 
 .input-glass {
-  @apply w-full px-4 py-3.5 rounded-2xl;
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  transition: all var(--duration-normal) var(--easing-smooth);
+  @apply w-full px-4 py-3 rounded-xl;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .input-glass:focus {
   @apply outline-none;
-  background: var(--glass-bg-strong);
-  border-color: rgba(124, 58, 237, 0.3);
-  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 /* ========================================
-   태그 & 뱃지
+   Tags & Badges - Solid backgrounds
    ======================================== */
 .tag {
   @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium;
 }
 
 .tag-primary {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+  background: var(--color-primary-bg);
   color: var(--color-primary);
 }
 
 .tag-secondary {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+  background: var(--color-secondary-bg);
   color: var(--color-secondary);
 }
 
 .tag-accent {
-  background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(249, 115, 22, 0.1) 100%);
+  background: rgba(99, 102, 241, 0.1);
   color: var(--color-accent);
 }
 
-/* 기존 호환 */
 .tag-partner {
-  @apply bg-primary-100 text-primary-700;
+  @apply bg-violet-50 text-violet-700;
 }
 
 .tag-communicator {
-  @apply bg-secondary-100 text-secondary-700;
+  @apply bg-teal-50 text-teal-700;
 }
 
 .tag-gray {
@@ -374,11 +374,11 @@ body {
 }
 
 /* ========================================
-   아이콘 컨테이너
+   Icon Containers - Solid backgrounds
    ======================================== */
 .icon-container {
-  @apply flex items-center justify-center rounded-2xl;
-  background: var(--gradient-soft);
+  @apply flex items-center justify-center rounded-xl;
+  background: var(--color-primary-bg);
 }
 
 .icon-container-sm {
@@ -394,56 +394,55 @@ body {
 }
 
 .icon-container-primary {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(236, 72, 153, 0.15) 100%);
+  background: var(--color-primary-bg);
 }
 
 .icon-container-secondary {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%);
+  background: var(--color-secondary-bg);
 }
 
-/* 기존 호환 */
 .icon-container-partner {
-  @apply bg-primary-50;
+  @apply bg-violet-50;
 }
 
 .icon-container-communicator {
-  @apply bg-secondary-50;
+  @apply bg-teal-50;
 }
 
 /* ========================================
-   메시지 & 알림
+   Messages & Alerts
    ======================================== */
 .message-error {
-  @apply flex items-center gap-3 p-4 rounded-2xl;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+  @apply flex items-center gap-3 p-4 rounded-xl;
+  background: rgba(239, 68, 68, 0.08);
   color: #dc2626;
 }
 
 .message-success {
-  @apply flex items-center gap-3 p-4 rounded-2xl;
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%);
+  @apply flex items-center gap-3 p-4 rounded-xl;
+  background: rgba(34, 197, 94, 0.08);
   color: #16a34a;
 }
 
 .message-info {
-  @apply flex items-center gap-3 p-4 rounded-2xl;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+  @apply flex items-center gap-3 p-4 rounded-xl;
+  background: rgba(59, 130, 246, 0.08);
   color: #2563eb;
 }
 
 .message-warning {
-  @apply flex items-center gap-3 p-4 rounded-2xl;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%);
+  @apply flex items-center gap-3 p-4 rounded-xl;
+  background: rgba(245, 158, 11, 0.08);
   color: #d97706;
 }
 
 /* ========================================
-   리스트 & 아이템
+   List & Items
    ======================================== */
 .list-item {
   @apply flex items-center gap-3 px-4 py-3.5 bg-white;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  transition: all var(--duration-fast);
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background var(--duration-fast);
 }
 
 .list-item:last-child {
@@ -461,25 +460,24 @@ body {
 }
 
 /* ========================================
-   하단 바
+   Bottom Bar
    ======================================== */
 .bottom-bar {
   @apply fixed bottom-0 left-0 right-0 z-50;
   background: var(--glass-bg-strong);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-border);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ========================================
-   인터랙션 & 터치
+   Interactions
    ======================================== */
 .touchable {
   @apply cursor-pointer select-none;
   -webkit-tap-highlight-color: transparent;
-  transition: transform var(--duration-fast) var(--easing-spring);
+  transition: transform var(--duration-fast) var(--easing-default);
 }
 
 .touchable:active {
@@ -490,22 +488,19 @@ button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-/* 호버 리프트 효과 */
 .hover-lift {
-  transition: all var(--duration-normal) var(--easing-smooth);
+  transition: all var(--duration-normal) var(--easing-default);
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
-/* 호버 글로우 효과 */
 .hover-glow:hover {
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-primary);
 }
 
-/* 기존 호환 */
 .card-hover {
   @apply transition-all duration-200;
 }
@@ -535,7 +530,7 @@ button:active:not(:disabled) {
 }
 
 /* ========================================
-   페이지 배경
+   Page Backgrounds - Clean, minimal
    ======================================== */
 .page-background {
   @apply min-h-screen;
@@ -544,35 +539,23 @@ button:active:not(:disabled) {
 
 .page-background-gradient {
   @apply min-h-screen;
-  background:
-    radial-gradient(ellipse at top, rgba(233, 213, 255, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at bottom right, rgba(207, 250, 254, 0.3) 0%, transparent 50%),
-    var(--color-background);
+  background: var(--color-background-secondary);
 }
 
 .page-background-mesh {
-  @apply min-h-screen relative;
+  @apply min-h-screen;
   background: var(--color-background);
 }
 
 .page-background-mesh::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(at 40% 20%, rgba(233, 213, 255, 0.5) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, rgba(207, 250, 254, 0.4) 0px, transparent 50%),
-    radial-gradient(at 0% 50%, rgba(251, 207, 232, 0.4) 0px, transparent 50%),
-    radial-gradient(at 80% 80%, rgba(199, 210, 254, 0.3) 0px, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 /* ========================================
-   로딩 & 스켈레톤
+   Loading & Skeleton
    ======================================== */
 .skeleton {
-  @apply rounded-xl;
+  @apply rounded-lg;
   background: linear-gradient(
     90deg,
     var(--color-surface-secondary) 0%,
@@ -597,7 +580,8 @@ button:active:not(:disabled) {
 }
 
 .loading-dots span {
-  @apply w-2 h-2 rounded-full bg-primary-500;
+  @apply w-2 h-2 rounded-full;
+  background: var(--color-primary);
   animation: loadingDot 1.4s infinite ease-in-out both;
 }
 
@@ -621,7 +605,7 @@ button:active:not(:disabled) {
 }
 
 /* ========================================
-   애니메이션 딜레이
+   Animation Delays
    ======================================== */
 .delay-75 {
   animation-delay: 75ms;
@@ -652,28 +636,28 @@ button:active:not(:disabled) {
 }
 
 /* ========================================
-   입력 필드 기본 (기존 호환)
+   Input Fields (Legacy)
    ======================================== */
 input:focus,
 textarea:focus,
 select:focus {
-  @apply outline-none ring-2 ring-primary-500 border-transparent;
+  @apply outline-none ring-2 ring-violet-500 border-transparent;
 }
 
 .input-app {
   @apply w-full px-4 py-3 bg-gray-50 border-0 rounded-xl;
   @apply text-gray-900 placeholder-gray-400;
-  @apply focus:bg-white focus:ring-2 focus:ring-primary-500;
+  @apply focus:bg-white focus:ring-2 focus:ring-violet-500;
   @apply transition-all duration-200;
 }
 
 /* ========================================
-   유틸리티 클래스
+   Utilities
    ======================================== */
 
-/* 텍스트 그라데이션 */
+/* Text gradient - For branding elements only */
 .text-gradient-primary {
-  background: var(--gradient-primary);
+  background: var(--gradient-brand);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -686,20 +670,17 @@ select:focus {
   background-clip: text;
 }
 
-/* 그라데이션 보더 */
+/* Border gradient - Now solid */
 .border-gradient {
-  border: double 2px transparent;
-  background-image: linear-gradient(white, white), var(--gradient-primary);
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
+  border: 1px solid var(--color-primary);
 }
 
-/* 포커스 링 */
+/* Focus ring */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  @apply focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2;
 }
 
-/* 말줄임 */
+/* Line clamp */
 .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;

@@ -1,5 +1,5 @@
 /**
- * 카드 선택 페이지 - 글래스모피즘 UI
+ * 카드 선택 페이지 - 미니멀 UI
  */
 
 "use client";
@@ -58,25 +58,23 @@ export default function CardsPage() {
     return null;
   }
 
-  // 로딩 화면 - 그라데이션 배경과 펄스 애니메이션
+  // 로딩 화면
   if (isLoading && recommendedCards.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-pink-50 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
         <div className="text-center">
-          {/* 그라데이션 아이콘 배경 */}
+          {/* 아이콘 */}
           <div className="relative w-24 h-24 mx-auto mb-8">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500 to-pink-500 rounded-3xl animate-pulse opacity-20" />
-            <div className="absolute inset-2 bg-gradient-to-br from-violet-100 to-pink-100 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="absolute inset-0 bg-violet-200 rounded-3xl animate-pulse opacity-40" />
+            <div className="absolute inset-2 bg-violet-100 rounded-2xl flex items-center justify-center shadow-lg">
               <div className="animate-bounce text-violet-600">
                 <LayoutGridIcon className="w-10 h-10" />
               </div>
             </div>
-            {/* 글로우 이펙트 */}
-            <div className="absolute -inset-4 bg-gradient-to-br from-violet-400 to-pink-400 rounded-full blur-2xl opacity-20 animate-pulse" />
           </div>
 
-          {/* 텍스트 애니메이션 */}
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-700 to-pink-600 bg-clip-text text-transparent mb-3 animate-fade-in">
+          {/* 텍스트 */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-3 animate-fade-in">
             소통이를 위한 카드를 준비하고 있어요
           </h2>
           <p className="text-gray-500 mb-8 text-sm leading-relaxed animate-fade-in animation-delay-100">
@@ -87,9 +85,9 @@ export default function CardsPage() {
 
           {/* 로딩 도트 */}
           <div className="flex justify-center gap-2">
-            <div className="w-3 h-3 bg-violet-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-            <div className="w-3 h-3 bg-violet-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-            <div className="w-3 h-3 bg-pink-400 rounded-full animate-bounce" />
+            <div className="w-3 h-3 bg-violet-600 rounded-full animate-bounce [animation-delay:-0.3s]" />
+            <div className="w-3 h-3 bg-violet-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+            <div className="w-3 h-3 bg-violet-400 rounded-full animate-bounce" />
           </div>
         </div>
       </div>
@@ -97,15 +95,15 @@ export default function CardsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50 pb-44">
-      {/* 글래스모피즘 헤더 */}
-      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-white/50 shadow-sm">
+    <div className="min-h-screen bg-slate-50 pb-44">
+      {/* 헤더 */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           {/* 상단 네비게이션 */}
           <div className="flex justify-between items-center">
             <button
               onClick={() => router.push("/main/dashboard")}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors px-3 py-2 rounded-xl hover:bg-white/50"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors px-3 py-2 rounded-xl hover:bg-gray-100"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -114,7 +112,7 @@ export default function CardsPage() {
             </button>
 
             <div className="text-center">
-              <h1 className="text-lg font-bold bg-gradient-to-r from-violet-700 to-pink-600 bg-clip-text text-transparent">
+              <h1 className="text-lg font-bold text-gray-900">
                 카드 선택
               </h1>
             </div>
@@ -124,8 +122,8 @@ export default function CardsPage() {
               disabled={isLoading}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl transition-all",
-                "bg-gradient-to-r from-violet-50 to-pink-50 hover:from-violet-100 hover:to-pink-100",
-                "text-violet-700 font-medium border border-violet-100",
+                "bg-violet-50 hover:bg-violet-100",
+                "text-violet-700 font-medium border border-violet-200",
                 isLoading && "opacity-50 cursor-not-allowed"
               )}
             >
@@ -136,25 +134,25 @@ export default function CardsPage() {
             </button>
           </div>
 
-          {/* 상황 정보 태그 - 글래스모피즘 */}
+          {/* 상황 정보 태그 */}
           <div className="flex gap-3 mt-4 overflow-x-auto pb-1 scrollbar-hide">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full border border-violet-100 shadow-sm flex-shrink-0">
-              <div className="w-6 h-6 bg-gradient-to-br from-violet-100 to-violet-200 rounded-full flex items-center justify-center text-violet-600">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-violet-200 shadow-sm flex-shrink-0">
+              <div className="w-6 h-6 bg-violet-100 rounded-full flex items-center justify-center text-violet-600">
                 <MapPinIcon className="w-3.5 h-3.5" />
               </div>
               <span className="text-sm font-medium text-violet-700">{context.place}</span>
             </div>
 
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full border border-pink-100 shadow-sm flex-shrink-0">
-              <div className="w-6 h-6 bg-gradient-to-br from-pink-100 to-pink-200 rounded-full flex items-center justify-center text-pink-600">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-pink-200 shadow-sm flex-shrink-0">
+              <div className="w-6 h-6 bg-pink-100 rounded-full flex items-center justify-center text-pink-600">
                 <UsersIcon className="w-3.5 h-3.5" />
               </div>
               <span className="text-sm font-medium text-pink-700">{context.interactionPartner}</span>
             </div>
 
             {context.currentActivity && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full border border-gray-200 shadow-sm flex-shrink-0">
-                <div className="w-6 h-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-gray-600">
+              <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200 shadow-sm flex-shrink-0">
+                <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-gray-600">
                   <ActivityIcon className="w-3.5 h-3.5" />
                 </div>
                 <span className="text-sm font-medium text-gray-700">{context.currentActivity}</span>
@@ -185,13 +183,13 @@ export default function CardsPage() {
 
         {allRecommendedCards.length > 0 && (
           <p className="text-center text-sm text-gray-500 mt-6">
-            지금까지 <span className="font-semibold bg-gradient-to-r from-violet-600 to-pink-500 bg-clip-text text-transparent">{allRecommendedCards.length}개</span>의 카드가 추천되었어요
+            지금까지 <span className="font-semibold text-violet-600">{allRecommendedCards.length}개</span>의 카드가 추천되었어요
           </p>
         )}
       </main>
 
-      {/* 하단 고정 선택 바 - 글래스모피즘 */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-t border-white/50 shadow-2xl">
+      {/* 하단 고정 선택 바 */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-200 shadow-2xl">
         <div className="max-w-lg mx-auto p-4">
           {/* 선택된 카드 미니 프리뷰 */}
           <div className="flex items-center gap-3 mb-4 overflow-x-auto pb-1 scrollbar-hide">
@@ -202,7 +200,7 @@ export default function CardsPage() {
                   className="relative flex-shrink-0 animate-scale-in"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-50 to-pink-50 overflow-hidden shadow-lg border-2 border-white">
+                  <div className="w-14 h-14 rounded-2xl bg-violet-50 overflow-hidden shadow-lg border-2 border-white">
                     <Image
                       src={getImageUrl(card.filename)}
                       alt={card.name}
@@ -214,7 +212,7 @@ export default function CardsPage() {
                   {/* X 버튼 */}
                   <button
                     onClick={() => handleRemoveCard(card)}
-                    className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-full text-white text-xs flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                    className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full text-white text-xs flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
                     aria-label={`${card.name} 제거`}
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,13 +231,13 @@ export default function CardsPage() {
             )}
           </div>
 
-          {/* 소통하기 버튼 - 그라데이션 */}
+          {/* 소통하기 버튼 */}
           <button
             onClick={proceedToInterpretation}
             disabled={selectedCards.length === 0 || isLoading}
             className={cn(
               "w-full py-4 rounded-2xl font-bold text-white text-lg transition-all",
-              "bg-gradient-to-r from-violet-600 via-violet-500 to-pink-500",
+              "bg-violet-600 hover:bg-violet-700",
               "shadow-lg shadow-violet-500/25",
               "hover:shadow-xl hover:shadow-violet-500/30 hover:scale-[1.02]",
               "active:scale-[0.98]",

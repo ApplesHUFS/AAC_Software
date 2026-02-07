@@ -80,19 +80,13 @@ export default function InterpretationPage() {
   // 로딩 화면 - AI 분석 중
   if (isInterpreting) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-pink-100 flex flex-col items-center justify-center p-4">
-        {/* 배경 장식 */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-violet-300/30 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-300/30 rounded-full blur-3xl animate-pulse delay-1000" />
-        </div>
-
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <div className="relative text-center">
-          {/* 아이콘 컨테이너 - 펄스 애니메이션 */}
+          {/* 아이콘 컨테이너 */}
           <div className="relative w-24 h-24 mx-auto mb-8">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500 to-pink-500 animate-ping opacity-20" />
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500 to-pink-500 animate-pulse opacity-40" />
-            <div className="relative w-full h-full rounded-3xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-xl shadow-violet-500/30">
+            <div className="absolute inset-0 rounded-3xl bg-violet-500 animate-ping opacity-20" />
+            <div className="absolute inset-0 rounded-3xl bg-violet-500 animate-pulse opacity-40" />
+            <div className="relative w-full h-full rounded-3xl bg-violet-600 flex items-center justify-center shadow-lg">
               <SparklesIcon className="w-12 h-12 text-white" />
             </div>
           </div>
@@ -118,15 +112,10 @@ export default function InterpretationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-pink-100 pb-8">
-      {/* 배경 장식 */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-0 w-80 h-80 bg-violet-300/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300/20 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-gray-50 pb-8">
 
-      {/* 글래스모피즘 헤더 */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-white/50 shadow-sm">
+      {/* 헤더 */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
@@ -149,11 +138,11 @@ export default function InterpretationPage() {
         </div>
       </header>
 
-      <main className="relative max-w-lg mx-auto px-4 py-6 space-y-5">
+      <main className="max-w-lg mx-auto px-4 py-6 space-y-5">
         {/* 선택한 카드 미리보기 */}
-        <div className="backdrop-blur-xl bg-white/60 rounded-2xl border border-white/50 p-4 shadow-lg shadow-violet-500/5 animate-fade-in">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm animate-fade-in">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center">
               <CardsIcon className="w-[18px] h-[18px] text-white" />
             </div>
             <h3 className="font-semibold text-gray-900">선택한 카드</h3>
@@ -188,9 +177,9 @@ export default function InterpretationPage() {
         </div>
 
         {/* AI 해석 결과 카드 */}
-        <div className="backdrop-blur-xl bg-white/70 rounded-2xl border border-white/50 p-5 shadow-lg shadow-violet-500/5 animate-fade-in-up">
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm animate-fade-in-up">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-md shadow-violet-500/20">
+            <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shadow-sm">
               <SparklesIcon className="w-6 h-6 text-white" />
             </div>
             <div>

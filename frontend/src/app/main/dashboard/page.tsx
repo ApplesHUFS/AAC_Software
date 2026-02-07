@@ -1,5 +1,5 @@
 /**
- * 대시보드 페이지 - 글래스모피즘과 애니메이션 적용
+ * 대시보드 페이지 - 미니멀 디자인과 애니메이션 적용
  */
 
 "use client";
@@ -72,7 +72,7 @@ export default function DashboardPage() {
                 className="object-cover"
               />
             </div>
-            <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="font-bold text-lg text-violet-600">
               소통, 이룸
             </span>
           </div>
@@ -89,13 +89,10 @@ export default function DashboardPage() {
 
       {/* 메인 콘텐츠 */}
       <main className="max-w-lg mx-auto px-4 py-6 space-y-5">
-        {/* 환영 카드 - 그라데이션 배경 */}
+        {/* 환영 카드 */}
         <div
-          className="relative overflow-hidden rounded-3xl p-6 shadow-xl"
-          style={{
-            background: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)",
-            animation: "fadeInUp 0.4s ease-out",
-          }}
+          className="relative overflow-hidden rounded-3xl p-6 shadow-xl bg-violet-600"
+          style={{ animation: "fadeInUp 0.4s ease-out" }}
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
@@ -123,7 +120,7 @@ export default function DashboardPage() {
             style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-200 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-violet-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                 <ChatPlusIcon className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1">
@@ -151,7 +148,7 @@ export default function DashboardPage() {
               style={{ animation: "fadeInUp 0.5s ease-out 0.2s both" }}
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center shadow-lg shadow-pink-200 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-xl bg-rose-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                   <MessageIcon className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
@@ -180,15 +177,15 @@ export default function DashboardPage() {
           className="bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden"
           style={{ animation: "fadeInUp 0.5s ease-out 0.3s both" }}
         >
-          <div className="px-5 py-3 bg-gradient-to-r from-violet-500/10 to-pink-500/10 border-b border-white/30">
-            <span className="text-sm font-semibold bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
+          <div className="px-5 py-3 bg-violet-50 border-b border-violet-100">
+            <span className="text-sm font-semibold text-violet-600">
               소통이 정보
             </span>
           </div>
           <div className="divide-y divide-gray-100/50">
             {/* 나이 */}
             <div className="flex items-center gap-3 px-5 py-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center shadow-md">
+              <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center shadow-md">
                 <CalendarIcon className="w-[18px] h-[18px] text-white" />
               </div>
               <span className="flex-1 text-gray-600">나이</span>
@@ -197,7 +194,7 @@ export default function DashboardPage() {
 
             {/* 성별 */}
             <div className="flex items-center gap-3 px-5 py-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center shadow-md">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center shadow-md">
                 <GenderIcon className="w-[18px] h-[18px] text-white" />
               </div>
               <span className="flex-1 text-gray-600">성별</span>
@@ -206,7 +203,7 @@ export default function DashboardPage() {
 
             {/* 장애 유형 */}
             <div className="flex items-center gap-3 px-5 py-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md">
+              <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center shadow-md">
                 <TagIcon className="w-[18px] h-[18px] text-white" />
               </div>
               <span className="flex-1 text-gray-600">장애 유형</span>
@@ -216,7 +213,7 @@ export default function DashboardPage() {
             {/* 관심 주제 */}
             <div className="px-5 py-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center shadow-md">
+                <div className="w-9 h-9 rounded-xl bg-rose-500 flex items-center justify-center shadow-md">
                   <StarIcon className="w-[18px] h-[18px] text-white" />
                 </div>
                 <span className="text-gray-600">관심 주제</span>
@@ -225,11 +222,8 @@ export default function DashboardPage() {
                 {user?.interestingTopics.map((topic, index) => (
                   <span
                     key={topic}
-                    className="px-3 py-1.5 rounded-full text-sm font-medium text-violet-700 shadow-sm"
-                    style={{
-                      background: "linear-gradient(135deg, #EDE9FE 0%, #FCE7F3 100%)",
-                      animation: `fadeInUp 0.3s ease-out ${0.4 + index * 0.05}s both`,
-                    }}
+                    className="px-3 py-1.5 rounded-full text-sm font-medium bg-violet-100 text-violet-700"
+                    style={{ animation: `fadeInUp 0.3s ease-out ${0.4 + index * 0.05}s both` }}
                   >
                     {topic}
                   </span>

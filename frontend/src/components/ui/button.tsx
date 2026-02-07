@@ -1,6 +1,6 @@
 /**
  * Button Component
- * - Gradient backgrounds with hover/active effects
+ * - Solid color backgrounds with hover/active effects
  * - Multiple variants: primary, secondary, ghost, danger
  * - Loading state with pulse animation
  */
@@ -63,10 +63,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: cn(
-        "bg-gradient-to-r from-violet-600 to-pink-500 text-white",
-        "hover:shadow-xl hover:shadow-violet-500/25 hover:-translate-y-0.5",
+        "bg-violet-600 text-white",
+        "hover:bg-violet-700 hover:shadow-lg hover:-translate-y-0.5",
         "focus:ring-violet-500",
-        "shadow-lg shadow-violet-500/20"
+        "shadow-md"
       ),
       secondary: cn(
         "border-2 border-violet-300 bg-white/80 backdrop-blur-sm text-violet-700",
@@ -79,10 +79,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         "focus:ring-gray-400"
       ),
       danger: cn(
-        "bg-gradient-to-r from-red-500 to-rose-500 text-white",
-        "hover:shadow-xl hover:shadow-red-500/25 hover:-translate-y-0.5",
+        "bg-red-500 text-white",
+        "hover:bg-red-600 hover:shadow-lg hover:-translate-y-0.5",
         "focus:ring-red-500",
-        "shadow-lg shadow-red-500/20"
+        "shadow-md"
       ),
     };
 

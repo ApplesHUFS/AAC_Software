@@ -114,7 +114,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
                   <div className="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-1 w-full">
                     <div
                       className={`h-full transition-all duration-500 ${
-                        isCompleted ? "bg-gradient-to-r from-violet-500 to-purple-500" : "bg-gray-200"
+                        isCompleted ? "bg-violet-500" : "bg-gray-200"
                       }`}
                     />
                   </div>
@@ -123,7 +123,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
                   <div className="absolute right-1/2 left-0 top-1/2 -translate-y-1/2 h-1 w-full">
                     <div
                       className={`h-full transition-all duration-500 ${
-                        isCompleted || isCurrent ? "bg-gradient-to-r from-purple-500 to-violet-500" : "bg-gray-200"
+                        isCompleted || isCurrent ? "bg-violet-500" : "bg-gray-200"
                       }`}
                     />
                   </div>
@@ -134,9 +134,9 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
                   className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center
                               transition-all duration-300 shadow-lg
                               ${isCompleted
-                                ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white scale-100"
+                                ? "bg-violet-500 text-white scale-100"
                                 : isCurrent
-                                  ? "bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white scale-110 ring-4 ring-violet-500/30"
+                                  ? "bg-violet-600 text-white scale-110 ring-4 ring-violet-500/30"
                                   : "bg-gray-100 text-gray-400 scale-90"
                               }`}
                 >
@@ -147,7 +147,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
               {/* 라벨 */}
               <span
                 className={`mt-2 text-xs font-medium transition-colors duration-300 ${
-                  isCurrent ? "text-violet-600" : isCompleted ? "text-purple-500" : "text-gray-400"
+                  isCurrent ? "text-violet-600" : isCompleted ? "text-violet-500" : "text-gray-400"
                 }`}
               >
                 {step.label}
@@ -330,7 +330,7 @@ export function RegisterForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 헤더 */}
         <div className="text-center">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold text-gray-900">
             회원가입
           </h2>
           <p className="text-gray-500 mt-2 text-sm">소통이의 정보를 입력해주세요</p>
@@ -383,9 +383,9 @@ export function RegisterForm() {
                 setError("");
                 goToStep(2);
               }}
-              className="w-full py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white
-                         font-semibold rounded-2xl shadow-lg shadow-purple-500/30
-                         hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02]
+              className="w-full py-4 bg-violet-600 text-white font-semibold rounded-2xl
+                         shadow-lg shadow-violet-500/30 hover:bg-violet-700
+                         hover:shadow-xl hover:shadow-violet-500/40 hover:scale-[1.02]
                          active:scale-[0.98] transition-all duration-200"
             >
               다음
@@ -461,9 +461,9 @@ export function RegisterForm() {
                   setError("");
                   goToStep(3);
                 }}
-                className="flex-[2] py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white
-                           font-semibold rounded-2xl shadow-lg shadow-purple-500/30
-                           hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02]
+                className="flex-[2] py-4 bg-violet-600 text-white font-semibold rounded-2xl
+                           shadow-lg shadow-violet-500/30 hover:bg-violet-700
+                           hover:shadow-xl hover:shadow-violet-500/40 hover:scale-[1.02]
                            active:scale-[0.98] transition-all duration-200"
               >
                 다음
@@ -550,7 +550,7 @@ export function RegisterForm() {
                   {formData.interestingTopics.map((topic) => (
                     <span
                       key={topic}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-500
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-500
                                 text-white text-sm font-medium rounded-full shadow-md animate-pop-in"
                     >
                       {topic}
@@ -582,9 +582,9 @@ export function RegisterForm() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-[2] py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white
-                           font-semibold rounded-2xl shadow-lg shadow-purple-500/30
-                           hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02]
+                className="flex-[2] py-4 bg-violet-600 text-white font-semibold rounded-2xl
+                           shadow-lg shadow-violet-500/30 hover:bg-violet-700
+                           hover:shadow-xl hover:shadow-violet-500/40 hover:scale-[1.02]
                            active:scale-[0.98] transition-all duration-200
                            disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100
                            relative overflow-hidden"
@@ -610,8 +610,7 @@ export function RegisterForm() {
           이미 계정이 있으신가요?{" "}
           <Link
             href="/auth/login"
-            className="font-semibold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent
-                       hover:from-violet-700 hover:to-purple-700 transition-all"
+            className="font-semibold text-violet-600 hover:text-violet-700 transition-colors"
           >
             로그인
           </Link>

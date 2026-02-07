@@ -1,5 +1,5 @@
 /**
- * 로그인 폼 컴포넌트 - 글래스모피즘 디자인
+ * 로그인 폼 컴포넌트 - 미니멀 디자인
  */
 
 "use client";
@@ -115,7 +115,7 @@ export function LoginForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 헤더 */}
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+          <h2 className="text-2xl font-bold text-gray-900">
             로그인
           </h2>
           <p className="text-gray-500 mt-2 text-sm">
@@ -178,23 +178,17 @@ export function LoginForm() {
           </div>
         </div>
 
-        {/* 그라데이션 로그인 버튼 */}
+        {/* 로그인 버튼 */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-pink-500 text-white
-                     font-semibold rounded-2xl shadow-lg shadow-purple-500/30
-                     hover:shadow-xl hover:shadow-purple-500/40 hover:scale-[1.02]
+          className="w-full py-4 bg-violet-600 hover:bg-violet-700 text-white
+                     font-semibold rounded-2xl shadow-lg shadow-violet-500/20
+                     hover:shadow-xl hover:shadow-violet-500/30 hover:scale-[1.02]
                      active:scale-[0.98] transition-all duration-200
-                     disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100
-                     relative overflow-hidden group"
+                     disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          {/* 버튼 호버 효과 */}
-          <span
-            className="absolute inset-0 bg-gradient-to-r from-violet-700 via-purple-700 to-pink-600
-                       opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          />
-          <span className="relative flex items-center justify-center gap-2">
+          <span className="flex items-center justify-center gap-2">
             {isLoading ? (
               <>
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -272,8 +266,7 @@ export function LoginForm() {
           계정이 없으신가요?{" "}
           <Link
             href="/auth/register"
-            className="font-semibold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent
-                       hover:from-violet-700 hover:to-purple-700 transition-all"
+            className="font-semibold text-violet-600 hover:text-violet-700 transition-colors"
           >
             회원가입
           </Link>

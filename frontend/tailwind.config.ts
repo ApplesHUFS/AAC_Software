@@ -106,10 +106,10 @@ const config: Config = {
         "soft-lg": "0 8px 16px rgba(0, 0, 0, 0.04), 0 12px 32px rgba(0, 0, 0, 0.08)",
         "soft-xl": "0 16px 32px rgba(0, 0, 0, 0.06), 0 24px 48px rgba(0, 0, 0, 0.1)",
         "soft-2xl": "0 24px 48px rgba(0, 0, 0, 0.08), 0 32px 64px rgba(0, 0, 0, 0.12)",
-        // 컬러 쉐도우
-        "glow-primary": "0 4px 20px rgba(124, 58, 237, 0.25), 0 8px 32px rgba(124, 58, 237, 0.15)",
-        "glow-accent": "0 4px 20px rgba(236, 72, 153, 0.25), 0 8px 32px rgba(236, 72, 153, 0.15)",
-        "glow-secondary": "0 4px 20px rgba(6, 182, 212, 0.25), 0 8px 32px rgba(6, 182, 212, 0.15)",
+        // 컬러 쉐도우 (subtle)
+        "glow-primary": "0 2px 8px rgba(124, 58, 237, 0.12), 0 4px 16px rgba(124, 58, 237, 0.08)",
+        "glow-accent": "0 2px 8px rgba(236, 72, 153, 0.12), 0 4px 16px rgba(236, 72, 153, 0.08)",
+        "glow-secondary": "0 2px 8px rgba(6, 182, 212, 0.12), 0 4px 16px rgba(6, 182, 212, 0.08)",
         // 글래스 쉐도우
         glass: "0 8px 32px rgba(0, 0, 0, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.1)",
         "glass-lg": "0 16px 48px rgba(0, 0, 0, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.15)",
@@ -254,24 +254,22 @@ const config: Config = {
         "safe-left": "env(safe-area-inset-left)",
         "safe-right": "env(safe-area-inset-right)",
       },
-      // 배경 그라데이션
+      // 배경 그라데이션 (절제된 스타일)
       backgroundImage: {
-        // 주요 그라데이션
-        "gradient-primary": "linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)",
-        "gradient-secondary": "linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)",
-        "gradient-accent": "linear-gradient(135deg, #ec4899 0%, #f97316 100%)",
-        // 소프트 그라데이션
-        "gradient-soft-purple": "linear-gradient(135deg, #e9d5ff 0%, #fbcfe8 100%)",
-        "gradient-soft-blue": "linear-gradient(135deg, #cffafe 0%, #ddd6fe 100%)",
-        "gradient-soft-pink": "linear-gradient(135deg, #fce7f3 0%, #fef3c7 100%)",
-        // 메시 그라데이션
-        "gradient-mesh": "radial-gradient(at 40% 20%, #e9d5ff 0px, transparent 50%), radial-gradient(at 80% 0%, #cffafe 0px, transparent 50%), radial-gradient(at 0% 50%, #fbcfe8 0px, transparent 50%)",
+        // 단색 계열 그라데이션 (같은 색상 내에서 명도 변화)
+        "gradient-primary": "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+        "gradient-secondary": "linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%)",
+        "gradient-accent": "linear-gradient(135deg, #f472b6 0%, #ec4899 100%)",
+        // 소프트 그라데이션 (미세한 톤 변화)
+        "gradient-soft-purple": "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
+        "gradient-soft-blue": "linear-gradient(135deg, #ecfeff 0%, #e0f2fe 100%)",
+        "gradient-soft-pink": "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)",
         // 글래스 배경
-        "gradient-glass": "linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%)",
+        "gradient-glass": "linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%)",
         // 오버레이
-        "gradient-overlay": "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 100%)",
+        "gradient-overlay": "linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 100%)",
         // 시머 효과
-        "shimmer": "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.5) 50%, transparent 100%)",
+        "shimmer": "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%)",
       },
       // 배경 크기
       backgroundSize: {

@@ -1,5 +1,5 @@
 /**
- * 해석 결과 표시 컴포넌트 - 글래스모피즘 디자인
+ * 해석 결과 표시 컴포넌트 - 미니멀 디자인
  */
 
 "use client";
@@ -186,7 +186,7 @@ export function InterpretationDisplay({
           "focus:outline-none focus:ring-2 focus:ring-offset-2",
           isSubmitDisabled
             ? "bg-gray-300 cursor-not-allowed"
-            : "bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 hover:shadow-lg hover:shadow-violet-500/25 hover:-translate-y-0.5 focus:ring-violet-500"
+            : "bg-violet-600 hover:bg-violet-700 hover:-translate-y-0.5 focus:ring-violet-500"
         )}
       >
         {isLoading ? (

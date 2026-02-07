@@ -1,5 +1,5 @@
 /**
- * 상황 설정 폼 - 아름다운 헤더와 그라데이션 버튼
+ * 상황 설정 폼 - 미니멀 디자인
  */
 
 "use client";
@@ -47,17 +47,12 @@ export function ContextForm({ onCancel }: ContextFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* 헤더 - 그라데이션 아이콘 영역 */}
+      {/* 헤더 */}
       <div className="text-center">
-        <div
-          className="w-20 h-20 mx-auto mb-5 rounded-3xl flex items-center justify-center shadow-xl"
-          style={{
-            background: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)",
-          }}
-        >
+        <div className="w-20 h-20 mx-auto mb-5 rounded-3xl flex items-center justify-center shadow-xl bg-violet-500">
           <MessageIcon className="w-10 h-10 text-white" />
         </div>
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-bold text-gray-900">
           대화 상황 설정
         </h2>
         <p className="text-gray-500 mt-2">
@@ -141,10 +136,7 @@ export function ContextForm({ onCancel }: ContextFormProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="flex-1 py-3.5 rounded-2xl font-semibold text-white shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
-          style={{
-            background: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)",
-          }}
+          className="flex-1 py-3.5 rounded-2xl font-semibold text-white shadow-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
