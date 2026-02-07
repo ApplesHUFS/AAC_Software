@@ -4,13 +4,14 @@
 
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { useContextStore } from "@/stores/context-store";
 import { useCardStore } from "@/stores/card-store";
 import { cardApi } from "@/lib/api/cards";
 import { Card } from "@/types/card";
+import { CARD_LIMITS } from "@/lib/constants";
 
 export function useCards() {
   const router = useRouter();
@@ -22,6 +23,8 @@ export function useCards() {
     selectedCards,
     interpretations,
     feedbackId,
+    isLoading,
+    error,
     setRecommendedCards,
     addToAllRecommended,
     setSelectedCards,
@@ -29,12 +32,11 @@ export function useCards() {
     setInterpretations,
     setFeedbackId,
     setConfirmationId,
+    setLoading,
+    setError,
     clearSelection,
     clearInterpretations,
   } = useCardStore();
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   /**
    * 카드 추천 요청
@@ -45,7 +47,7 @@ export function useCards() {
       return null;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
@@ -63,12 +65,21 @@ export function useCards() {
 
       return null;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "카드 추천 중 오류가 발생했습니다.");
+      setError(
+        err instanceof Error ? err.message : "카드 추천 중 오류가 발생했습니다."
+      );
       return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [user, context, setRecommendedCards, addToAllRecommended]);
+  }, [
+    user,
+    context,
+    setRecommendedCards,
+    addToAllRecommended,
+    setLoading,
+    setError,
+  ]);
 
   /**
    * 카드 선택 토글
@@ -78,7 +89,7 @@ export function useCards() {
       toggleCardSelection(card);
       setError(null);
     },
-    [toggleCardSelection]
+    [toggleCardSelection, setError]
   );
 
   /**
@@ -86,11 +97,11 @@ export function useCards() {
    */
   const proceedToInterpretation = useCallback(async () => {
     if (selectedCards.length === 0) {
-      setError("최소 1개의 카드를 선택해주세요.");
+      setError(`최소 ${CARD_LIMITS.MIN_SELECTION}개의 카드를 선택해주세요.`);
       return false;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
@@ -108,12 +119,21 @@ export function useCards() {
       setError("선택한 카드가 유효하지 않습니다.");
       return false;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "카드 검증 중 오류가 발생했습니다.");
+      setError(
+        err instanceof Error ? err.message : "카드 검증 중 오류가 발생했습니다."
+      );
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [selectedCards, allRecommendedCards, router, clearInterpretations]);
+  }, [
+    selectedCards,
+    allRecommendedCards,
+    router,
+    clearInterpretations,
+    setLoading,
+    setError,
+  ]);
 
   /**
    * 카드 해석 요청
@@ -124,7 +144,7 @@ export function useCards() {
       return null;
     }
 
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
@@ -142,12 +162,22 @@ export function useCards() {
 
       return null;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "카드 해석 중 오류가 발생했습니다.");
+      setError(
+        err instanceof Error ? err.message : "카드 해석 중 오류가 발생했습니다."
+      );
       return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [user, context, selectedCards, setInterpretations, setFeedbackId]);
+  }, [
+    user,
+    context,
+    selectedCards,
+    setInterpretations,
+    setFeedbackId,
+    setLoading,
+    setError,
+  ]);
 
   return {
     recommendedCards,

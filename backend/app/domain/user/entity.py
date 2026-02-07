@@ -3,7 +3,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional
-import hashlib
+
+import bcrypt
 
 
 @dataclass
@@ -23,12 +24,20 @@ class User:
 
     @staticmethod
     def hash_password(password: str) -> str:
-        """비밀번호 SHA256 해시"""
-        return hashlib.sha256(password.encode()).hexdigest()
+        """bcrypt로 비밀번호 해시 생성 (salt 자동 포함)"""
+        password_bytes = password.encode("utf-8")
+        salt = bcrypt.gensalt(rounds=12)
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode("utf-8")
 
     def verify_password(self, password: str) -> bool:
-        """비밀번호 검증"""
-        return self.password_hash == self.hash_password(password)
+        """bcrypt로 비밀번호 검증"""
+        try:
+            password_bytes = password.encode("utf-8")
+            hash_bytes = self.password_hash.encode("utf-8")
+            return bcrypt.checkpw(password_bytes, hash_bytes)
+        except (ValueError, TypeError):
+            return False
 
     def to_dict(self) -> dict:
         """딕셔너리 변환 (저장용)"""

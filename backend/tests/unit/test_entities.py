@@ -168,19 +168,21 @@ class TestUserEntity:
     """사용자 엔티티 테스트"""
 
     def test_user_hash_password(self):
-        """비밀번호 해시 생성"""
+        """비밀번호 해시 생성 (bcrypt)"""
         # Arrange
         password = "mypassword123"
 
         # Act
         hash1 = User.hash_password(password)
         hash2 = User.hash_password(password)
-        hash_different = User.hash_password("otherpassword")
 
-        # Assert
-        assert hash1 == hash2  # 같은 입력이면 같은 해시
-        assert hash1 != hash_different  # 다른 입력이면 다른 해시
-        assert len(hash1) == 64  # SHA256 해시 길이
+        # Assert: bcrypt는 매번 다른 salt를 사용하므로 해시값이 다름
+        assert hash1 != hash2
+        # bcrypt 해시는 $2b$ 접두어로 시작
+        assert hash1.startswith("$2b$")
+        assert hash2.startswith("$2b$")
+        # bcrypt 해시 길이는 60자
+        assert len(hash1) == 60
 
     def test_user_verify_password(self, sample_user: User):
         """비밀번호 검증"""

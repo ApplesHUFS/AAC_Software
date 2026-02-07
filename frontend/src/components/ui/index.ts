@@ -9,4 +9,6 @@ export { Select } from "./select";
 export { Spinner } from "./spinner";
 export { Card, CardHeader, CardContent, CardFooter } from "./card";
 export { Icon, IconContainer } from "./icon";
+export { Toast } from "./toast";
+export type { ToastProps, ToastType } from "./toast";
 export * from "./icons";

@@ -1,9 +1,10 @@
 """인증 관련 스키마"""
 
+import re
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class RegisterRequest(BaseModel):
@@ -16,7 +17,23 @@ class RegisterRequest(BaseModel):
     disability_type: str = Field(..., alias="disabilityType")
     communication_characteristics: str = Field(..., alias="communicationCharacteristics")
     interesting_topics: List[str] = Field(..., alias="interestingTopics", min_length=1)
-    password: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=8)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_complexity(cls, v: str) -> str:
+        """비밀번호 복잡도 검증: 최소 8자, 대문자, 소문자, 숫자, 특수문자 포함"""
+        if len(v) < 8:
+            raise ValueError("비밀번호는 최소 8자 이상이어야 합니다")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("비밀번호에 대문자가 포함되어야 합니다")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("비밀번호에 소문자가 포함되어야 합니다")
+        if not re.search(r"\d", v):
+            raise ValueError("비밀번호에 숫자가 포함되어야 합니다")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError("비밀번호에 특수문자가 포함되어야 합니다")
+        return v
 
     class Config:
         populate_by_name = True

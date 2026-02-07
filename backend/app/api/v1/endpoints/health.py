@@ -2,9 +2,11 @@
 
 from fastapi import APIRouter
 
+from app.config.settings import get_settings
 from app.core.response import success_response
 
 router = APIRouter()
+settings = get_settings()
 
 
 @router.get("/health")
@@ -14,7 +16,7 @@ async def health_check():
         data={
             "status": "healthy",
             "service": "AAC Interpreter Service",
-            "version": "2.0.0",
+            "version": settings.VERSION,
         },
         message="서비스가 정상 작동 중입니다.",
     )

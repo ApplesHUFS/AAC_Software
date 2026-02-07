@@ -1,6 +1,7 @@
 """로깅 설정 모듈
 
 구조화된 로깅 시스템 - JSON 포맷(프로덕션) / 컬러 콘솔(개발)
+request_id 추적 지원
 """
 
 import logging
@@ -9,6 +10,8 @@ import sys
 from datetime import datetime
 from typing import Any, Dict, Optional
 import json
+
+from app.core.middleware import get_request_id
 
 
 class JSONFormatter(logging.Formatter):
@@ -25,6 +28,11 @@ class JSONFormatter(logging.Formatter):
             "message": record.getMessage(),
         }
 
+        # request_id 추가
+        request_id = get_request_id()
+        if request_id:
+            log_data["request_id"] = request_id
+
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
 
@@ -38,7 +46,7 @@ class JSONFormatter(logging.Formatter):
 class ColorFormatter(logging.Formatter):
     """컬러 콘솔 포맷터 (개발용)
 
-    ANSI 색상 코드로 로그 레벨 구분
+    ANSI 색상 코드로 로그 레벨 구분, request_id 포함
     """
 
     COLORS = {
@@ -49,6 +57,7 @@ class ColorFormatter(logging.Formatter):
         "CRITICAL": "\033[35m",  # magenta
     }
     RESET = "\033[0m"
+    DIM = "\033[2m"
 
     def format(self, record: logging.LogRecord) -> str:
         color = self.COLORS.get(record.levelname, self.RESET)
@@ -62,7 +71,11 @@ class ColorFormatter(logging.Formatter):
         timestamp = datetime.now().strftime("%H:%M:%S")
         message = record.getMessage()
 
-        formatted = f"{timestamp} | {levelname} | {logger_name:30} | {message}"
+        # request_id 추가 (앞 8자만 표시)
+        request_id = get_request_id()
+        req_id_str = f"{self.DIM}[{request_id[:8]}]{self.RESET} " if request_id else ""
+
+        formatted = f"{timestamp} | {levelname} | {req_id_str}{logger_name:30} | {message}"
 
         if record.exc_info:
             formatted += "\n" + self.formatException(record.exc_info)

@@ -5,6 +5,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { Card, Interpretation } from "@/types/card";
+import { CARD_LIMITS } from "@/lib/constants";
 
 interface CardState {
   // 추천된 카드
@@ -19,6 +20,10 @@ interface CardState {
   feedbackId: number | null;
   // 확인 ID
   confirmationId: string | null;
+  // 로딩 상태
+  isLoading: boolean;
+  // 에러 상태
+  error: string | null;
 
   // Actions
   setRecommendedCards: (cards: Card[]) => void;
@@ -28,6 +33,8 @@ interface CardState {
   setInterpretations: (interpretations: Interpretation[]) => void;
   setFeedbackId: (id: number) => void;
   setConfirmationId: (id: string) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
   clearCards: () => void;
   clearSelection: () => void;
   clearInterpretations: () => void;
@@ -35,13 +42,15 @@ interface CardState {
 
 export const useCardStore = create<CardState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       recommendedCards: [],
       allRecommendedCards: [],
       selectedCards: [],
       interpretations: [],
       feedbackId: null,
       confirmationId: null,
+      isLoading: false,
+      error: null,
 
       setRecommendedCards: (cards) => set({ recommendedCards: cards }),
 
@@ -74,7 +83,7 @@ export const useCardStore = create<CardState>()(
             };
           }
 
-          if (state.selectedCards.length >= 4) {
+          if (state.selectedCards.length >= CARD_LIMITS.MAX_SELECTION) {
             return state;
           }
 
@@ -89,6 +98,10 @@ export const useCardStore = create<CardState>()(
 
       setConfirmationId: (id) => set({ confirmationId: id }),
 
+      setLoading: (loading) => set({ isLoading: loading }),
+
+      setError: (error) => set({ error }),
+
       clearCards: () =>
         set({
           recommendedCards: [],
@@ -97,6 +110,8 @@ export const useCardStore = create<CardState>()(
           interpretations: [],
           feedbackId: null,
           confirmationId: null,
+          isLoading: false,
+          error: null,
         }),
 
       clearSelection: () => set({ selectedCards: [] }),
@@ -111,6 +126,15 @@ export const useCardStore = create<CardState>()(
     {
       name: "aac-card-storage",
       storage: createJSONStorage(() => sessionStorage),
+      // isLoading, error는 persist에서 제외
+      partialize: (state) => ({
+        recommendedCards: state.recommendedCards,
+        allRecommendedCards: state.allRecommendedCards,
+        selectedCards: state.selectedCards,
+        interpretations: state.interpretations,
+        feedbackId: state.feedbackId,
+        confirmationId: state.confirmationId,
+      }),
     }
   )
 );

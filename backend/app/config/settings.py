@@ -63,6 +63,9 @@ class QueryRewriteConfig(BaseModel):
 class Settings(BaseSettings):
     """애플리케이션 전역 설정"""
 
+    # 버전 정보 (SSOT)
+    VERSION: str = "2.0.0"
+
     # 프로젝트 경로
     project_root: Path = Field(
         default_factory=lambda: Path(__file__).parent.parent.parent.parent
