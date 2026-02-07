@@ -22,6 +22,10 @@ class RecommendationConfig(BaseModel):
     diversity_selection_multiplier: int = 4  # Stage 2 MMR 선택 배수
     top_k: int = 20  # 최종 추천 카드 수
 
+    # 듀얼 검색 (페르소나 + 컨텍스트)
+    dual_search_enabled: bool = True  # 페르소나 기반 병렬 검색 활성화
+    persona_search_ratio: float = 0.3  # 페르소나 검색 비율 (나머지는 컨텍스트)
+
 
 class LLMConfig(BaseModel):
     """LLM 관련 설정"""

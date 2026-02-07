@@ -122,6 +122,16 @@ class CardRecommender:
             else:
                 self._query_rewriter = NoOpQueryRewriter()
 
+            # 페르소나 검색기 초기화 (듀얼 검색용)
+            persona_searcher = None
+            if self._settings.recommendation.dual_search_enabled:
+                from app.domain.card.persona_searcher import PersonaSearcher
+                persona_searcher = PersonaSearcher(
+                    embedding_provider=clip_client,
+                    vector_index=vector_index,
+                )
+                logger.info("페르소나 검색기 초기화 완료")
+
             self._clip_recommender = CLIPCardRecommender(
                 settings=self._settings,
                 embedding_provider=clip_client,
@@ -131,6 +141,7 @@ class CardRecommender:
                 llm_filter=self._llm_filter,
                 llm_reranker=self._llm_reranker,
                 query_rewriter=self._query_rewriter,
+                persona_searcher=persona_searcher,
             )
             logger.info("CLIP 추천기 초기화 완료")
 

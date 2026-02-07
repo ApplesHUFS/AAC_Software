@@ -82,6 +82,9 @@ class LLMCardFilter(ICardFilter):
             f"- {name}" for name in card_names[: self._batch_size]
         )
 
+        # 관심 주제 포맷팅
+        topics_str = ", ".join(user.interesting_topics) if user.interesting_topics else "없음"
+
         return f"""당신은 AAC(보완대체의사소통) 전문가입니다.
 다음 카드들이 사용자에게 적합한지 평가해주세요.
 
@@ -90,6 +93,7 @@ class LLMCardFilter(ICardFilter):
 - 성별: {user.gender}
 - 장애 유형: {user.disability_type}
 - 의사소통 특성: {user.communication_characteristics}
+- 관심 주제: {topics_str}
 
 ## 현재 상황
 - 장소: {context.place}
@@ -108,7 +112,11 @@ class LLMCardFilter(ICardFilter):
 2. **상황 관련성**: 현재 상황({context.place}에서 {context.current_activity})과 관련있는가?
    - 완전히 무관한 카드는 우선순위 낮춤
 
-3. **의사소통 적합성**: {user.disability_type} 사용자가 이해하고 사용할 수 있는가?
+3. **관심 주제 관련성**: 사용자의 관심 주제({topics_str})와 관련된 카드인가?
+   - 관심 주제 관련 카드는 현재 상황과 직접 관련 없어도 **적합으로 분류**
+   - 사용자가 좋아하는 주제이므로 의사소통 동기 부여에 도움됨
+
+4. **의사소통 적합성**: {user.disability_type} 사용자가 이해하고 사용할 수 있는가?
 
 ## 응답 형식 (JSON)
 {{
@@ -116,7 +124,7 @@ class LLMCardFilter(ICardFilter):
   "inappropriate": [
     {{"name": "부적합한 카드명", "reason": "부적합 이유"}}
   ],
-  "highly_relevant": ["상황에 특히 관련된 카드명1", "카드명2"]
+  "highly_relevant": ["상황 또는 관심 주제에 특히 관련된 카드명1", "카드명2"]
 }}
 
 적합/부적합을 명확히 구분하여 빠짐없이 분류해주세요."""

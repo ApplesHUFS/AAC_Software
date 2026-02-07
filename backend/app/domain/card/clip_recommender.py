@@ -39,6 +39,11 @@ from app.domain.card.query_rewriter import IQueryRewriter
 from app.domain.context.entity import Context
 from app.domain.user.entity import User
 
+# TYPE_CHECKING으로 순환 임포트 방지
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.domain.card.persona_searcher import PersonaSearcher
+
 logger = logging.getLogger(__name__)
 
 # LLM 에러 타입 튜플 (Graceful Degradation 적용 대상)
@@ -80,6 +85,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
         llm_filter: Optional[ICardFilter] = None,
         llm_reranker: Optional[ICardReranker] = None,
         query_rewriter: Optional[IQueryRewriter] = None,
+        persona_searcher: Optional["PersonaSearcher"] = None,
     ):
         self._settings = settings
         self._embedding = embedding_provider
@@ -101,6 +107,9 @@ class CLIPCardRecommender(IRecommendationStrategy):
 
         # 쿼리 재작성기
         self._query_rewriter = query_rewriter
+
+        # 페르소나 검색기 (듀얼 검색용)
+        self._persona_searcher = persona_searcher
 
         # 선호 키워드 임베딩 캐시
         self._keyword_embedding_cache: dict = {}
@@ -435,7 +444,64 @@ class CLIPCardRecommender(IRecommendationStrategy):
         context: SearchContext,
         count: int,
     ) -> List[ScoredCard]:
-        """Stage 1: 다중 쿼리 CLIP 시맨틱 검색
+        """Stage 1: 듀얼 검색 전략 (컨텍스트 + 페르소나)
+
+        듀얼 검색이 활성화된 경우:
+        - 컨텍스트 검색: 상황 기반 검색 (기존)
+        - 페르소나 검색: 관심 주제 기반 검색 (신규)
+        두 결과를 병합하여 더 풍부한 후보 풀 확보
+        """
+        # 제외할 인덱스 계산
+        excluded_indices: Set[int] = set()
+        for fn in context.excluded_filenames:
+            idx = self._vector_index.get_index(fn)
+            if idx is not None:
+                excluded_indices.add(idx)
+
+        candidate_count = count * self._config.candidate_multiplier
+        rec_cfg = self._settings.recommendation
+
+        # 듀얼 검색 조건: 활성화 && 관심 주제 있음 && 페르소나 검색기 존재
+        if (rec_cfg.dual_search_enabled
+                and context.preferred_keywords
+                and self._persona_searcher):
+
+            # 페르소나 검색 비율 적용
+            persona_count = int(candidate_count * rec_cfg.persona_search_ratio)
+            context_count = candidate_count - persona_count
+
+            # 컨텍스트 검색 (기존 로직)
+            context_candidates = await self._context_search(
+                context, context_count, excluded_indices
+            )
+
+            # 페르소나 검색 (신규)
+            persona_candidates = self._persona_searcher.search(
+                context.preferred_keywords, persona_count, excluded_indices
+            )
+
+            # 병합 (중복 제거, 페르소나 카드 우선)
+            merged = self._merge_candidates(
+                context_candidates, persona_candidates, candidate_count
+            )
+
+            logger.info(
+                f"Stage 1 듀얼 검색: 컨텍스트 {len(context_candidates)}개 + "
+                f"페르소나 {len(persona_candidates)}개 → {len(merged)}개"
+            )
+
+            return merged
+
+        # 듀얼 검색 비활성화 시 기존 단일 검색
+        return await self._context_search(context, candidate_count, excluded_indices)
+
+    async def _context_search(
+        self,
+        context: SearchContext,
+        count: int,
+        excluded_indices: Set[int],
+    ) -> List[ScoredCard]:
+        """컨텍스트 기반 CLIP 검색 (기존 로직)
 
         쿼리 재작성이 활성화된 경우 여러 쿼리로 검색하여
         더 다양한 후보를 확보합니다.
@@ -453,16 +519,6 @@ class CLIPCardRecommender(IRecommendationStrategy):
         if not queries or not any(q.strip() for q in queries):
             return []
 
-        # 제외할 인덱스 계산
-        excluded_indices: Set[int] = set()
-        for fn in context.excluded_filenames:
-            idx = self._vector_index.get_index(fn)
-            if idx is not None:
-                excluded_indices.add(idx)
-
-        # 후보 수 계산
-        candidate_count = count * self._config.candidate_multiplier
-
         # 다중 쿼리로 검색 (중복 제거)
         seen_filenames: Set[str] = set()
         all_candidates: List[ScoredCard] = []
@@ -475,7 +531,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
 
             search_results = self._vector_index.search(
                 query_embedding,
-                candidate_count,
+                count,
                 excluded_indices,
             )
 
@@ -499,13 +555,43 @@ class CLIPCardRecommender(IRecommendationStrategy):
                 )
 
         # 점수순 정렬 후 상위 N개 반환
-        all_candidates.sort(key=lambda sc: sc.semantic_score, reverse=True)
+        all_candidates.sort(key=lambda sc: -sc.semantic_score)
 
-        logger.info(
-            f"Stage 1: {len(queries)}개 쿼리로 {len(all_candidates)}개 후보 검색"
+        logger.debug(
+            f"컨텍스트 검색: {len(queries)}개 쿼리로 {len(all_candidates)}개 후보"
         )
 
-        return all_candidates[:candidate_count]
+        return all_candidates[:count]
+
+    def _merge_candidates(
+        self,
+        context_candidates: List[ScoredCard],
+        persona_candidates: List[ScoredCard],
+        total_count: int,
+    ) -> List[ScoredCard]:
+        """두 검색 결과 병합 (중복 제거, 페르소나 우선)
+
+        페르소나 카드를 먼저 추가하여 관심 주제 카드가
+        최종 결과에 반드시 포함되도록 보장합니다.
+        """
+        seen_filenames: Set[str] = set()
+        merged: List[ScoredCard] = []
+
+        # 페르소나 결과 우선 추가 (관심 주제 보장)
+        for sc in persona_candidates:
+            if sc.card.filename not in seen_filenames:
+                seen_filenames.add(sc.card.filename)
+                merged.append(sc)
+
+        # 컨텍스트 결과 추가
+        for sc in context_candidates:
+            if sc.card.filename not in seen_filenames:
+                seen_filenames.add(sc.card.filename)
+                merged.append(sc)
+
+        # 점수순 정렬 후 반환
+        merged.sort(key=lambda sc: -sc.semantic_score)
+        return merged[:total_count]
 
     def _build_rich_query(self, context: SearchContext) -> str:
         """컨텍스트를 풍부한 자연어 쿼리로 변환

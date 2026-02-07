@@ -70,22 +70,28 @@ class LLMCardReranker(ICardReranker):
         user = filter_ctx.user
         context = filter_ctx.context
 
+        # 관심 주제 포맷팅
+        topics_str = ", ".join(user.interesting_topics) if user.interesting_topics else "없음"
+
         return f"""AAC 카드를 현재 상황에 맞게 순위를 매겨주세요.
 
 ## 사용자 상황
 - {user.age}세 {user.disability_type} 사용자
 - {context.place}에서 {context.interaction_partner}와 함께
 - 현재 활동: "{context.current_activity}"
+- 관심 주제: {topics_str}
 
 ## 카드 목록
 {card_names}
 
 ## 우선순위 기준
 1. **현재 활동 관련**: "{context.current_activity}"와 직접 관련된 카드 (예: 먹다, 맛있다)
-2. **기본 의사소통**: 좋다, 싫다, 더, 그만, 도와주세요 등 필수 표현
-3. **장소/상대 관련**: {context.place}, {context.interaction_partner}와 관련된 카드
-4. **감정 표현**: 행복, 슬픔, 아파요 등 감정 카드
-5. **요청 표현**: 화장실, 물, 쉬고 싶어요 등 기본 요청
+2. **관심 주제 관련**: 사용자의 관심 주제({topics_str})와 관련된 카드
+   - 관심 주제 카드는 의사소통 동기 부여에 중요하므로 상위 배치
+3. **기본 의사소통**: 좋다, 싫다, 더, 그만, 도와주세요 등 필수 표현
+4. **장소/상대 관련**: {context.place}, {context.interaction_partner}와 관련된 카드
+5. **감정 표현**: 행복, 슬픔, 아파요 등 감정 카드
+6. **요청 표현**: 화장실, 물, 쉬고 싶어요 등 기본 요청
 
 ## 응답 형식 (JSON)
 가장 유용한 순서대로 카드명을 배열로 제공해주세요:

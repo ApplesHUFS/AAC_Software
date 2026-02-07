@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from app.config.settings import Settings
 from app.domain.card.entity import Card
-from app.domain.card.interfaces import IVectorIndex, ScoredCard
+from app.domain.card.interfaces import IEmbeddingProvider, IVectorIndex, ScoredCard
 from app.domain.context.entity import Context
 from app.domain.context.repository import ContextRepository
 from app.domain.user.entity import User
@@ -102,6 +102,26 @@ def sample_scored_cards(sample_cards: List[Card]) -> List[ScoredCard]:
     ]
 
 
+class MockEmbeddingProvider(IEmbeddingProvider):
+    """테스트용 임베딩 제공자"""
+
+    def __init__(self, dimension: int = 512):
+        self._dimension = dimension
+
+    def encode_text(self, text: str) -> np.ndarray:
+        """텍스트를 일관된 랜덤 벡터로 인코딩"""
+        np.random.seed(hash(text) % (2**32))
+        vec = np.random.randn(self._dimension).astype(np.float32)
+        return vec / np.linalg.norm(vec)
+
+    def encode_texts_batch(self, texts: List[str]) -> np.ndarray:
+        """배치 인코딩"""
+        return np.array([self.encode_text(t) for t in texts])
+
+    def get_embedding_dimension(self) -> int:
+        return self._dimension
+
+
 class MockVectorIndex(IVectorIndex):
     """테스트용 벡터 인덱스"""
 
@@ -154,6 +174,12 @@ def mock_vector_index(sample_cards: List[Card]) -> MockVectorIndex:
     """테스트용 벡터 인덱스"""
     filenames = [card.filename for card in sample_cards]
     return MockVectorIndex(filenames)
+
+
+@pytest.fixture
+def mock_embedding_provider() -> MockEmbeddingProvider:
+    """테스트용 임베딩 제공자"""
+    return MockEmbeddingProvider()
 
 
 class MockContextRepository(ContextRepository):
