@@ -5,7 +5,7 @@ Pydantic Settings를 사용하여 환경변수와 기본값을 통합 관리
 
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import FrozenSet, List
 
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
@@ -58,6 +58,25 @@ class QueryRewriteConfig(BaseModel):
     enabled: bool = True  # LLM 기반 쿼리 재작성 활성화
     count: int = 3  # 생성할 추가 쿼리 수
     max_tokens: int = 300  # 쿼리 재작성 최대 토큰
+
+
+class AgeAppropriatenessConfig(BaseModel):
+    """나이별 부적절 키워드 설정 (LLM 필터 폴백용)"""
+
+    child_inappropriate: FrozenSet[str] = frozenset({
+        "사랑에 빠지다", "연애하다", "키스하다", "결혼", "신혼부부",
+        "결혼한 커플", "기저귀를 갈다", "기저귀를 입은", "잠자는 숲속의 미녀",
+        "생리대", "임신", "출산", "성관계",
+    })
+    teen_inappropriate: FrozenSet[str] = frozenset({
+        "기저귀를 갈다", "기저귀를 입은",
+    })
+    universal_inappropriate: FrozenSet[str] = frozenset({
+        "강간", "성매매", "자살", "살인", "학대", "마약",
+    })
+
+    class Config:
+        frozen = True
 
 
 class Settings(BaseSettings):
@@ -163,6 +182,9 @@ class Settings(BaseSettings):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     feedback: FeedbackConfig = Field(default_factory=FeedbackConfig)
     query_rewrite: QueryRewriteConfig = Field(default_factory=QueryRewriteConfig)
+    age_appropriateness: AgeAppropriatenessConfig = Field(
+        default_factory=AgeAppropriatenessConfig
+    )
 
     # 하위 호환성 프로퍼티 (기존 코드 지원)
     @property

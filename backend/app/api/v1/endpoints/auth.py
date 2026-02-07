@@ -1,8 +1,14 @@
 """인증 API 엔드포인트"""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import UserServiceDep, CurrentUserDep
+from app.core.exceptions import (
+    AuthenticationException,
+    ForbiddenException,
+    NotFoundException,
+    ValidationException,
+)
 from app.core.response import success_response
 from app.core.security import TokenService, get_token_service
 from app.core.rate_limit import limiter, RATE_LIMIT_LOGIN
@@ -34,7 +40,7 @@ async def check_user_id(
     )
 
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=201)
 async def register(
     request: RegisterRequest,
     user_service: UserServiceDep,
@@ -52,10 +58,7 @@ async def register(
     )
 
     if not result.success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.message,
-        )
+        raise ValidationException(result.message)
 
     return success_response(
         data={
@@ -82,10 +85,7 @@ async def login(
     )
 
     if not result.authenticated:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=result.message,
-        )
+        raise AuthenticationException(result.message)
 
     access_token = token_service.create_access_token(login_data.user_id)
     refresh_token = token_service.create_refresh_token(login_data.user_id)
@@ -112,10 +112,7 @@ async def refresh_token(
     user_id = token_service.verify_token(request.refresh_token, token_type="refresh")
 
     if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="유효하지 않은 리프레시 토큰입니다.",
-        )
+        raise AuthenticationException("유효하지 않은 리프레시 토큰입니다.")
 
     new_access_token = token_service.create_access_token(user_id)
 
@@ -135,20 +132,13 @@ async def get_profile(
     user_service: UserServiceDep,
 ):
     """프로필 조회 (인증 필요)"""
-    # 본인 프로필만 조회 가능
     if current_user.user_id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="다른 사용자의 프로필을 조회할 수 없습니다.",
-        )
+        raise ForbiddenException("다른 사용자의 프로필을 조회할 수 없습니다.")
 
     result = await user_service.get_user_info(user_id)
 
     if not result.success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=result.message,
-        )
+        raise NotFoundException(result.message)
 
     return success_response(
         data={"userId": user_id, **result.user},
@@ -175,12 +165,8 @@ async def update_profile(
     user_service: UserServiceDep,
 ):
     """프로필 업데이트 (인증 필요)"""
-    # 본인 프로필만 수정 가능
     if current_user.user_id != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="다른 사용자의 프로필을 수정할 수 없습니다.",
-        )
+        raise ForbiddenException("다른 사용자의 프로필을 수정할 수 없습니다.")
 
     updates = request.model_dump(exclude_none=True, by_alias=True)
 
@@ -190,10 +176,7 @@ async def update_profile(
     )
 
     if not result.success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.message,
-        )
+        raise ValidationException(result.message)
 
     return success_response(
         data={

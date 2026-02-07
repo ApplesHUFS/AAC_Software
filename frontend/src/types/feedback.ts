@@ -2,12 +2,14 @@
  * 피드백 관련 타입 정의
  */
 
-export interface ContextSummary {
-  time: string;
-  place: string;
-  interactionPartner?: string;
-  currentActivity: string;
-}
+import { ContextInfo } from "./card";
+
+/**
+ * 컨텍스트 요약 타입 (ContextInfo 확장)
+ * interactionPartner가 선택적
+ */
+export interface ContextSummary extends Partial<Pick<ContextInfo, "interactionPartner">>,
+  Omit<ContextInfo, "interactionPartner"> {}
 
 export interface FeedbackRequestBody {
   userId: string;

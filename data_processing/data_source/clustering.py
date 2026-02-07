@@ -9,6 +9,9 @@ from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import normalize
 from tqdm import tqdm
 
+from . import embedding_utils
+from .utils import save_json
+
 plt.rcParams["font.family"] = ["DejaVu Sans", "sans-serif"]
 plt.rcParams["axes.unicode_minus"] = False
 
@@ -189,19 +192,12 @@ class Clusterer:
         self.config = config or {}
         self.filenames = self.data["filenames"]
 
-        # 임베딩 융합
         img_embeddings = np.array(self.data["image_embeddings"])
         txt_embeddings = np.array(self.data["text_embeddings"])
-
-        img_normalized = normalize(img_embeddings, norm="l2")
-        txt_normalized = normalize(txt_embeddings, norm="l2")
-
-        # config에서 이미지 가중치 가져오기
         img_weight = self.config["image_weight"]
-        self.embeddings = (
-            img_weight * img_normalized + (1 - img_weight) * txt_normalized
+        self.embeddings = embedding_utils.fuse_embeddings(
+            img_embeddings, txt_embeddings, img_weight
         )
-        self.embeddings = normalize(self.embeddings, norm="l2")
 
     def _find_optimal_clusters(
         self, X: np.ndarray, min_k: int = 2, max_k: int = 30
@@ -353,8 +349,6 @@ class Clusterer:
             results: 클러스터링 결과
             output_path: 출력 파일 경로
         """
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
         cluster_data = {
             "cluster_labels": results["cluster_labels"],
             "clustered_files": {
@@ -363,9 +357,7 @@ class Clusterer:
             "n_clusters": results["n_clusters"],
             "filenames": self.filenames,
         }
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(cluster_data, f, ensure_ascii=False, indent=2)
+        save_json(cluster_data, output_path)
 
     def print_cluster_summary(self, results: Dict[str, Any]) -> None:
         """클러스터링 결과 요약 출력.

@@ -1,15 +1,16 @@
 """컨텍스트 API 엔드포인트"""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 from app.api.deps import ContextServiceDep
+from app.core.exceptions import NotFoundException, ValidationException
 from app.core.response import success_response
 from app.schemas.context import CreateContextRequest
 
 router = APIRouter()
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=201)
 async def create_context(
     request: CreateContextRequest,
     context_service: ContextServiceDep,
@@ -23,10 +24,7 @@ async def create_context(
     )
 
     if not result.success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.message,
-        )
+        raise ValidationException(result.message)
 
     return success_response(
         data=result.context.to_dict(),
@@ -43,10 +41,7 @@ async def get_context(
     context = await context_service.get_context(context_id)
 
     if not context:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="컨텍스트를 찾을 수 없습니다.",
-        )
+        raise NotFoundException("컨텍스트를 찾을 수 없습니다.")
 
     return success_response(
         data=context.to_dict(),

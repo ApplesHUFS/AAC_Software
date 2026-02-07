@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/icons";
 import { Toast } from "@/components/ui/toast";
 import { Spinner } from "@/components/ui/spinner";
+import { Input } from "@/components/ui/input";
 import { StepIndicator } from "./step-indicator";
-import { InputField } from "./input-field";
 import { SelectField } from "./select-field";
 
 export function RegisterForm() {
@@ -158,7 +158,8 @@ export function RegisterForm() {
             {/* 아이디 + 중복확인 버튼 */}
             <div className="flex gap-2">
               <div className="flex-1">
-                <InputField
+                <Input
+                  variant="minimal"
                   id="register-userId"
                   name="userId"
                   type="text"
@@ -170,9 +171,10 @@ export function RegisterForm() {
                   }}
                   placeholder="아이디"
                   label="아이디"
-                  icon={<UserIcon className="w-5 h-5" />}
+                  srOnlyLabel
+                  leftIcon={<UserIcon className="w-5 h-5" />}
                   autoComplete="username"
-                  error={!!error && !idAvailable}
+                  aria-invalid={!!error && !idAvailable}
                   errorId={error ? "register-error" : undefined}
                 />
               </div>
@@ -190,7 +192,8 @@ export function RegisterForm() {
                 {checkingId ? "확인중..." : idChecked && idAvailable ? "확인됨" : "중복확인"}
               </button>
             </div>
-            <InputField
+            <Input
+              variant="minimal"
               id="register-password"
               name="password"
               type="password"
@@ -198,12 +201,14 @@ export function RegisterForm() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               placeholder="비밀번호"
               label="비밀번호"
-              icon={<LockIcon className="w-5 h-5" />}
+              srOnlyLabel
+              leftIcon={<LockIcon className="w-5 h-5" />}
               autoComplete="new-password"
-              error={!!error}
+              aria-invalid={!!error}
               errorId={error ? "register-error" : undefined}
             />
-            <InputField
+            <Input
+              variant="minimal"
               id="register-passwordConfirm"
               name="passwordConfirm"
               type="password"
@@ -211,9 +216,10 @@ export function RegisterForm() {
               onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
               placeholder="비밀번호 확인"
               label="비밀번호 확인"
-              icon={<LockIcon className="w-5 h-5" />}
+              srOnlyLabel
+              leftIcon={<LockIcon className="w-5 h-5" />}
               autoComplete="new-password"
-              error={!!error}
+              aria-invalid={!!error}
               errorId={error ? "register-error" : undefined}
             />
 
@@ -252,7 +258,8 @@ export function RegisterForm() {
             disabled={step !== 2}
           >
             <legend className="sr-only">개인 정보</legend>
-            <InputField
+            <Input
+              variant="minimal"
               id="register-name"
               name="name"
               type="text"
@@ -260,12 +267,14 @@ export function RegisterForm() {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="이름"
               label="이름"
-              icon={<PersonIcon className="w-5 h-5" />}
+              srOnlyLabel
+              leftIcon={<PersonIcon className="w-5 h-5" />}
               autoComplete="name"
-              error={!!error}
+              aria-invalid={!!error}
               errorId={error ? "register-error" : undefined}
             />
-            <InputField
+            <Input
+              variant="minimal"
               id="register-age"
               name="age"
               type="number"
@@ -273,8 +282,9 @@ export function RegisterForm() {
               onChange={(e) => setFormData({ ...formData, age: e.target.value })}
               placeholder="나이"
               label="나이"
-              icon={<CalendarIcon className="w-5 h-5" />}
-              error={!!error}
+              srOnlyLabel
+              leftIcon={<CalendarIcon className="w-5 h-5" />}
+              aria-invalid={!!error}
               errorId={error ? "register-error" : undefined}
             />
             <SelectField

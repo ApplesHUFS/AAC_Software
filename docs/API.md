@@ -4,14 +4,15 @@ AAC Software Backend API 엔드포인트 가이드입니다.
 
 ## 기본 정보
 
-- **Base URL**: `http://localhost:8000`
+- **Base URL**: `http://localhost:8001`
 - **Content-Type**: `application/json`
+- **API Prefix**: `/api/v1`
 
 ## 인증 API
 
 ### 회원가입
 ```http
-POST /api/auth/register
+POST /api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -23,7 +24,7 @@ Content-Type: application/json
 
 ### 로그인
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 Content-Type: application/json
 
 {
@@ -34,14 +35,14 @@ Content-Type: application/json
 
 ### 프로필 조회
 ```http
-GET /api/auth/profile/{userId}
+GET /api/v1/auth/profile/{userId}
 ```
 
 ## 카드 시스템 API
 
 ### 카드 추천
 ```http
-POST /api/cards/recommend
+POST /api/v1/cards/recommend
 Content-Type: application/json
 
 {
@@ -67,7 +68,7 @@ Content-Type: application/json
 
 ### 카드 해석
 ```http
-POST /api/cards/interpret
+POST /api/v1/cards/interpret
 Content-Type: application/json
 
 {
@@ -87,15 +88,15 @@ Content-Type: application/json
 
 ### 추천 히스토리
 ```http
-GET /api/cards/history/{contextId}
-GET /api/cards/history/{contextId}/page/{pageNumber}
+GET /api/v1/cards/history/{contextId}
+GET /api/v1/cards/history/{contextId}/page/{pageNumber}
 ```
 
 ## 피드백 API
 
 ### 피드백 제출
 ```http
-POST /api/feedback/submit
+POST /api/v1/feedback/submit
 Content-Type: application/json
 
 {
@@ -109,7 +110,7 @@ Content-Type: application/json
 
 ### 상황 생성
 ```http
-POST /api/context
+POST /api/v1/context
 Content-Type: application/json
 
 {
@@ -129,7 +130,7 @@ Content-Type: application/json
 
 ```javascript
 // 카드 추천 요청
-const response = await fetch('http://localhost:8000/api/cards/recommend', {
+const response = await fetch('http://localhost:8001/api/v1/cards/recommend', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'

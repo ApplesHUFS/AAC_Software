@@ -42,6 +42,13 @@ class AuthenticationException(AppException):
         super().__init__(message, status_code=401)
 
 
+class ForbiddenException(AppException):
+    """권한 없음 (403)"""
+
+    def __init__(self, message: str = "접근 권한이 없습니다."):
+        super().__init__(message, status_code=403)
+
+
 class DuplicateException(AppException):
     """중복 리소스 (409)"""
 

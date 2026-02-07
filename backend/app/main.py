@@ -14,6 +14,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.router import api_router
 from app.config.settings import get_settings
+from app.core.exceptions import AppException
 from app.core.middleware import RequestIDMiddleware
 from app.core.response import error_response
 from app.core.rate_limit import limiter, rate_limit_exceeded_handler
@@ -69,6 +70,16 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
 )
+
+
+# 커스텀 애플리케이션 예외 핸들러
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    """커스텀 애플리케이션 예외 처리"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(error=exc.message),
+    )
 
 
 # HTTPException 핸들러

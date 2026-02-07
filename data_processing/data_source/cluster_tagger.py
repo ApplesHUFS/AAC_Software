@@ -12,6 +12,9 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics import pairwise_distances
 from tqdm import tqdm
 
+from . import embedding_utils
+from .utils import extract_keyword_from_filename, get_device, save_json
+
 
 class ClusterTagger:
     """계층적 클러스터 태깅.
@@ -40,15 +43,7 @@ class ClusterTagger:
         self.images_folder = Path(images_folder)
         self.client = OpenAI()
 
-        # 디바이스 설정
-        if "device" in self.config:
-            device_setting = self.config["device"]
-            if device_setting == "auto":
-                self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self.device = device_setting
-        else:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = get_device(self.config)
 
         # 유사도 모델 로드
         similarity_model_name = self.config["similarity_model"]
@@ -73,20 +68,12 @@ class ClusterTagger:
 
         self.filenames = embedding_data["filenames"]
 
-        # 임베딩 융합
         img_embeddings = np.array(embedding_data["image_embeddings"])
         txt_embeddings = np.array(embedding_data["text_embeddings"])
-
-        from sklearn.preprocessing import normalize
-
-        img_normalized = normalize(img_embeddings, norm="l2")
-        txt_normalized = normalize(txt_embeddings, norm="l2")
-
         img_weight = self.config["image_weight"]
-        self.embeddings = (
-            img_weight * img_normalized + (1 - img_weight) * txt_normalized
+        self.embeddings = embedding_utils.fuse_embeddings(
+            img_embeddings, txt_embeddings, img_weight
         )
-        self.embeddings = normalize(self.embeddings, norm="l2")
 
         self.cluster_labels = np.array(cluster_data["cluster_labels"])
         self.clustered_files = {
@@ -144,18 +131,8 @@ class ClusterTagger:
             return base64.b64encode(image_file.read()).decode("utf-8")
 
     def _extract_keyword(self, filename: str) -> str:
-        """파일명에서 키워드 추출.
-
-        파일명 패턴: {id}_{keyword}.png에서 keyword 부분을 추출합니다.
-
-        Args:
-            filename: 파일명
-
-        Returns:
-            str: 추출된 키워드
-        """
-        stem = Path(filename).stem
-        return stem.split("_", 1)[1] if "_" in stem else ""
+        """파일명에서 키워드 추출."""
+        return extract_keyword_from_filename(filename)
 
     def _tag_cluster_with_llm(
         self, cluster_id: int, medoid_files: List[str]
@@ -280,15 +257,7 @@ class ClusterTagger:
             cluster_tags: 클러스터 태그 딕셔너리
             output_path: 출력 파일 경로
         """
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {str(k): v for k, v in cluster_tags.items()},
-                f,
-                ensure_ascii=False,
-                indent=2,
-            )
+        save_json({str(k): v for k, v in cluster_tags.items()}, output_path)
 
     def compute_topic_similarities_batch(
         self, topics1: List[str], topics2: List[str]

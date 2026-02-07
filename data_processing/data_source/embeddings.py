@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 from typing import List, Optional, Tuple
@@ -10,6 +9,8 @@ from dotenv import load_dotenv
 from PIL import Image
 from tqdm import tqdm
 from transformers import AutoModel, AutoProcessor
+
+from .utils import extract_keyword_from_filename, get_device, save_json
 
 
 class CLIPEncoder:
@@ -40,16 +41,7 @@ class CLIPEncoder:
         if hf_token:
             huggingface_hub.login(token=hf_token)
 
-        # 디바이스 설정
-        if self.config and "device" in self.config:
-            device_setting = self.config["device"]
-            if device_setting == "auto":
-                self.device = "cuda" if torch.cuda.is_available() else "cpu"
-            else:
-                self.device = device_setting
-        else:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
+        self.device = get_device(self.config)
         print(f"Using device: {self.device}")
 
         self.model = AutoModel.from_pretrained(
@@ -73,20 +65,8 @@ class CLIPEncoder:
         return image.convert("RGB")
 
     def _extract_text(self, filename: str) -> str:
-        """파일명에서 텍스트 키워드 추출.
-
-        파일명 패턴: {id}_{keyword}.png에서 keyword 부분을 추출합니다.
-
-        Args:
-            filename: 파일명
-
-        Returns:
-            str: 추출된 키워드 (없으면 빈 문자열)
-        """
-        stem = Path(filename).stem
-        if "_" not in stem:
-            return ""
-        return stem.split("_", 1)[1]
+        """파일명에서 텍스트 키워드 추출."""
+        return extract_keyword_from_filename(filename)
 
     def encode_single(
         self, image_path: str, text: str
@@ -176,17 +156,12 @@ class CLIPEncoder:
             text_embeddings: 텍스트 임베딩 배열
             output_path: 출력 파일 경로
         """
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
         embedding_data = {
             "filenames": filenames,
             "image_embeddings": image_embeddings.tolist(),
             "text_embeddings": text_embeddings.tolist(),
         }
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(embedding_data, f, ensure_ascii=False, indent=2)
-
+        save_json(embedding_data, output_path)
         print(f"Embeddings saved to {output_path}")
 
     def process_and_save(

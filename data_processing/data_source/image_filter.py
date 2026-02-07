@@ -6,6 +6,8 @@ from typing import Dict, List, Optional, Set
 
 from tqdm import tqdm
 
+from .utils import extract_keyword_from_filename
+
 
 class ImageFilter:
     """AAC 이미지 필터링 시스템.
@@ -793,20 +795,8 @@ class ImageFilter:
         return False
 
     def _extract_keyword(self, filename: str) -> str:
-        """파일명에서 키워드 추출.
-
-        파일명 패턴: {id}_{keyword}.png에서 keyword 부분을 추출합니다.
-
-        Args:
-            filename: 파일명
-
-        Returns:
-            str: 추출된 키워드
-        """
-        stem = Path(filename).stem
-        if "_" not in stem:
-            return ""
-        return stem.split("_", 1)[1].strip()
+        """파일명에서 키워드 추출."""
+        return extract_keyword_from_filename(filename).strip()
 
     def _should_filter(self, keyword: str) -> str:
         """키워드가 필터링 대상인지 판단.

@@ -24,6 +24,10 @@ export interface SelectionRules {
   totalOptions: number;
 }
 
+/**
+ * 컨텍스트 정보 기본 타입
+ * feedback.ts의 ContextSummary가 이 타입을 확장함
+ */
 export interface ContextInfo {
   time: string;
   place: string;

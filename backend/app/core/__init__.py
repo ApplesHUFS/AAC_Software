@@ -6,6 +6,7 @@ from app.core.exceptions import (
     NotFoundException,
     ValidationException,
     AuthenticationException,
+    ForbiddenException,
     DuplicateException,
 )
 from app.core.middleware import RequestIDMiddleware, get_request_id
@@ -17,6 +18,7 @@ __all__ = [
     "NotFoundException",
     "ValidationException",
     "AuthenticationException",
+    "ForbiddenException",
     "DuplicateException",
     "RequestIDMiddleware",
     "get_request_id",

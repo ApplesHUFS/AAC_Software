@@ -1,8 +1,9 @@
 """피드백 API 엔드포인트"""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 from app.api.deps import FeedbackServiceDep
+from app.core.exceptions import ValidationException
 from app.core.response import success_response
 from app.schemas.feedback import FeedbackRequestBody, FeedbackSubmitRequest
 
@@ -45,10 +46,7 @@ async def submit_feedback(
     )
 
     if not result.success:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.message,
-        )
+        raise ValidationException(result.message)
 
     return success_response(
         data={

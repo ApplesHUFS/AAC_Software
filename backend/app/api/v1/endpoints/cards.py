@@ -1,8 +1,9 @@
 """카드 API 엔드포인트"""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 
 from app.api.deps import CardServiceDep, UserServiceDep, ContextServiceDep, SettingsDep
+from app.core.exceptions import NotFoundException, ValidationException
 from app.core.response import success_response
 from app.schemas.card import (
     CardRecommendRequest,
@@ -21,21 +22,13 @@ async def recommend_cards(
     context_service: ContextServiceDep,
 ):
     """카드 추천"""
-    # 사용자 조회
     user = await user_service.get_user(request.user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="사용자를 찾을 수 없습니다.",
-        )
+        raise NotFoundException("사용자를 찾을 수 없습니다.")
 
-    # 컨텍스트 조회
     context = await context_service.get_context(request.context_id)
     if not context:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="컨텍스트를 찾을 수 없습니다.",
-        )
+        raise NotFoundException("컨텍스트를 찾을 수 없습니다.")
 
     result = await card_service.recommend_cards(user, context)
 
@@ -67,10 +60,7 @@ async def validate_selection(
     )
 
     if not result.valid:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.message,
-        )
+        raise ValidationException(result.message)
 
     return success_response(
         data={
@@ -89,21 +79,13 @@ async def interpret_cards(
     context_service: ContextServiceDep,
 ):
     """카드 해석"""
-    # 사용자 조회
     user = await user_service.get_user(request.user_id)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="사용자를 찾을 수 없습니다.",
-        )
+        raise NotFoundException("사용자를 찾을 수 없습니다.")
 
-    # 컨텍스트 조회
     context = await context_service.get_context(request.context_id)
     if not context:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="컨텍스트를 찾을 수 없습니다.",
-        )
+        raise NotFoundException("컨텍스트를 찾을 수 없습니다.")
 
     result = await card_service.interpret_cards(
         user=user,
@@ -146,10 +128,7 @@ async def get_history_page(
     page_data = await card_service.get_history_page(context_id, page_number)
 
     if not page_data:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"페이지 {page_number}를 찾을 수 없습니다.",
-        )
+        raise NotFoundException(f"페이지 {page_number}를 찾을 수 없습니다.")
 
     return success_response(
         data=page_data,

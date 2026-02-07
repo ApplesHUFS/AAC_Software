@@ -7,7 +7,6 @@
 
 from typing import Optional, Tuple
 
-from app.config.filter_config import FilterSettings, get_filter_settings
 from app.config.settings import Settings
 from app.domain.card.filters.base import ICardFilter, ICardReranker
 from app.domain.card.filters.llm_filter import LLMCardFilter
@@ -25,11 +24,9 @@ class FilterFactory:
         self,
         settings: Settings,
         openai_client: OpenAIClient,
-        filter_settings: Optional[FilterSettings] = None,
     ):
         self._settings = settings
         self._openai_client = openai_client
-        self._filter_settings = filter_settings or get_filter_settings()
 
     def create_filter(self) -> Optional[ICardFilter]:
         """카드 필터 생성
@@ -43,7 +40,7 @@ class FilterFactory:
         return LLMCardFilter(
             openai_client=self._openai_client,
             batch_size=self._settings.filter_batch_size,
-            fallback_config=self._filter_settings.age_config,
+            fallback_config=self._settings.age_appropriateness,
         )
 
     def create_reranker(self) -> Optional[ICardReranker]:

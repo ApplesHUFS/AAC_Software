@@ -8,7 +8,7 @@ LLM의 자연어 이해 능력을 활용하여 키워드 기반 필터링보다
 import logging
 from typing import Dict, List, Set
 
-from app.config.filter_config import AgeAppropriatenessConfig
+from app.config.settings import AgeAppropriatenessConfig
 from app.domain.card.filters.base import (
     FilterContext,
     FilterResult,
