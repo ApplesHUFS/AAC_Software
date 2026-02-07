@@ -7,7 +7,7 @@
 - OpenAIClient: 통합 클라이언트 (하위 호환성)
 """
 
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from pathlib import Path
 
 from app.config.settings import Settings
@@ -17,16 +17,24 @@ from .interpreter import CardInterpreter
 from .filter_reranker import CardFilterReranker
 from .query_rewriter import QueryRewriter
 
+if TYPE_CHECKING:
+    from app.domain.feedback.visual_analyzer import IVisualPatternAnalyzer
+
 
 class OpenAIClient(OpenAIClientBase):
     """OpenAI 통합 클라이언트 (하위 호환성 유지)
 
-    기능별 클라이언트를 조합하여 기존 인터페이스 제공
+    기능별 클라이언트를 조합하여 기존 인터페이스 제공.
+    시각적 패턴 분석기가 제공되면 해석 시 개인화된 힌트 활용.
     """
 
-    def __init__(self, settings: Settings):
+    def __init__(
+        self,
+        settings: Settings,
+        visual_analyzer: Optional["IVisualPatternAnalyzer"] = None,
+    ):
         super().__init__(settings)
-        self._interpreter = CardInterpreter(settings)
+        self._interpreter = CardInterpreter(settings, visual_analyzer)
         self._filter_reranker = CardFilterReranker(settings)
         self._query_rewriter = QueryRewriter(settings)
 

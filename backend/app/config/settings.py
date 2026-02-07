@@ -52,6 +52,22 @@ class FeedbackConfig(BaseModel):
     weight: float = 0.4  # 피드백 쿼리 가중치
 
 
+class VisualPatternConfig(BaseModel):
+    """시각적 패턴 학습 설정
+
+    자폐 스펙트럼 장애 등 시각 중심 의사소통 사용자를 위한
+    시각적 특징-의미 연결 학습 설정
+    """
+
+    enabled: bool = True  # 시각적 패턴 학습 활성화
+    signature_method: str = "mean"  # 임베딩 집계 방법 (mean, max, attention)
+    similarity_threshold: float = 0.7  # 유사 패턴 판정 임계값
+    max_patterns_per_query: int = 5  # 쿼리당 최대 패턴 수
+    recency_decay_days: int = 30  # 시간 감쇠 기준 일수
+    text_weight: float = 0.4  # 텍스트 분석 가중치
+    visual_weight: float = 0.6  # 시각적 분석 가중치
+
+
 class QueryRewriteConfig(BaseModel):
     """쿼리 재작성 설정"""
 
@@ -185,6 +201,7 @@ class Settings(BaseSettings):
     age_appropriateness: AgeAppropriatenessConfig = Field(
         default_factory=AgeAppropriatenessConfig
     )
+    visual_pattern: VisualPatternConfig = Field(default_factory=VisualPatternConfig)
 
     # 하위 호환성 프로퍼티 (기존 코드 지원)
     @property
@@ -298,6 +315,26 @@ class Settings(BaseSettings):
     @property
     def filter_max_retries(self) -> int:
         return self.llm.filter_max_retries
+
+    @property
+    def enable_visual_pattern(self) -> bool:
+        return self.visual_pattern.enabled
+
+    @property
+    def visual_signature_method(self) -> str:
+        return self.visual_pattern.signature_method
+
+    @property
+    def visual_similarity_threshold(self) -> float:
+        return self.visual_pattern.similarity_threshold
+
+    @property
+    def visual_text_weight(self) -> float:
+        return self.visual_pattern.text_weight
+
+    @property
+    def visual_pattern_weight(self) -> float:
+        return self.visual_pattern.visual_weight
 
     @property
     def dataset_root(self) -> Path:

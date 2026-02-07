@@ -19,6 +19,11 @@ from app.domain.feedback.analyzer import (
     TFIDFFeedbackAnalyzer,
     NoOpFeedbackAnalyzer,
 )
+from app.domain.feedback.visual_analyzer import (
+    IVisualPatternAnalyzer,
+    CLIPVisualPatternAnalyzer,
+    NoOpVisualPatternAnalyzer,
+)
 from app.infrastructure.persistence.json_repository import (
     JsonUserRepository,
     JsonCardRepository,
@@ -105,11 +110,17 @@ CurrentUserOptionalDep = Annotated[Optional[User], Depends(get_current_user_opti
 
 
 # 인프라스트럭처 레이어 - 싱글톤
-@lru_cache
 def get_openai_client() -> OpenAIClient:
-    """OpenAI 클라이언트 싱글톤"""
+    """OpenAI 클라이언트 팩토리
+
+    시각적 패턴 분석기가 활성화되면 해석 시 개인화된 힌트 활용.
+    lru_cache 사용하지 않음 (visual_analyzer 종속성 때문)
+    """
     settings = get_settings()
-    return OpenAIClient(settings)
+    visual_analyzer = None
+    if settings.visual_pattern.enabled:
+        visual_analyzer = get_visual_pattern_analyzer()
+    return OpenAIClient(settings, visual_analyzer)
 
 
 @lru_cache
@@ -191,6 +202,28 @@ def get_feedback_analyzer() -> IFeedbackAnalyzer:
     return NoOpFeedbackAnalyzer()
 
 
+@lru_cache
+def get_visual_pattern_analyzer() -> IVisualPatternAnalyzer:
+    """시각적 패턴 분석기 싱글톤
+
+    CLIP 임베딩 기반 시각적 특징-의미 연결 분석.
+    자폐 스펙트럼 장애 등 시각 중심 의사소통 사용자를 위한 개인화 지원.
+    """
+    settings = get_settings()
+    visual_config = settings.visual_pattern
+
+    if visual_config.enabled:
+        return CLIPVisualPatternAnalyzer(
+            vector_index=get_vector_index(),
+            feedback_file_path=settings.feedback_file_path,
+            signature_method=visual_config.signature_method,
+            similarity_threshold=visual_config.similarity_threshold,
+            decay_days=visual_config.recency_decay_days,
+        )
+
+    return NoOpVisualPatternAnalyzer()
+
+
 # 서비스 레이어
 def get_user_service(
     settings: SettingsDep,
@@ -231,9 +264,16 @@ def get_feedback_service(
     request_repo: InMemoryFeedbackRequestRepository = Depends(
         get_feedback_request_repository
     ),
+    visual_analyzer: IVisualPatternAnalyzer = Depends(get_visual_pattern_analyzer),
 ) -> FeedbackService:
-    """피드백 서비스"""
-    return FeedbackService(CombinedFeedbackRepository(feedback_repo, request_repo))
+    """피드백 서비스
+
+    시각적 패턴 분석기가 활성화되면 피드백 저장 시 시각적 서명 계산.
+    """
+    return FeedbackService(
+        CombinedFeedbackRepository(feedback_repo, request_repo),
+        visual_analyzer=visual_analyzer,
+    )
 
 
 # 타입 별칭

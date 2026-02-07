@@ -3,10 +3,13 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from app.domain.feedback.entity import Feedback, FeedbackRequest
 from app.domain.feedback.repository import FeedbackRepository
+
+if TYPE_CHECKING:
+    from app.domain.feedback.visual_analyzer import IVisualPatternAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +34,20 @@ class SubmitFeedbackResult:
 
 
 class FeedbackService:
-    """피드백 관련 비즈니스 로직"""
+    """피드백 관련 비즈니스 로직
 
-    def __init__(self, repository: FeedbackRepository):
+    Attributes:
+        _repo: 피드백 저장소
+        _visual_analyzer: 시각적 패턴 분석기 (선택적)
+    """
+
+    def __init__(
+        self,
+        repository: FeedbackRepository,
+        visual_analyzer: Optional["IVisualPatternAnalyzer"] = None,
+    ):
         self._repo = repository
+        self._visual_analyzer = visual_analyzer
 
     async def request_feedback(
         self,
@@ -108,6 +121,18 @@ class FeedbackService:
 
         feedback_id = await self._repo.get_next_feedback_id()
 
+        # 시각적 서명 계산 (분석기가 있으면)
+        visual_signature = None
+        if self._visual_analyzer and request.cards:
+            try:
+                signature = await self._visual_analyzer.compute_visual_signature(
+                    request.cards
+                )
+                visual_signature = signature.tolist()
+                logger.debug("시각적 서명 계산 완료: %d차원", len(visual_signature))
+            except Exception as e:
+                logger.warning("시각적 서명 계산 실패: %s", e)
+
         feedback = Feedback(
             feedback_id=feedback_id,
             confirmation_id=confirmation_id,
@@ -121,6 +146,7 @@ class FeedbackService:
             selected_interpretation=selected_interpretation,
             direct_feedback=direct_feedback,
             confirmed_at=datetime.now(),
+            visual_signature=visual_signature,
         )
 
         await self._repo.save_feedback(feedback)
