@@ -1,7 +1,7 @@
 """카드 추천 엔진
 
-CLIP 기반 5단계 시맨틱 추천 시스템 (LLM 필터 포함)
-컨텍스트 → 벡터 검색 → MMR 다양성 → LLM 필터 → LLM 재순위 → 키워드 부스트
+CLIP 기반 5단계 시맨틱 추천 시스템 (LLM 필터 + 피드백 학습)
+컨텍스트 → 피드백 기반 쿼리 확장 → 벡터 검색 → MMR 다양성 → LLM 필터(Backfill) → 키워드 부스트
 """
 
 from typing import TYPE_CHECKING, List, Optional, Set
@@ -16,22 +16,24 @@ from app.domain.user.entity import User
 
 if TYPE_CHECKING:
     from app.domain.card.clip_recommender import CLIPCardRecommender
+    from app.domain.feedback.analyzer import IFeedbackAnalyzer
     from app.infrastructure.external.openai_client import OpenAIClient
 
 
 class CardRecommender:
-    """CLIP 기반 카드 추천기 (LLM 필터 포함)
+    """CLIP 기반 카드 추천기 (LLM 필터 + 피드백 학습)
 
     5단계 추천 파이프라인:
-    1. CLIP 벡터 검색: 컨텍스트와 시맨틱 유사도가 높은 카드 검색
+    1. CLIP 벡터 검색: 피드백 기반 쿼리 확장 후 시맨틱 검색
     2. MMR 다양성 선택: 중복 방지, 다양한 카드 포함
-    3. LLM 적합성 필터: 부적절한 카드 필터링
+    3. LLM 적합성 필터: 부적절 카드 필터링 + Backfill 전략
     4. LLM 재순위화: 컨텍스트 맞춤 순위 조정
     5. 키워드 부스트: 사용자 선호 키워드 반영
 
     Attributes:
         _settings: 애플리케이션 설정
         _openai_client: OpenAI 클라이언트 (LLM 필터용)
+        _feedback_analyzer: 피드백 분석기 (Contextual Relevance Feedback)
         _clip_recommender: CLIP 기반 추천기 (지연 초기화)
     """
 
@@ -39,9 +41,11 @@ class CardRecommender:
         self,
         settings: Settings,
         openai_client: Optional["OpenAIClient"] = None,
+        feedback_analyzer: Optional["IFeedbackAnalyzer"] = None,
     ):
         self._settings = settings
         self._openai_client = openai_client
+        self._feedback_analyzer = feedback_analyzer
         self._clip_recommender: Optional["CLIPCardRecommender"] = None
         self._llm_filter: Optional[ICardFilter] = None
         self._llm_reranker: Optional[ICardReranker] = None
@@ -52,6 +56,7 @@ class CardRecommender:
 
         첫 호출 시에만 CLIP 모델과 벡터 인덱스 로드
         LLM 필터, 재순위화기, 쿼리 재작성기도 함께 초기화
+        피드백 분석기가 있으면 FeedbackAwareQueryRewriter 사용
         """
         if self._clip_recommender is None:
             # 지연 임포트 (순환 임포트 방지)
@@ -61,7 +66,11 @@ class CardRecommender:
             )
             from app.domain.card.diversity_selector import MMRDiversitySelector
             from app.domain.card.filters.factory import FilterFactory
-            from app.domain.card.query_rewriter import LLMQueryRewriter, NoOpQueryRewriter
+            from app.domain.card.query_rewriter import (
+                FeedbackAwareQueryRewriter,
+                LLMQueryRewriter,
+                NoOpQueryRewriter,
+            )
             from app.domain.card.vector_searcher import create_vector_index
             from app.infrastructure.external.clip_client import CLIPEmbeddingClient
 
@@ -86,12 +95,22 @@ class CardRecommender:
                 )
                 self._llm_filter, self._llm_reranker = filter_factory.create_all()
 
-            # 쿼리 재작성기 초기화
+            # 쿼리 재작성기 초기화 (피드백 분석기 활용)
             if self._openai_client and self._settings.enable_query_rewriting:
-                self._query_rewriter = LLMQueryRewriter(
-                    openai_client=self._openai_client,
-                    query_count=self._settings.query_rewrite_count,
-                )
+                if self._feedback_analyzer and self._settings.enable_feedback_learning:
+                    # 피드백 기반 쿼리 재작성 (Contextual Relevance Feedback)
+                    self._query_rewriter = FeedbackAwareQueryRewriter(
+                        openai_client=self._openai_client,
+                        feedback_analyzer=self._feedback_analyzer,
+                        query_count=self._settings.query_rewrite_count,
+                        feedback_weight=self._settings.feedback_weight,
+                    )
+                else:
+                    # 기본 LLM 쿼리 재작성
+                    self._query_rewriter = LLMQueryRewriter(
+                        openai_client=self._openai_client,
+                        query_count=self._settings.query_rewrite_count,
+                    )
             else:
                 self._query_rewriter = NoOpQueryRewriter()
 

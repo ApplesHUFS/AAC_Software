@@ -295,6 +295,7 @@ class OpenAIClient:
         partner: str,
         activity: str,
         count: int = 3,
+        context_hints: Optional[List[str]] = None,
     ) -> List[str]:
         """검색 쿼리 확장 (JSON 응답)
 
@@ -306,17 +307,27 @@ class OpenAIClient:
             partner: 대화 상대
             activity: 현재 활동
             count: 생성할 쿼리 수
+            context_hints: 과거 피드백에서 추출된 컨텍스트 힌트
 
         Returns:
             확장된 쿼리 목록
         """
+        # 피드백 기반 컨텍스트 힌트 섹션
+        hints_section = ""
+        if context_hints:
+            hints_section = f"""
+## 과거 유사 상황 (피드백 기반)
+다음은 과거에 비슷한 상황에서 사용된 표현입니다. 이를 참고하여 쿼리를 확장하세요:
+{', '.join(context_hints)}
+"""
+
         prompt = f"""AAC 카드 검색을 위해 쿼리를 확장해주세요.
 
 ## 원본 컨텍스트
 - 장소: {place or '없음'}
 - 대화 상대: {partner or '없음'}
 - 현재 활동: {activity or '없음'}
-
+{hints_section}
 ## 요청
 위 상황에서 필요한 AAC 카드를 찾기 위한 검색 쿼리 {count}개를 생성하세요.
 각 쿼리는 서로 다른 관점에서 작성:

@@ -87,6 +87,12 @@ class Settings(BaseSettings):
     query_rewrite_count: int = 3            # 생성할 추가 쿼리 수
     query_rewrite_max_tokens: int = 300     # 쿼리 재작성 최대 토큰
 
+    # 피드백 기반 쿼리 확장 설정 (Contextual Relevance Feedback)
+    enable_feedback_learning: bool = True   # 피드백 기반 학습 활성화
+    feedback_min_similarity: float = 0.3    # 유사 피드백 최소 유사도
+    feedback_decay_days: int = 30           # 피드백 시간 감쇠 (일)
+    feedback_weight: float = 0.4            # 피드백 쿼리 가중치
+
     # LLM 필터 설정
     enable_llm_filter: bool = True
     enable_llm_reranker: bool = True

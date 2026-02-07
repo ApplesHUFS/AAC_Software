@@ -11,6 +11,11 @@ from app.domain.context.service import ContextService
 from app.domain.card.service import CardService
 from app.domain.card.recommender import CardRecommender
 from app.domain.feedback.service import FeedbackService
+from app.domain.feedback.analyzer import (
+    IFeedbackAnalyzer,
+    TFIDFFeedbackAnalyzer,
+    NoOpFeedbackAnalyzer,
+)
 from app.infrastructure.persistence.json_repository import (
     JsonUserRepository,
     JsonCardRepository,
@@ -99,6 +104,25 @@ def get_feedback_request_repository() -> InMemoryFeedbackRequestRepository:
     return InMemoryFeedbackRequestRepository()
 
 
+@lru_cache
+def get_feedback_analyzer() -> IFeedbackAnalyzer:
+    """피드백 분석기 싱글톤
+
+    Contextual Relevance Feedback 알고리즘을 사용하여
+    과거 피드백에서 상황-카드 연관 패턴을 학습합니다.
+    """
+    settings = get_settings()
+
+    if settings.enable_feedback_learning:
+        return TFIDFFeedbackAnalyzer(
+            feedback_file_path=settings.feedback_file_path,
+            decay_days=settings.feedback_decay_days,
+            min_similarity=settings.feedback_min_similarity,
+        )
+
+    return NoOpFeedbackAnalyzer()
+
+
 # 서비스 레이어
 def get_user_service(
     settings: SettingsDep,
@@ -118,9 +142,10 @@ def get_context_service(
 def get_card_recommender(
     settings: SettingsDep,
     openai_client: OpenAIClient = Depends(get_openai_client),
+    feedback_analyzer: IFeedbackAnalyzer = Depends(get_feedback_analyzer),
 ) -> CardRecommender:
-    """CLIP 기반 카드 추천 엔진 (LLM 필터 포함)"""
-    return CardRecommender(settings, openai_client)
+    """CLIP 기반 카드 추천 엔진 (LLM 필터 + 피드백 학습)"""
+    return CardRecommender(settings, openai_client, feedback_analyzer)
 
 
 def get_card_service(

@@ -121,7 +121,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
         user: Optional[User] = None,
         context_entity: Optional[Context] = None,
     ) -> List[ScoredCard]:
-        """비동기 추천 파이프라인 (LLM 필터 포함)
+        """비동기 추천 파이프라인 (LLM 필터 포함, 카드 수 보장)
 
         Args:
             context: 검색 컨텍스트 (장소, 상대, 활동, 선호 키워드)
@@ -130,7 +130,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
             context_entity: 컨텍스트 엔티티 (LLM 필터에 사용)
 
         Returns:
-            점수가 계산된 추천 카드 목록
+            점수가 계산된 추천 카드 목록 (count개 보장)
         """
         # Stage 1: 다중 쿼리 시맨틱 검색 (CLIP + Query Rewriting)
         candidates = await self._stage1_semantic_search_async(context, count)
@@ -141,9 +141,13 @@ class CLIPCardRecommender(IRecommendationStrategy):
         # Stage 2: 다양성 선택 (MMR)
         diverse_candidates = self._stage2_diversity_selection(candidates, count)
 
-        # Stage 3: LLM 적합성 필터 (GPT-4o)
-        filtered_candidates = await self._stage3_llm_filter(
-            diverse_candidates, user, context_entity
+        # Stage 3: LLM 적합성 필터 (GPT-4o) + Backfill
+        filtered_candidates = await self._stage3_llm_filter_with_backfill(
+            diverse_candidates=diverse_candidates,
+            all_candidates=candidates,
+            user=user,
+            context_entity=context_entity,
+            target_count=count,
         )
 
         # Stage 4: LLM 재순위화 (GPT-4o)
@@ -162,7 +166,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
         user: Optional[User],
         context_entity: Optional[Context],
     ) -> List[ScoredCard]:
-        """Stage 3: LLM 적합성 필터
+        """Stage 3: LLM 적합성 필터 (단순 버전, 카드 수 보장 없음)
 
         GPT-4o를 사용하여 사용자 나이, 장애유형, 상황에
         부적절한 카드를 필터링합니다.
@@ -190,6 +194,119 @@ class CLIPCardRecommender(IRecommendationStrategy):
             logger.warning(f"LLM 필터 오류, 원본 반환: {e}")
 
         return candidates
+
+    async def _stage3_llm_filter_with_backfill(
+        self,
+        diverse_candidates: List[ScoredCard],
+        all_candidates: List[ScoredCard],
+        user: Optional[User],
+        context_entity: Optional[Context],
+        target_count: int,
+    ) -> List[ScoredCard]:
+        """Stage 3: LLM 적합성 필터 + Backfill Strategy
+
+        LLM 필터링 후 카드 수가 목표 미만이면 예비 후보에서 보충합니다.
+        이 방식은 필터링 품질을 유지하면서 카드 수를 보장합니다.
+
+        Args:
+            diverse_candidates: MMR로 선택된 다양성 후보
+            all_candidates: Stage 1에서 검색된 전체 후보
+            user: 사용자 정보
+            context_entity: 컨텍스트 엔티티
+            target_count: 목표 카드 수
+
+        Returns:
+            target_count개의 적합 카드 (가능한 한)
+        """
+        if not self._llm_filter or not user or not context_entity:
+            return diverse_candidates
+
+        # 필터링에 이미 사용된 파일명 추적
+        processed_filenames: Set[str] = {
+            sc.card.filename for sc in diverse_candidates
+        }
+
+        # 백필용 예비 후보 준비 (MMR 선택에서 제외된 카드들)
+        reserve_candidates = [
+            sc for sc in all_candidates
+            if sc.card.filename not in processed_filenames
+        ]
+
+        try:
+            filter_ctx = FilterContext(
+                user=user,
+                context=context_entity,
+                excluded_filenames=set(),
+            )
+
+            # 1차 필터링
+            result = await self._llm_filter.filter_cards(
+                diverse_candidates, filter_ctx
+            )
+            appropriate_cards = result.appropriate_cards or []
+
+            # 카드 수가 충분하면 바로 반환
+            if len(appropriate_cards) >= target_count:
+                logger.info(
+                    f"LLM 필터: {len(appropriate_cards)}개 적합 (목표 달성)"
+                )
+                return appropriate_cards
+
+            # Backfill 필요: 예비 후보에서 추가 카드 확보
+            deficit = target_count - len(appropriate_cards)
+            logger.info(
+                f"LLM 필터: {len(appropriate_cards)}개 적합, "
+                f"{deficit}개 부족 → Backfill 시작"
+            )
+
+            # 이미 적합 판정된 파일명
+            appropriate_filenames = {sc.card.filename for sc in appropriate_cards}
+
+            # 예비 후보를 배치로 필터링
+            backfill_batch_size = min(deficit * 3, len(reserve_candidates))
+
+            if backfill_batch_size > 0 and reserve_candidates:
+                backfill_batch = reserve_candidates[:backfill_batch_size]
+
+                backfill_result = await self._llm_filter.filter_cards(
+                    backfill_batch, filter_ctx
+                )
+
+                if backfill_result.appropriate_cards:
+                    for sc in backfill_result.appropriate_cards:
+                        if sc.card.filename not in appropriate_filenames:
+                            appropriate_cards.append(sc)
+                            appropriate_filenames.add(sc.card.filename)
+
+                            if len(appropriate_cards) >= target_count:
+                                break
+
+            logger.info(
+                f"Backfill 완료: 최종 {len(appropriate_cards)}개 카드"
+            )
+
+            # 여전히 부족하면 필터링 없이 예비 후보 추가 (최후의 수단)
+            if len(appropriate_cards) < target_count:
+                remaining_reserve = [
+                    sc for sc in reserve_candidates
+                    if sc.card.filename not in appropriate_filenames
+                ]
+
+                for sc in remaining_reserve:
+                    appropriate_cards.append(sc)
+                    if len(appropriate_cards) >= target_count:
+                        break
+
+                logger.warning(
+                    f"Backfill 후에도 부족, 비필터 카드 추가: "
+                    f"최종 {len(appropriate_cards)}개"
+                )
+
+            return appropriate_cards
+
+        except Exception as e:
+            logger.warning(f"LLM 필터 + Backfill 오류, 원본 반환: {e}")
+            return diverse_candidates
 
     async def _stage4_llm_rerank(
         self,
