@@ -6,17 +6,25 @@
 3. LLM 적합성 필터: GPT-4o 기반 부적절 카드 필터링
 4. LLM 재순위화: GPT-4o 기반 컨텍스트 맞춤 재순위
 5. 페르소나 부스트: 선호 키워드와의 유사도로 가산점
+
+설계 원칙:
+- 랜덤 fallback 없이 명시적 오류 반환
+- 비필터 카드 추가 없이 부분 결과 허용
 """
 
 import logging
-import random
 from dataclasses import dataclass
 from typing import List, Optional, Set
 
 import numpy as np
 
 from app.config.settings import Settings
-from app.core.exceptions import LLMRateLimitError, LLMServiceError, LLMTimeoutError
+from app.core.exceptions import (
+    LLMRateLimitError,
+    LLMServiceError,
+    LLMTimeoutError,
+    SemanticSearchError,
+)
 from app.domain.card.entity import Card
 from app.domain.card.filters.base import FilterContext, ICardFilter, ICardReranker
 from app.domain.card.interfaces import (
@@ -108,14 +116,20 @@ class CLIPCardRecommender(IRecommendationStrategy):
         """동기 추천 파이프라인 (LLM 필터 없음)
 
         LLM 필터가 필요한 경우 recommend_async 사용
+
+        Raises:
+            SemanticSearchError: 시맨틱 검색 결과 없을 때 (랜덤 fallback 대신 명시적 오류)
         """
         logger.info("동기 추천 파이프라인 시작: %d개 요청", count)
 
         candidates = self._stage1_semantic_search(context, count)
 
         if not candidates:
-            logger.warning("Stage 1 검색 결과 없음, 랜덤 선택으로 대체")
-            return self._fallback_random_selection(context, count)
+            logger.error("Stage 1 검색 결과 없음 - 오류 발생")
+            raise SemanticSearchError(
+                f"'{context.to_query_text()}'에 대한 검색 결과가 없습니다. "
+                "컨텍스트를 더 구체적으로 입력해주세요."
+            )
 
         diverse_candidates = self._stage2_diversity_selection(candidates, count)
         final_cards = self._stage5_persona_boost(diverse_candidates, context)
@@ -150,8 +164,11 @@ class CLIPCardRecommender(IRecommendationStrategy):
         candidates = await self._stage1_semantic_search_async(context, count)
 
         if not candidates:
-            logger.warning("Stage 1 검색 결과 없음, 랜덤 선택으로 대체")
-            return self._fallback_random_selection(context, count)
+            logger.error("Stage 1 검색 결과 없음 - 오류 발생")
+            raise SemanticSearchError(
+                f"'{context.to_query_text()}'에 대한 검색 결과가 없습니다. "
+                "컨텍스트를 더 구체적으로 입력해주세요."
+            )
 
         # Stage 2: 다양성 선택 (MMR)
         diverse_candidates = self._stage2_diversity_selection(candidates, count)
@@ -299,26 +316,16 @@ class CLIPCardRecommender(IRecommendationStrategy):
                             if len(appropriate_cards) >= target_count:
                                 break
 
+            # 부분 결과 허용 (비필터 카드 추가 없음)
+            if len(appropriate_cards) < target_count:
+                logger.warning(
+                    "Backfill 후에도 목표 미달: %d/%d개 (부분 결과 반환)",
+                    len(appropriate_cards), target_count
+                )
+
             logger.info(
                 f"Backfill 완료: 최종 {len(appropriate_cards)}개 카드"
             )
-
-            # 여전히 부족하면 필터링 없이 예비 후보 추가 (최후의 수단)
-            if len(appropriate_cards) < target_count:
-                remaining_reserve = [
-                    sc for sc in reserve_candidates
-                    if sc.card.filename not in appropriate_filenames
-                ]
-
-                for sc in remaining_reserve:
-                    appropriate_cards.append(sc)
-                    if len(appropriate_cards) >= target_count:
-                        break
-
-                logger.warning(
-                    f"Backfill 후에도 부족, 비필터 카드 추가: "
-                    f"최종 {len(appropriate_cards)}개"
-                )
 
             return appropriate_cards
 
@@ -608,39 +615,6 @@ class CLIPCardRecommender(IRecommendationStrategy):
             similarities = keyword_embeddings @ card_embedding
             sc.persona_score = float(np.max(similarities))
 
-    def _fallback_random_selection(
-        self,
-        context: SearchContext,
-        count: int,
-    ) -> List[ScoredCard]:
-        """Fallback: 시맨틱 검색 실패 시 랜덤 선택"""
-        logger.warning("Fallback 랜덤 선택 시작: %d개 요청", count)
-
-        all_filenames = self._vector_index.filenames
-
-        available = [
-            fn for fn in all_filenames
-            if fn not in context.excluded_filenames
-        ]
-
-        if not available:
-            logger.error("Fallback 실패: 가용 카드 없음")
-            return []
-
-        selected = random.sample(available, min(count, len(available)))
-        logger.info("Fallback 랜덤 선택 완료: %d개 선택", len(selected))
-
-        return [
-            ScoredCard(
-                card=Card.from_filename(fn),
-                semantic_score=0.5,
-                diversity_score=0.5,
-                persona_score=0.5,
-                final_score=0.5,
-            )
-            for fn in selected
-        ]
-
 
 class ContextAwareRecommender(IRecommendationStrategy):
     """컨텍스트 품질 인식 추천기
@@ -691,9 +665,12 @@ class ContextAwareRecommender(IRecommendationStrategy):
         context: SearchContext,
         count: int,
     ) -> List[ScoredCard]:
-        """선호 키워드 기반 추천 (컨텍스트 부족 시)"""
+        """선호 키워드 기반 추천 (컨텍스트 부족 시)
+
+        Raises:
+            SemanticSearchError: 키워드도 없고 검색 결과도 없을 때
+        """
         if context.preferred_keywords:
-            # 키워드를 쿼리로 사용
             keyword_query = " ".join(context.preferred_keywords[:3])
             modified_context = SearchContext(
                 place=keyword_query,
@@ -704,4 +681,7 @@ class ContextAwareRecommender(IRecommendationStrategy):
             )
             return self._clip.recommend(modified_context, count)
         else:
-            return self._clip._fallback_random_selection(context, count)
+            raise SemanticSearchError(
+                "컨텍스트와 선호 키워드가 모두 부족합니다. "
+                "장소, 대화 상대, 현재 활동 중 하나 이상을 입력해주세요."
+            )

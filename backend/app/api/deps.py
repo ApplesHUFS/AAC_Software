@@ -16,7 +16,7 @@ from app.domain.card.recommender import CardRecommender
 from app.domain.feedback.service import FeedbackService
 from app.domain.feedback.analyzer import (
     IFeedbackAnalyzer,
-    TFIDFFeedbackAnalyzer,
+    CLIPFeedbackAnalyzer,
     NoOpFeedbackAnalyzer,
 )
 from app.domain.feedback.visual_analyzer import (
@@ -182,22 +182,20 @@ def get_feedback_request_repository() -> InMemoryFeedbackRequestRepository:
     return InMemoryFeedbackRequestRepository()
 
 
-@lru_cache
 def get_feedback_analyzer() -> IFeedbackAnalyzer:
-    """피드백 분석기 싱글톤
+    """피드백 분석기 팩토리
 
-    Contextual Relevance Feedback 알고리즘을 사용하여
-    과거 피드백에서 상황-카드 연관 패턴을 학습합니다.
+    CLIP 임베딩 기반 의미론적 패턴 분석 (TF-IDF 제거).
+    시각적 패턴 분석기를 래핑하여 IFeedbackAnalyzer 인터페이스 제공.
+
+    lru_cache 사용하지 않음 (visual_analyzer 종속성 때문)
     """
     settings = get_settings()
     feedback_config = settings.feedback
 
     if feedback_config.enable_learning:
-        return TFIDFFeedbackAnalyzer(
-            feedback_file_path=settings.feedback_file_path,
-            decay_days=feedback_config.decay_days,
-            min_similarity=feedback_config.min_similarity,
-        )
+        visual_analyzer = get_visual_pattern_analyzer()
+        return CLIPFeedbackAnalyzer(visual_analyzer=visual_analyzer)
 
     return NoOpFeedbackAnalyzer()
 

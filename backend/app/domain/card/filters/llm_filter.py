@@ -1,14 +1,17 @@
 """GPT-4o 기반 카드 적합성 필터
 
 사용자 정보와 컨텍스트를 기반으로 부적절한 카드를 필터링합니다.
-LLM의 자연어 이해 능력을 활용하여 키워드 기반 필터링보다
-더 정확한 적합성 평가를 수행합니다.
+LLM의 자연어 이해 능력을 활용하여 의미론적 적합성 평가를 수행합니다.
+
+설계 원칙:
+- 키워드 기반 fallback 없이 LLM 전용 필터링
+- LLM 실패 시 명시적 오류 반환 (잘못된 fallback 방지)
 """
 
 import logging
 from typing import Dict, List, Set
 
-from app.config.settings import AgeAppropriatenessConfig
+from app.core.exceptions import LLMFilterError
 from app.domain.card.filters.base import (
     FilterContext,
     FilterResult,
@@ -25,40 +28,44 @@ class LLMCardFilter(ICardFilter):
 
     카드 목록과 사용자 정보를 GPT-4o에 전달하여
     각 카드의 적합성을 평가받습니다.
+
+    키워드 기반 fallback 없이 LLM 응답에만 의존.
+    LLM 실패 시 명시적 오류 반환.
     """
 
     def __init__(
         self,
         openai_client: OpenAIClient,
         batch_size: int = 40,
-        fallback_config: AgeAppropriatenessConfig | None = None,
     ):
         self._openai = openai_client
         self._batch_size = batch_size
-        self._fallback_config = fallback_config or AgeAppropriatenessConfig()
 
     async def filter_cards(
         self,
         candidates: List[ScoredCard],
         filter_ctx: FilterContext,
     ) -> FilterResult:
-        """카드 필터링 실행"""
+        """카드 필터링 실행
+
+        Raises:
+            LLMFilterError: LLM 응답이 비어있을 때 (키워드 fallback 대신 명시적 오류)
+        """
         if not candidates:
             return FilterResult(appropriate_cards=[])
 
-        # 배치 처리를 위해 카드 이름 추출
         card_names = [self._extract_card_name(c.card.filename) for c in candidates]
 
-        # 프롬프트 생성 및 API 호출
         prompt = self._build_filter_prompt(card_names, filter_ctx)
         response = await self._openai.filter_cards(prompt)
 
-        # 응답이 비어있으면 폴백 사용
+        # 응답이 비어있으면 명시적 오류 발생 (키워드 fallback 제거)
         if not response.get("appropriate") and not response.get("inappropriate"):
-            logger.warning("LLM 필터 응답 없음, 폴백 필터 사용")
-            return self._fallback_filter(candidates, filter_ctx)
+            logger.error("LLM 필터 응답 비어있음 - 오류 발생")
+            raise LLMFilterError(
+                "LLM 필터가 유효한 응답을 반환하지 않았습니다. 다시 시도해주세요."
+            )
 
-        # 결과 적용
         return self._apply_filter_result(candidates, response)
 
     def _build_filter_prompt(
@@ -154,49 +161,6 @@ class LLMCardFilter(ICardFilter):
             appropriate_cards=appropriate_cards,
             inappropriate_cards=response.get("inappropriate", []),
             highly_relevant_cards=list(highly_relevant_names),
-        )
-
-    def _fallback_filter(
-        self,
-        candidates: List[ScoredCard],
-        filter_ctx: FilterContext,
-    ) -> FilterResult:
-        """LLM 실패 시 키워드 기반 폴백 필터"""
-        age = filter_ctx.user.age
-
-        # 나이대별 부적절 키워드 선택
-        if age <= 12:
-            inappropriate_keywords = self._fallback_config.child_inappropriate
-        elif age <= 17:
-            inappropriate_keywords = self._fallback_config.teen_inappropriate
-        else:
-            inappropriate_keywords = frozenset()
-
-        # 항상 적용되는 부적절 키워드
-        all_inappropriate = (
-            inappropriate_keywords | self._fallback_config.universal_inappropriate
-        )
-
-        appropriate_cards: List[ScoredCard] = []
-        inappropriate_list: List[Dict[str, str]] = []
-
-        for c in candidates:
-            name = self._extract_card_name(c.card.filename).lower()
-            is_inappropriate = any(kw in name for kw in all_inappropriate)
-
-            if is_inappropriate:
-                matched_kw = next(
-                    (kw for kw in all_inappropriate if kw in name), "unknown"
-                )
-                inappropriate_list.append(
-                    {"name": name, "reason": f"부적절한 키워드 포함: {matched_kw}"}
-                )
-            else:
-                appropriate_cards.append(c)
-
-        return FilterResult(
-            appropriate_cards=appropriate_cards,
-            inappropriate_cards=inappropriate_list,
         )
 
     def _extract_card_name(self, filename: str) -> str:

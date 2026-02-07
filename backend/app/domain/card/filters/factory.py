@@ -33,6 +33,8 @@ class FilterFactory:
 
         settings.enable_llm_filter가 True이면 LLMCardFilter 반환
         False이면 None 반환 (필터링 비활성화)
+
+        키워드 기반 fallback 제거됨 - LLM 전용 필터링
         """
         if not self._settings.enable_llm_filter:
             return None
@@ -40,7 +42,6 @@ class FilterFactory:
         return LLMCardFilter(
             openai_client=self._openai_client,
             batch_size=self._settings.filter_batch_size,
-            fallback_config=self._settings.age_appropriateness,
         )
 
     def create_reranker(self) -> Optional[ICardReranker]:

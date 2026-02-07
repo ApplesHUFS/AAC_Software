@@ -77,3 +77,28 @@ class LLMRateLimitError(LLMServiceError):
     def __init__(self, message: str = "LLM API 요청 한도를 초과했습니다."):
         super().__init__(message)
         self.status_code = 429
+
+
+class LLMFilterError(LLMServiceError):
+    """LLM 필터 응답 오류 (503)
+
+    LLM 필터가 유효한 응답을 반환하지 않았을 때 발생.
+    키워드 기반 fallback 대신 명시적 오류 반환.
+    """
+
+    def __init__(self, message: str = "LLM 필터가 유효한 응답을 반환하지 않았습니다."):
+        super().__init__(message)
+
+
+class SemanticSearchError(AppException):
+    """시맨틱 검색 실패 (500)
+
+    CLIP 기반 시맨틱 검색에서 결과를 찾지 못했을 때 발생.
+    랜덤 fallback 대신 명시적 오류 반환.
+    """
+
+    def __init__(
+        self,
+        message: str = "검색 결과가 없습니다. 컨텍스트를 더 구체적으로 입력해주세요.",
+    ):
+        super().__init__(message, status_code=500)

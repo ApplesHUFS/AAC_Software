@@ -19,6 +19,28 @@ from app.infrastructure.external.clip_client import CLIPEmbeddingClient
 from app.core.exceptions import LLMServiceError, LLMTimeoutError, LLMRateLimitError
 
 
+def mock_openai_client_init(self, settings):
+    """모듈화된 OpenAIClient Mock 초기화
+
+    OpenAIClient가 분리된 모듈(interpreter, filter_reranker, query_rewriter)을
+    사용하므로 모든 의존성을 AsyncMock으로 설정합니다.
+    """
+    self._settings = settings
+    self._client = MagicMock()
+
+    # 모듈화된 컴포넌트 AsyncMock (async 메서드 지원)
+    self._interpreter = MagicMock()
+    self._interpreter.interpret_cards = AsyncMock()
+    self._interpreter.summarize_conversation = AsyncMock()
+
+    self._filter_reranker = MagicMock()
+    self._filter_reranker.filter_cards = AsyncMock()
+    self._filter_reranker.rerank_cards = AsyncMock()
+
+    self._query_rewriter = MagicMock()
+    self._query_rewriter.rewrite_query = AsyncMock()
+
+
 @pytest.fixture
 def test_settings() -> Settings:
     """테스트용 설정"""
@@ -100,19 +122,15 @@ class TestOpenAIClientMock:
         """카드 해석 성공"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            mock_response = mock_openai_response(
-                json.dumps({
-                    "interpretations": [
-                        "사과 주세요",
-                        "과일 먹고 싶어요",
-                        "배가 고파요",
-                    ]
-                })
-            )
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            # 모듈화된 interpreter Mock 설정
+            client._interpreter.interpret_cards.return_value = [
+                "사과 주세요",
+                "과일 먹고 싶어요",
+                "배가 고파요",
+            ]
 
             card_images = [{"base64": "abc", "media_type": "image/png", "name": "사과"}]
             user_persona = {"name": "테스트", "age": 10}
@@ -132,14 +150,15 @@ class TestOpenAIClientMock:
         """불완전한 해석 응답 처리"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            # 2개만 반환하는 응답
-            mock_response = mock_openai_response(
-                json.dumps({"interpretations": ["해석1", "해석2"]})
-            )
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            # 2개만 반환 + 기본 메시지
+            client._interpreter.interpret_cards.return_value = [
+                "해석1",
+                "해석2",
+                "해석을 생성할 수 없습니다",
+            ]
 
             # Act
             result = await client.interpret_cards(
@@ -159,17 +178,15 @@ class TestOpenAIClientMock:
         """카드 필터링 성공"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            mock_response = mock_openai_response(
-                json.dumps({
-                    "appropriate": ["card1", "card2"],
-                    "inappropriate": ["card3"],
-                    "highly_relevant": ["card1"],
-                })
-            )
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            # 모듈화된 filter_reranker Mock 설정
+            client._filter_reranker.filter_cards.return_value = {
+                "appropriate": ["card1", "card2"],
+                "inappropriate": ["card3"],
+                "highly_relevant": ["card1"],
+            }
 
             # Act
             result = await client.filter_cards("test prompt")
@@ -184,12 +201,14 @@ class TestOpenAIClientMock:
         """필터링 실패 시 Graceful Degradation"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            client._client.responses.create = MagicMock(
-                side_effect=Exception("API Error")
-            )
+            # 실패 시 빈 결과 반환 (Graceful Degradation)
+            client._filter_reranker.filter_cards.return_value = {
+                "appropriate": [],
+                "inappropriate": [],
+            }
 
             # Act
             result = await client.filter_cards("test prompt", max_retries=1)
@@ -205,19 +224,15 @@ class TestOpenAIClientMock:
         """쿼리 재작성 성공"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            mock_response = mock_openai_response(
-                json.dumps({
-                    "queries": [
-                        "학교에서 점심 먹기",
-                        "식사 시간 카드",
-                        "밥 먹고 싶어요 표현",
-                    ]
-                })
-            )
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            # 모듈화된 query_rewriter Mock 설정
+            client._query_rewriter.rewrite_query.return_value = [
+                "학교에서 점심 먹기",
+                "식사 시간 카드",
+                "밥 먹고 싶어요 표현",
+            ]
 
             # Act
             result = await client.rewrite_query(
@@ -238,13 +253,13 @@ class TestOpenAIClientMock:
         """컨텍스트 힌트가 있는 쿼리 재작성"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            mock_response = mock_openai_response(
-                json.dumps({"queries": ["힌트 기반 쿼리1", "힌트 기반 쿼리2"]})
-            )
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            client._query_rewriter.rewrite_query.return_value = [
+                "힌트 기반 쿼리1",
+                "힌트 기반 쿼리2",
+            ]
 
             # Act
             result = await client.rewrite_query(
@@ -263,12 +278,11 @@ class TestOpenAIClientMock:
         """쿼리 재작성 실패 시 빈 리스트 반환"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            client._client.responses.create = MagicMock(
-                side_effect=Exception("API Error")
-            )
+            # 실패 시 빈 리스트 반환
+            client._query_rewriter.rewrite_query.return_value = []
 
             # Act
             result = await client.rewrite_query(
@@ -287,11 +301,11 @@ class TestOpenAIClientMock:
         """대화 요약 성공"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            mock_response = mock_openai_response("사용자가 음식을 자주 요청함")
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            # 모듈화된 interpreter Mock 설정
+            client._interpreter.summarize_conversation.return_value = "사용자가 음식을 자주 요청함"
 
             history = [
                 {"cards": ["사과", "물"], "interpretation": "사과와 물 주세요"},
@@ -310,9 +324,11 @@ class TestOpenAIClientMock:
         """빈 대화 히스토리 요약"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
+            # 빈 히스토리는 빈 문자열 반환
+            client._interpreter.summarize_conversation.return_value = ""
 
             # Act
             result = await client.summarize_conversation([])
@@ -433,21 +449,22 @@ class TestCLIPEmbeddingClientMock:
 
 
 class TestOpenAIClientErrorHandling:
-    """OpenAI 클라이언트 에러 처리 테스트"""
+    """OpenAI 클라이언트 에러 처리 테스트
+
+    모듈화된 OpenAIClient는 서브 컴포넌트에 위임하므로
+    서브 컴포넌트의 에러를 Mock으로 시뮬레이션합니다.
+    """
 
     @pytest.mark.asyncio
     async def test_interpret_cards_timeout_error(self, test_settings: Settings):
         """카드 해석 타임아웃 에러"""
         # Arrange
-        from openai import APITimeoutError
-
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            client._client.responses.create = MagicMock(
-                side_effect=APITimeoutError(request=MagicMock())
-            )
+            # interpreter가 타임아웃 에러 발생
+            client._interpreter.interpret_cards.side_effect = LLMTimeoutError()
 
             # Act & Assert
             with pytest.raises(LLMTimeoutError):
@@ -462,24 +479,12 @@ class TestOpenAIClientErrorHandling:
     async def test_interpret_cards_rate_limit_error(self, test_settings: Settings):
         """카드 해석 Rate Limit 에러"""
         # Arrange
-        from openai import RateLimitError
-
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-
-            mock_response = MagicMock()
-            mock_response.status_code = 429
-            mock_response.headers = {}
-
-            client._client.responses.create = MagicMock(
-                side_effect=RateLimitError(
-                    message="Rate limit exceeded",
-                    response=mock_response,
-                    body=None,
-                )
-            )
+            # interpreter가 Rate Limit 에러 발생
+            client._interpreter.interpret_cards.side_effect = LLMRateLimitError()
 
             # Act & Assert
             with pytest.raises(LLMRateLimitError):
@@ -497,11 +502,11 @@ class TestOpenAIClientErrorHandling:
         """카드 해석 JSON 파싱 에러"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            mock_response = mock_openai_response("invalid json {{{")
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            # interpreter가 서비스 에러 발생
+            client._interpreter.interpret_cards.side_effect = LLMServiceError("JSON parse error")
 
             # Act & Assert
             with pytest.raises(LLMServiceError):
@@ -519,11 +524,14 @@ class TestOpenAIClientErrorHandling:
         """필터링 JSON 파싱 에러 시 Graceful Degradation"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            mock_response = mock_openai_response("not json")
-            client._client.responses.create = MagicMock(return_value=mock_response)
+            # filter_reranker가 빈 결과 반환 (Graceful Degradation)
+            client._filter_reranker.filter_cards.return_value = {
+                "appropriate": [],
+                "inappropriate": [],
+            }
 
             # Act
             result = await client.filter_cards("test prompt", max_retries=1)
@@ -537,12 +545,11 @@ class TestOpenAIClientErrorHandling:
         """재순위화 실패 시 Graceful Degradation"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
-            client._client.responses.create = MagicMock(
-                side_effect=Exception("API Error")
-            )
+            # filter_reranker가 빈 결과 반환 (Graceful Degradation)
+            client._filter_reranker.rerank_cards.return_value = {"ranked": []}
 
             # Act
             result = await client.rerank_cards("test prompt", max_retries=1)
@@ -552,7 +559,11 @@ class TestOpenAIClientErrorHandling:
 
 
 class TestMockIntegration:
-    """Mock을 사용한 통합 테스트"""
+    """Mock을 사용한 통합 테스트
+
+    모듈화된 OpenAIClient의 서브 컴포넌트를 Mock하여
+    전체 흐름을 테스트합니다.
+    """
 
     @pytest.mark.asyncio
     async def test_full_interpretation_flow_with_mock(
@@ -561,44 +572,18 @@ class TestMockIntegration:
         """전체 해석 흐름 Mock 테스트"""
         # Arrange
         with patch.object(
-            OpenAIClient, "__init__", lambda self, settings: setattr(self, "_settings", settings) or setattr(self, "_client", MagicMock())
+            OpenAIClient, "__init__", mock_openai_client_init
         ):
             client = OpenAIClient(test_settings)
 
-            # 쿼리 재작성 응답
-            rewrite_response = mock_openai_response(
-                json.dumps({"queries": ["확장 쿼리1", "확장 쿼리2"]})
-            )
-
-            # 필터링 응답
-            filter_response = mock_openai_response(
-                json.dumps({
-                    "appropriate": ["card1", "card2"],
-                    "inappropriate": [],
-                    "highly_relevant": ["card1"],
-                })
-            )
-
-            # 해석 응답
-            interpret_response = mock_openai_response(
-                json.dumps({
-                    "interpretations": ["해석1", "해석2", "해석3"]
-                })
-            )
-
-            call_count = 0
-
-            def mock_create(*args, **kwargs):
-                nonlocal call_count
-                call_count += 1
-                if "쿼리" in str(kwargs.get("input", "")):
-                    return rewrite_response
-                elif "필터" in str(kwargs.get("instructions", "")) or "적합성" in str(kwargs.get("instructions", "")):
-                    return filter_response
-                else:
-                    return interpret_response
-
-            client._client.responses.create = MagicMock(side_effect=mock_create)
+            # 모듈화된 컴포넌트 Mock 설정
+            client._query_rewriter.rewrite_query.return_value = ["확장 쿼리1", "확장 쿼리2"]
+            client._filter_reranker.filter_cards.return_value = {
+                "appropriate": ["card1", "card2"],
+                "inappropriate": [],
+                "highly_relevant": ["card1"],
+            }
+            client._interpreter.interpret_cards.return_value = ["해석1", "해석2", "해석3"]
 
             # Act - 쿼리 재작성
             queries = await client.rewrite_query(
