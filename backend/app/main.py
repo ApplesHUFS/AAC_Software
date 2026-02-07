@@ -2,17 +2,23 @@
 AAC Interpreter Service - FastAPI 메인 애플리케이션
 """
 
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api.v1.router import api_router
 from app.config.settings import get_settings
 from app.core.middleware import RequestIDMiddleware
 from app.core.response import error_response
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
+
+logger = logging.getLogger(__name__)
 
 # 설정 싱글톤
 settings = get_settings()
@@ -21,15 +27,23 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """애플리케이션 시작/종료 시 실행되는 로직"""
-    print("=" * 50)
-    print("AAC Interpreter API Server 시작")
-    print(f"버전: {settings.VERSION}")
-    print(f"프로젝트 루트: {settings.project_root}")
-    print(f"데이터셋 경로: {settings.dataset_root}")
-    print(f"사용자 데이터 경로: {settings.user_data_root}")
-    print("=" * 50)
+    logger.info("=" * 50)
+    logger.info("AAC Interpreter API Server 시작")
+    logger.info("버전: %s", settings.VERSION)
+    logger.info("환경: %s", settings.environment)
+    logger.info("디버그 모드: %s", settings.debug_mode)
+    logger.info("프로젝트 루트: %s", settings.project_root)
+    logger.info("=" * 50)
+
+    # 프로덕션 환경 경고
+    if settings.is_production:
+        if not settings.jwt_secret_key:
+            logger.warning("JWT_SECRET_KEY가 설정되지 않았습니다!")
+        if not settings.allowed_origins:
+            logger.warning("CORS 오리진이 설정되지 않았습니다!")
+
     yield
-    print("AAC Interpreter API Server 종료")
+    logger.info("AAC Interpreter API Server 종료")
 
 
 app = FastAPI(
@@ -37,7 +51,12 @@ app = FastAPI(
     description="개인화된 AAC 카드 해석 시스템 - FastAPI 백엔드",
     version=settings.VERSION,
     lifespan=lifespan,
+    debug=settings.debug_mode,
 )
+
+# Rate Limiter 설정
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 # Request ID 추적 미들웨어 (가장 먼저 등록하여 모든 요청에 적용)
 app.add_middleware(RequestIDMiddleware)
@@ -65,10 +84,29 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 # 전역 예외 핸들러
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """전역 예외 처리"""
+    """전역 예외 처리
+
+    프로덕션 환경에서는 상세 오류 메시지를 숨기고,
+    서버 로그에만 기록하여 보안 강화
+    """
+    from app.core.middleware import get_request_id
+
+    request_id = get_request_id() or "unknown"
+    logger.exception(
+        "Unhandled exception [request_id=%s, path=%s]: %s",
+        request_id,
+        request.url.path,
+        str(exc),
+    )
+
+    if settings.is_production:
+        error_msg = "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+    else:
+        error_msg = f"서버 내부 오류: {str(exc)}"
+
     return JSONResponse(
         status_code=500,
-        content=error_response(error=f"서버 내부 오류: {str(exc)}"),
+        content=error_response(error=error_msg),
     )
 
 
@@ -131,5 +169,5 @@ if __name__ == "__main__":
         "app.main:app",
         host=settings.host,
         port=settings.port,
-        reload=settings.debug,
+        reload=settings.debug_mode,
     )

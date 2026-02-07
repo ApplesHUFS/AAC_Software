@@ -1,11 +1,14 @@
 """의존성 주입 모듈"""
 
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.config.settings import Settings, get_settings
+from app.core.security import TokenService, get_token_service
+from app.domain.user.entity import User
 from app.domain.user.service import UserService
 from app.domain.context.service import ContextService
 from app.domain.card.service import CardService
@@ -26,6 +29,7 @@ from app.infrastructure.persistence.memory_repository import (
     InMemoryCardHistoryRepository,
     InMemoryFeedbackRequestRepository,
 )
+from app.infrastructure.persistence.combined_repository import CombinedFeedbackRepository
 from app.infrastructure.external.openai_client import OpenAIClient
 from app.infrastructure.external.clip_client import CLIPEmbeddingClient
 from app.domain.card.vector_searcher import FaissVectorIndex, create_vector_index
@@ -35,6 +39,69 @@ from app.domain.card.diversity_selector import MMRDiversitySelector
 
 # 설정
 SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+# HTTP Bearer 인증 스키마
+http_bearer = HTTPBearer(auto_error=False)
+
+
+# 인증 의존성
+async def get_current_user(
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(http_bearer)],
+    token_service: TokenService = Depends(get_token_service),
+    user_repo: "JsonUserRepository" = Depends(lambda: get_user_repository()),
+) -> User:
+    """현재 인증된 사용자 반환
+
+    Raises:
+        HTTPException: 401 인증 실패
+    """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="인증 정보가 필요합니다.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = token_service.verify_token(credentials.credentials)
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="유효하지 않은 토큰입니다.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = await user_repo.find_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="사용자를 찾을 수 없습니다.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return user
+
+
+async def get_current_user_optional(
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(http_bearer)],
+    token_service: TokenService = Depends(get_token_service),
+    user_repo: "JsonUserRepository" = Depends(lambda: get_user_repository()),
+) -> Optional[User]:
+    """현재 인증된 사용자 반환 (선택적)
+
+    인증이 없어도 None 반환, 예외 발생하지 않음
+    """
+    if not credentials:
+        return None
+
+    user_id = token_service.verify_token(credentials.credentials)
+    if not user_id:
+        return None
+
+    return await user_repo.find_by_id(user_id)
+
+
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
+CurrentUserOptionalDep = Annotated[Optional[User], Depends(get_current_user_optional)]
 
 
 # 인프라스트럭처 레이어 - 싱글톤
@@ -166,27 +233,6 @@ def get_feedback_service(
     ),
 ) -> FeedbackService:
     """피드백 서비스"""
-
-    class CombinedFeedbackRepository:
-        def __init__(self, feedback_repo, request_repo):
-            self._feedback = feedback_repo
-            self._request = request_repo
-
-        async def save_request(self, request):
-            await self._request.save_request(request)
-
-        async def find_request(self, confirmation_id):
-            return await self._request.find_request(confirmation_id)
-
-        async def save_feedback(self, feedback):
-            return await self._feedback.save_feedback(feedback)
-
-        async def delete_request(self, confirmation_id):
-            await self._request.delete_request(confirmation_id)
-
-        async def get_next_feedback_id(self):
-            return await self._feedback.get_next_feedback_id()
-
     return FeedbackService(CombinedFeedbackRepository(feedback_repo, request_repo))
 
 

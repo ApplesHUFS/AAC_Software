@@ -22,6 +22,8 @@ export function CardItem({ card, isSelected, onSelect, disabled, index = 0 }: Ca
       type="button"
       onClick={() => !disabled && onSelect(card)}
       disabled={disabled}
+      aria-pressed={isSelected}
+      aria-label={`${card.name} 카드${isSelected ? " (선택됨)" : ""}`}
       className={cn(
         "relative p-3 rounded-2xl transition-all duration-300 ease-out",
         "bg-white/70 backdrop-blur-sm",

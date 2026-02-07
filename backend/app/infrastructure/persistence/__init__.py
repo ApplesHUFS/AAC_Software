@@ -10,6 +10,9 @@ from app.infrastructure.persistence.memory_repository import (
     InMemoryCardHistoryRepository,
     InMemoryFeedbackRequestRepository,
 )
+from app.infrastructure.persistence.combined_repository import (
+    CombinedFeedbackRepository,
+)
 
 __all__ = [
     "JsonUserRepository",
@@ -18,4 +21,5 @@ __all__ = [
     "InMemoryContextRepository",
     "InMemoryCardHistoryRepository",
     "InMemoryFeedbackRequestRepository",
+    "CombinedFeedbackRepository",
 ]

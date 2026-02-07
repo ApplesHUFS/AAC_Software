@@ -71,6 +71,9 @@ class UserService:
         password: str,
     ) -> RegisterResult:
         """새 사용자 등록"""
+        if not user_id or not isinstance(user_id, str):
+            raise ValueError("user_id는 빈 문자열이 아닌 문자열이어야 합니다.")
+
         logger.info("사용자 등록 시작: user_id=%s, name=%s", user_id, name)
 
         if await self._repo.exists(user_id):

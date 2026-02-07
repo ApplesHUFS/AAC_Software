@@ -6,8 +6,9 @@
 
 import { useState } from "react";
 import { useContext } from "@/hooks/use-context";
-import { Button, Input, Textarea } from "@/components/ui";
-import { MessageIcon, MapPinIcon, UsersIcon, AlertCircleIcon } from "@/components/ui/icons";
+import { MessageIcon, MapPinIcon, UsersIcon, ZapIcon } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/spinner";
+import { ErrorBox } from "@/components/ui/error-box";
 
 interface ContextFormProps {
   onCancel?: () => void;
@@ -115,12 +116,7 @@ export function ContextForm({ onCancel }: ContextFormProps) {
       </div>
 
       {/* 에러 메시지 */}
-      {error && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-red-600">
-          <AlertCircleIcon className="w-5 h-5" />
-          <span className="text-sm font-medium">{error}</span>
-        </div>
-      )}
+      {error && <ErrorBox message={error} />}
 
       {/* 버튼 */}
       <div className="flex gap-3 pt-2">
@@ -140,17 +136,12 @@ export function ContextForm({ onCancel }: ContextFormProps) {
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3" />
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              </svg>
+              <Spinner size="sm" />
               처리 중...
             </span>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+              <ZapIcon className="w-5 h-5" />
               카드 추천 받기
             </span>
           )}

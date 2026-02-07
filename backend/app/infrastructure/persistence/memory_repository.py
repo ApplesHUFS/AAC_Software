@@ -1,8 +1,7 @@
 """인메모리 저장소 구현"""
 
-from datetime import datetime
+import asyncio
 from typing import Dict, List, Optional, Set
-import threading
 
 from app.domain.context.entity import Context
 from app.domain.context.repository import ContextRepository
@@ -17,21 +16,28 @@ class InMemoryContextRepository(ContextRepository):
 
     def __init__(self):
         self._storage: Dict[str, Context] = {}
-        self._lock = threading.Lock()
+        self.__lock: Optional[asyncio.Lock] = None
+
+    @property
+    def _lock(self) -> asyncio.Lock:
+        """Lazy initialization of asyncio.Lock"""
+        if self.__lock is None:
+            self.__lock = asyncio.Lock()
+        return self.__lock
 
     async def find_by_id(self, context_id: str) -> Optional[Context]:
         """컨텍스트 ID로 조회"""
-        with self._lock:
+        async with self._lock:
             return self._storage.get(context_id)
 
     async def save(self, context: Context) -> None:
         """컨텍스트 저장"""
-        with self._lock:
+        async with self._lock:
             self._storage[context.context_id] = context
 
     async def delete(self, context_id: str) -> None:
         """컨텍스트 삭제"""
-        with self._lock:
+        async with self._lock:
             self._storage.pop(context_id, None)
 
 
@@ -40,25 +46,32 @@ class InMemoryCardHistoryRepository(CardHistoryRepository):
 
     def __init__(self):
         self._storage: Dict[str, List[CardHistory]] = {}
-        self._lock = threading.Lock()
+        self.__lock: Optional[asyncio.Lock] = None
+
+    @property
+    def _lock(self) -> asyncio.Lock:
+        """Lazy initialization of asyncio.Lock"""
+        if self.__lock is None:
+            self.__lock = asyncio.Lock()
+        return self.__lock
 
     async def save_history(self, history: CardHistory) -> None:
         """히스토리 저장"""
-        with self._lock:
+        async with self._lock:
             if history.context_id not in self._storage:
                 self._storage[history.context_id] = []
             self._storage[history.context_id].append(history)
 
     async def get_history_by_context(self, context_id: str) -> List[CardHistory]:
         """컨텍스트별 히스토리 조회"""
-        with self._lock:
+        async with self._lock:
             return self._storage.get(context_id, [])
 
     async def get_history_page(
         self, context_id: str, page_number: int
     ) -> Optional[CardHistory]:
         """특정 페이지 히스토리 조회"""
-        with self._lock:
+        async with self._lock:
             histories = self._storage.get(context_id, [])
             for history in histories:
                 if history.page_number == page_number:
@@ -67,7 +80,7 @@ class InMemoryCardHistoryRepository(CardHistoryRepository):
 
     async def get_all_recommended_cards(self, context_id: str) -> Set[str]:
         """해당 컨텍스트에서 추천된 모든 카드 파일명 조회"""
-        with self._lock:
+        async with self._lock:
             histories = self._storage.get(context_id, [])
             all_cards: Set[str] = set()
             for history in histories:
@@ -75,9 +88,9 @@ class InMemoryCardHistoryRepository(CardHistoryRepository):
                     all_cards.add(card.filename)
             return all_cards
 
-    def get_total_pages(self, context_id: str) -> int:
+    async def get_total_pages(self, context_id: str) -> int:
         """총 페이지 수 반환"""
-        with self._lock:
+        async with self._lock:
             return len(self._storage.get(context_id, []))
 
 
@@ -86,19 +99,26 @@ class InMemoryFeedbackRequestRepository:
 
     def __init__(self):
         self._storage: Dict[str, FeedbackRequest] = {}
-        self._lock = threading.Lock()
+        self.__lock: Optional[asyncio.Lock] = None
+
+    @property
+    def _lock(self) -> asyncio.Lock:
+        """Lazy initialization of asyncio.Lock"""
+        if self.__lock is None:
+            self.__lock = asyncio.Lock()
+        return self.__lock
 
     async def save_request(self, request: FeedbackRequest) -> None:
         """피드백 요청 저장"""
-        with self._lock:
+        async with self._lock:
             self._storage[request.confirmation_id] = request
 
     async def find_request(self, confirmation_id: str) -> Optional[FeedbackRequest]:
         """피드백 요청 조회"""
-        with self._lock:
+        async with self._lock:
             return self._storage.get(confirmation_id)
 
     async def delete_request(self, confirmation_id: str) -> None:
         """피드백 요청 삭제"""
-        with self._lock:
+        async with self._lock:
             self._storage.pop(confirmation_id, None)

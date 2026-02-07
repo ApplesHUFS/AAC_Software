@@ -66,6 +66,9 @@ class Settings(BaseSettings):
     # 버전 정보 (SSOT)
     VERSION: str = "2.0.0"
 
+    # 환경 설정
+    environment: str = Field(default="development", alias="ENVIRONMENT")
+
     # 프로젝트 경로
     project_root: Path = Field(
         default_factory=lambda: Path(__file__).parent.parent.parent.parent
@@ -74,10 +77,30 @@ class Settings(BaseSettings):
     # OpenAI API 설정
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
 
+    # JWT 설정
+    jwt_secret_key: str = Field(default="", alias="JWT_SECRET_KEY")
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    jwt_access_expire_minutes: int = Field(default=30, alias="JWT_ACCESS_EXPIRE_MINUTES")
+    jwt_refresh_expire_days: int = Field(default=7, alias="JWT_REFRESH_EXPIRE_DAYS")
+
+    # Rate Limiting 설정
+    rate_limit_login: str = Field(default="5/minute", alias="RATE_LIMIT_LOGIN")
+    rate_limit_api: str = Field(default="100/minute", alias="RATE_LIMIT_API")
+
     # 서버 설정
     host: str = "0.0.0.0"
     port: int = 8001
     debug: bool = False
+
+    @property
+    def is_production(self) -> bool:
+        """프로덕션 환경 여부"""
+        return self.environment.lower() == "production"
+
+    @property
+    def debug_mode(self) -> bool:
+        """디버그 모드 (프로덕션에서는 항상 False)"""
+        return False if self.is_production else self.debug
 
     # 로깅 설정
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
@@ -88,11 +111,22 @@ class Settings(BaseSettings):
         default="http://localhost:3001,http://127.0.0.1:3001",
         alias="ALLOWED_ORIGINS",
     )
+    # 프로덕션용 CORS 설정
+    allowed_origins_production_str: str = Field(
+        default="",
+        alias="ALLOWED_ORIGINS_PRODUCTION",
+    )
 
     @property
     def allowed_origins(self) -> List[str]:
-        """CORS 허용 오리진 리스트"""
-        return [origin.strip() for origin in self.allowed_origins_str.split(",") if origin.strip()]
+        """환경에 따른 CORS 허용 오리진 리스트"""
+        if self.is_production:
+            origins_str = self.allowed_origins_production_str
+            if not origins_str:
+                return []  # 프로덕션에서 설정 없으면 빈 리스트 (모두 차단)
+        else:
+            origins_str = self.allowed_origins_str
+        return [origin.strip() for origin in origins_str.split(",") if origin.strip()]
 
     # 카드 추천 설정
     display_cards_total: int = 20

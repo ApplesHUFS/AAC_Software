@@ -12,8 +12,9 @@ import { useCards } from "@/hooks/use-cards";
 import { useFeedback } from "@/hooks/use-feedback";
 import { Button } from "@/components/ui";
 import { InterpretationDisplay } from "@/components/interpretation/interpretation-display";
+import { ErrorBox } from "@/components/ui/error-box";
 import { getImageUrl } from "@/lib/utils";
-import { SparklesIcon, CardsIcon, AlertCircleIcon } from "@/components/ui/icons";
+import { SparklesIcon, CardsIcon } from "@/components/ui/icons";
 
 export default function InterpretationPage() {
   const router = useRouter();
@@ -195,12 +196,7 @@ export default function InterpretationPage() {
             isLoading={isLoading}
           />
 
-          {error && (
-            <div className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm">
-              <AlertCircleIcon className="w-[18px] h-[18px]" />
-              <span>{error}</span>
-            </div>
-          )}
+          {error && <ErrorBox message={error} className="mt-4" />}
         </div>
       </main>
     </div>

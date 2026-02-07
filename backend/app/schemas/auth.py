@@ -90,3 +90,23 @@ class ProfileUpdateRequest(BaseModel):
 
     class Config:
         populate_by_name = True
+
+
+class TokenResponse(BaseModel):
+    """토큰 응답"""
+
+    access_token: str = Field(..., alias="accessToken")
+    refresh_token: str = Field(..., alias="refreshToken")
+    token_type: str = Field(default="bearer", alias="tokenType")
+
+    class Config:
+        populate_by_name = True
+
+
+class RefreshTokenRequest(BaseModel):
+    """리프레시 토큰 요청"""
+
+    refresh_token: str = Field(..., alias="refreshToken")
+
+    class Config:
+        populate_by_name = True

@@ -189,6 +189,15 @@ def mock_openai_client() -> MagicMock:
     return client
 
 
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """각 테스트 전에 rate limiter 상태 초기화"""
+    from app.core.rate_limit import limiter
+
+    limiter.reset()
+    yield
+
+
 @pytest.fixture
 def client() -> TestClient:
     """FastAPI 테스트 클라이언트"""

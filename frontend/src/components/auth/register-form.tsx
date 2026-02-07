@@ -17,256 +17,13 @@ import {
   PersonIcon,
   CalendarIcon,
   ShieldIcon,
-  CheckIcon,
-  ChevronDownIcon,
   XIcon,
-  HeartIcon,
 } from "@/components/ui/icons";
 import { Toast } from "@/components/ui/toast";
-
-// 스텝 표시 컴포넌트
-interface StepIndicatorProps {
-  currentStep: number;
-  totalSteps: number;
-}
-
-function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
-  const steps = [
-    { icon: LockIcon, label: "계정 정보" },
-    { icon: PersonIcon, label: "개인 정보" },
-    { icon: HeartIcon, label: "관심사" },
-  ];
-
-  return (
-    <nav className="mb-8" aria-label="회원가입 진행 단계">
-      <ol className="flex items-center justify-between">
-        {steps.map((step, index) => {
-          const stepNum = index + 1;
-          const isCompleted = stepNum < currentStep;
-          const isCurrent = stepNum === currentStep;
-
-          return (
-            <li key={index} className="flex flex-col items-center flex-1">
-              <div className="relative flex items-center justify-center w-full">
-                {/* 연결선 */}
-                {index < totalSteps - 1 && (
-                  <div
-                    className="absolute left-1/2 right-0 top-1/2 -translate-y-1/2 h-1 w-full"
-                    aria-hidden="true"
-                  >
-                    <div
-                      className={`h-full transition-all duration-500 ${
-                        isCompleted ? "bg-violet-500" : "bg-gray-200"
-                      }`}
-                    />
-                  </div>
-                )}
-                {index > 0 && (
-                  <div
-                    className="absolute right-1/2 left-0 top-1/2 -translate-y-1/2 h-1 w-full"
-                    aria-hidden="true"
-                  >
-                    <div
-                      className={`h-full transition-all duration-500 ${
-                        isCompleted || isCurrent ? "bg-violet-500" : "bg-gray-200"
-                      }`}
-                    />
-                  </div>
-                )}
-
-                {/* 스텝 원 */}
-                <div
-                  className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center
-                              transition-all duration-300 shadow-lg
-                              ${
-                                isCompleted
-                                  ? "bg-violet-500 text-white scale-100"
-                                  : isCurrent
-                                    ? "bg-violet-600 text-white scale-110 ring-4 ring-violet-500/30"
-                                    : "bg-gray-100 text-gray-400 scale-90"
-                              }`}
-                  aria-current={isCurrent ? "step" : undefined}
-                  aria-label={`${step.label} ${isCompleted ? "(완료)" : isCurrent ? "(현재)" : ""}`}
-                >
-                  {isCompleted ? (
-                    <CheckIcon className="w-4 h-4" aria-hidden="true" />
-                  ) : (
-                    <step.icon className="w-5 h-5" aria-hidden="true" />
-                  )}
-                </div>
-              </div>
-
-              {/* 라벨 */}
-              <span
-                className={`mt-2 text-xs font-medium transition-colors duration-300 ${
-                  isCurrent ? "text-violet-600" : isCompleted ? "text-violet-500" : "text-gray-400"
-                }`}
-              >
-                {step.label}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-    </nav>
-  );
-}
-
-// 입력 필드 컴포넌트
-interface InputFieldProps {
-  id: string;
-  name: string;
-  type: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder: string;
-  label: string;
-  icon: React.ReactNode;
-  disabled?: boolean;
-  autoComplete?: string;
-  required?: boolean;
-  error?: boolean;
-  errorId?: string;
-}
-
-function InputField({
-  id,
-  name,
-  type,
-  value,
-  onChange,
-  placeholder,
-  label,
-  icon,
-  disabled,
-  autoComplete,
-  required = true,
-  error,
-  errorId,
-}: InputFieldProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
-  return (
-    <div className="relative">
-      <label htmlFor={id} className="sr-only">
-        {label}
-      </label>
-      <div
-        className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200
-                    ${isFocused ? "text-violet-600" : "text-gray-400"}`}
-        aria-hidden="true"
-      >
-        {icon}
-      </div>
-      <input
-        id={id}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete={autoComplete}
-        aria-label={label}
-        aria-required={required}
-        aria-invalid={error}
-        aria-describedby={errorId}
-        className={`w-full pl-12 pr-4 py-4 bg-gray-50/50 border-2 rounded-2xl text-gray-900
-                   placeholder:text-gray-400 transition-all duration-200 outline-none
-                   ${
-                     isFocused
-                       ? "border-violet-500 ring-4 ring-violet-500/20 bg-white"
-                       : "border-gray-200 hover:border-gray-300"
-                   }
-                   disabled:opacity-50 disabled:cursor-not-allowed`}
-      />
-    </div>
-  );
-}
-
-// 선택 필드 컴포넌트
-interface SelectFieldProps {
-  id: string;
-  name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  options: readonly { value: string; label: string }[];
-  placeholder: string;
-  label: string;
-  icon: React.ReactNode;
-  required?: boolean;
-  error?: boolean;
-  errorId?: string;
-}
-
-function SelectField({
-  id,
-  name,
-  value,
-  onChange,
-  options,
-  placeholder,
-  label,
-  icon,
-  required = true,
-  error,
-  errorId,
-}: SelectFieldProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
-  return (
-    <div className="relative">
-      <label htmlFor={id} className="sr-only">
-        {label}
-      </label>
-      <div
-        className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-200 pointer-events-none
-                    ${isFocused ? "text-violet-600" : "text-gray-400"}`}
-        aria-hidden="true"
-      >
-        {icon}
-      </div>
-      <select
-        id={id}
-        name={name}
-        value={value}
-        onChange={onChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        aria-label={label}
-        aria-required={required}
-        aria-invalid={error}
-        aria-describedby={errorId}
-        className={`w-full pl-12 pr-10 py-4 bg-gray-50/50 border-2 rounded-2xl text-gray-900
-                   transition-all duration-200 outline-none appearance-none cursor-pointer
-                   ${!value ? "text-gray-400" : ""}
-                   ${
-                     isFocused
-                       ? "border-violet-500 ring-4 ring-violet-500/20 bg-white"
-                       : "border-gray-200 hover:border-gray-300"
-                   }`}
-      >
-        <option value="" disabled>
-          {placeholder}
-        </option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <div
-        className={`absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none transition-colors
-                    ${isFocused ? "text-violet-600" : "text-gray-400"}`}
-        aria-hidden="true"
-      >
-        <ChevronDownIcon className="w-5 h-5" />
-      </div>
-    </div>
-  );
-}
+import { Spinner } from "@/components/ui/spinner";
+import { StepIndicator } from "./step-indicator";
+import { InputField } from "./input-field";
+import { SelectField } from "./select-field";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -430,7 +187,7 @@ export function RegisterForm() {
                            }
                            disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {checkingId ? "확인중..." : idChecked && idAvailable ? "✓ 확인됨" : "중복확인"}
+                {checkingId ? "확인중..." : idChecked && idAvailable ? "확인됨" : "중복확인"}
               </button>
             </div>
             <InputField
@@ -732,26 +489,7 @@ export function RegisterForm() {
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <svg
-                      className="w-5 h-5 animate-spin"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
+                    <Spinner size="sm" />
                     <span>가입 중...</span>
                   </span>
                 ) : (

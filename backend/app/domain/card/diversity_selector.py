@@ -134,8 +134,8 @@ class MMRDiversitySelector(IDiversitySelector):
 
             if best_idx is not None:
                 best_card = candidates[best_idx]
-                # 다양성 점수: 기존 선택과 얼마나 다른가 (0~1)
-                best_card.diversity_score = 1.0 - best_max_sim
+                # 다양성 점수: 기존 선택과 얼마나 다른가 (0~1), 부동소수점 오차 보정
+                best_card.diversity_score = float(np.clip(1.0 - best_max_sim, 0.0, 1.0))
                 selected.append(best_card)
                 selected_indices.append(best_idx)
                 remaining.remove(best_idx)

@@ -87,31 +87,43 @@ export function InterpretationDisplay({
 
   return (
     <div className="space-y-5">
-      {/* 해석 옵션 - 라디오 버튼 스타일 */}
-      <div className="space-y-3">
+      {/* 해석 옵션 - 실제 라디오 버튼으로 접근성 개선 */}
+      <fieldset className="space-y-3" aria-label="해석 선택">
+        <legend className="sr-only">해석을 선택하세요</legend>
         {interpretations.map((interpretation, index) => {
           const isSelected = selectedIndex === index;
+          const inputId = `interpretation-${index}`;
 
           return (
-            <button
+            <label
               key={index}
-              type="button"
-              onClick={() => handleSelect(index)}
-              disabled={isLoading}
+              htmlFor={inputId}
               className={cn(
-                "w-full p-4 rounded-2xl text-left transition-all duration-200",
+                "w-full p-4 rounded-2xl text-left transition-all duration-200 block cursor-pointer",
                 "backdrop-blur-md border-2",
                 "hover:-translate-y-0.5 hover:shadow-lg",
-                "focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:ring-offset-2",
-                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0",
+                "focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:ring-offset-2",
+                isLoading && "opacity-50 cursor-not-allowed hover:translate-y-0",
                 isSelected
                   ? "border-violet-500 bg-violet-50/50 shadow-md shadow-violet-500/10"
                   : "border-transparent bg-white/50 hover:bg-white/70 hover:border-gray-200"
               )}
             >
               <div className="flex items-start gap-3">
-                {/* 라디오 버튼 스타일 체크박스 */}
+                {/* 시각적으로 숨긴 실제 라디오 버튼 */}
+                <input
+                  type="radio"
+                  id={inputId}
+                  name="interpretation"
+                  value={index}
+                  checked={isSelected}
+                  onChange={() => handleSelect(index)}
+                  disabled={isLoading}
+                  className="sr-only"
+                />
+                {/* 커스텀 라디오 버튼 UI */}
                 <div
+                  aria-hidden="true"
                   className={cn(
                     "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-all duration-200",
                     isSelected
@@ -131,10 +143,10 @@ export function InterpretationDisplay({
                   {interpretation.text}
                 </span>
               </div>
-            </button>
+            </label>
           );
         })}
-      </div>
+      </fieldset>
 
       {/* 직접 입력 섹션 */}
       <div className="pt-3 border-t border-gray-200/50">

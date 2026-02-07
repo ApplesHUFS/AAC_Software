@@ -1,5 +1,6 @@
 /**
  * 카드 관련 커스텀 훅
+ * - 개별 selector로 불필요한 리렌더링 방지
  */
 
 "use client";
@@ -17,26 +18,28 @@ export function useCards() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { context } = useContextStore();
-  const {
-    recommendedCards,
-    allRecommendedCards,
-    selectedCards,
-    interpretations,
-    feedbackId,
-    isLoading,
-    error,
-    setRecommendedCards,
-    addToAllRecommended,
-    setSelectedCards,
-    toggleCardSelection,
-    setInterpretations,
-    setFeedbackId,
-    setConfirmationId,
-    setLoading,
-    setError,
-    clearSelection,
-    clearInterpretations,
-  } = useCardStore();
+
+  // 개별 selector로 상태 구독 - 불필요한 리렌더링 방지
+  const recommendedCards = useCardStore((state) => state.recommendedCards);
+  const allRecommendedCards = useCardStore((state) => state.allRecommendedCards);
+  const selectedCards = useCardStore((state) => state.selectedCards);
+  const interpretations = useCardStore((state) => state.interpretations);
+  const feedbackId = useCardStore((state) => state.feedbackId);
+  const isLoading = useCardStore((state) => state.isLoading);
+  const error = useCardStore((state) => state.error);
+
+  // 액션은 안정적인 참조 유지
+  const setRecommendedCards = useCardStore((state) => state.setRecommendedCards);
+  const addToAllRecommended = useCardStore((state) => state.addToAllRecommended);
+  const setSelectedCards = useCardStore((state) => state.setSelectedCards);
+  const toggleCardSelection = useCardStore((state) => state.toggleCardSelection);
+  const setInterpretations = useCardStore((state) => state.setInterpretations);
+  const setFeedbackId = useCardStore((state) => state.setFeedbackId);
+  const setConfirmationId = useCardStore((state) => state.setConfirmationId);
+  const setLoading = useCardStore((state) => state.setLoading);
+  const setError = useCardStore((state) => state.setError);
+  const clearSelection = useCardStore((state) => state.clearSelection);
+  const clearInterpretations = useCardStore((state) => state.clearInterpretations);
 
   /**
    * 카드 추천 요청

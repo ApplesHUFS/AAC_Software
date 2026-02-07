@@ -44,9 +44,10 @@ export function useAuth() {
       try {
         const response = await authApi.login(data);
         if (response.success && response.data) {
+          const { userId, user } = response.data;
           setUser({
-            userId: response.data.userId,
-            ...response.data.user,
+            ...user,
+            userId,
           });
           router.push("/main/dashboard");
         }

@@ -93,7 +93,7 @@ class CardService:
         )
 
         # 히스토리 저장
-        total_pages = self._history_repo.get_total_pages(context.context_id)
+        total_pages = await self._history_repo.get_total_pages(context.context_id)
         new_page = total_pages + 1
 
         history = CardHistory(
@@ -272,7 +272,7 @@ class CardService:
         if not history:
             return None
 
-        total_pages = self._history_repo.get_total_pages(context_id)
+        total_pages = await self._history_repo.get_total_pages(context_id)
 
         return {
             "cards": [card.to_dict() for card in history.cards],
