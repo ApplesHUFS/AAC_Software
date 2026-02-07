@@ -78,6 +78,15 @@ class Settings(BaseSettings):
     # MMR 파라미터
     mmr_lambda: float = 0.6  # 관련성(1.0) vs 다양성(0.0) 균형
 
+    # 검색 배수 설정
+    initial_search_multiplier: int = 10     # Stage 1: 초기 검색 배수
+    diversity_selection_multiplier: int = 4  # Stage 2: MMR 선택 배수
+
+    # 쿼리 재작성 설정
+    enable_query_rewriting: bool = True     # LLM 기반 쿼리 재작성 활성화
+    query_rewrite_count: int = 3            # 생성할 추가 쿼리 수
+    query_rewrite_max_tokens: int = 300     # 쿼리 재작성 최대 토큰
+
     # LLM 필터 설정
     enable_llm_filter: bool = True
     enable_llm_reranker: bool = True

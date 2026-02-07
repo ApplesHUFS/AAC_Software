@@ -26,6 +26,7 @@ from app.domain.card.interfaces import (
     SearchContext,
     ScoredCard,
 )
+from app.domain.card.query_rewriter import IQueryRewriter
 from app.domain.context.entity import Context
 from app.domain.user.entity import User
 
@@ -39,7 +40,8 @@ class RecommendationConfig:
     diversity_weight: float = 0.2   # MMR 다양성 가중치
     persona_weight: float = 0.2     # 선호 키워드 유사도 가중치
     mmr_lambda: float = 0.7         # MMR 관련성-다양성 균형 (높을수록 관련성)
-    candidate_multiplier: int = 5   # 초기 검색 배수
+    candidate_multiplier: int = 10  # Stage 1 초기 검색 배수
+    diversity_multiplier: int = 4   # Stage 2 MMR 선택 배수
 
 
 class CLIPCardRecommender(IRecommendationStrategy):
@@ -65,6 +67,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
         config: Optional[RecommendationConfig] = None,
         llm_filter: Optional[ICardFilter] = None,
         llm_reranker: Optional[ICardReranker] = None,
+        query_rewriter: Optional[IQueryRewriter] = None,
     ):
         self._settings = settings
         self._embedding = embedding_provider
@@ -75,11 +78,16 @@ class CLIPCardRecommender(IRecommendationStrategy):
             diversity_weight=settings.diversity_weight,
             persona_weight=settings.persona_weight,
             mmr_lambda=settings.mmr_lambda,
+            candidate_multiplier=settings.initial_search_multiplier,
+            diversity_multiplier=settings.diversity_selection_multiplier,
         )
 
         # LLM 필터 및 재순위화기
         self._llm_filter = llm_filter
         self._llm_reranker = llm_reranker
+
+        # 쿼리 재작성기
+        self._query_rewriter = query_rewriter
 
         # 선호 키워드 임베딩 캐시
         self._keyword_embedding_cache: dict = {}
@@ -124,8 +132,8 @@ class CLIPCardRecommender(IRecommendationStrategy):
         Returns:
             점수가 계산된 추천 카드 목록
         """
-        # Stage 1: 시맨틱 검색 (CLIP)
-        candidates = self._stage1_semantic_search(context, count)
+        # Stage 1: 다중 쿼리 시맨틱 검색 (CLIP + Query Rewriting)
+        candidates = await self._stage1_semantic_search_async(context, count)
 
         if not candidates:
             return self._fallback_random_selection(context, count)
@@ -268,6 +276,83 @@ class CLIPCardRecommender(IRecommendationStrategy):
 
         return scored_cards
 
+    async def _stage1_semantic_search_async(
+        self,
+        context: SearchContext,
+        count: int,
+    ) -> List[ScoredCard]:
+        """Stage 1: 다중 쿼리 CLIP 시맨틱 검색
+
+        쿼리 재작성이 활성화된 경우 여러 쿼리로 검색하여
+        더 다양한 후보를 확보합니다.
+        """
+        # 쿼리 생성 (재작성 또는 원본)
+        if self._query_rewriter:
+            queries = await self._query_rewriter.rewrite(
+                context.place or "",
+                context.interaction_partner or "",
+                context.current_activity or "",
+            )
+        else:
+            queries = [self._build_rich_query(context)]
+
+        if not queries or not any(q.strip() for q in queries):
+            return []
+
+        # 제외할 인덱스 계산
+        excluded_indices: Set[int] = set()
+        for fn in context.excluded_filenames:
+            idx = self._vector_index.get_index(fn)
+            if idx is not None:
+                excluded_indices.add(idx)
+
+        # 후보 수 계산
+        candidate_count = count * self._config.candidate_multiplier
+
+        # 다중 쿼리로 검색 (중복 제거)
+        seen_filenames: Set[str] = set()
+        all_candidates: List[ScoredCard] = []
+
+        for query in queries:
+            if not query.strip():
+                continue
+
+            query_embedding = self._embedding.encode_text(query)
+
+            search_results = self._vector_index.search(
+                query_embedding,
+                candidate_count,
+                excluded_indices,
+            )
+
+            for idx, similarity in search_results:
+                filename = self._vector_index.get_filename(idx)
+
+                if filename in seen_filenames:
+                    continue
+
+                seen_filenames.add(filename)
+                card = Card.from_filename(filename)
+
+                all_candidates.append(
+                    ScoredCard(
+                        card=card,
+                        semantic_score=float(similarity),
+                        diversity_score=0.0,
+                        persona_score=0.0,
+                        final_score=float(similarity),
+                    )
+                )
+
+        # 점수순 정렬 후 상위 N개 반환
+        all_candidates.sort(key=lambda sc: sc.semantic_score, reverse=True)
+
+        logger.info(
+            f"Stage 1: {len(queries)}개 쿼리로 {len(all_candidates)}개 후보 검색"
+        )
+
+        return all_candidates[:candidate_count]
+
     def _build_rich_query(self, context: SearchContext) -> str:
         """컨텍스트를 풍부한 자연어 쿼리로 변환
 
@@ -299,13 +384,18 @@ class CLIPCardRecommender(IRecommendationStrategy):
         시맨틱 유사도가 높은 카드 중에서도
         서로 다른 의미의 카드들이 포함되도록 선택
         """
-        selection_count = min(count * 2, len(candidates))
+        selection_count = min(
+            count * self._config.diversity_multiplier,
+            len(candidates),
+        )
 
         diverse_cards = self._diversity.select_diverse(
             candidates,
             selection_count,
             lambda_param=self._config.mmr_lambda,
         )
+
+        logger.info(f"Stage 2: {len(diverse_cards)}개 다양성 선택 완료")
 
         return diverse_cards
 

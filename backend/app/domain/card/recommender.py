@@ -10,6 +10,7 @@ from app.config.settings import Settings
 from app.domain.card.entity import Card
 from app.domain.card.filters.base import ICardFilter, ICardReranker
 from app.domain.card.interfaces import SearchContext, ScoredCard
+from app.domain.card.query_rewriter import IQueryRewriter
 from app.domain.context.entity import Context
 from app.domain.user.entity import User
 
@@ -44,12 +45,13 @@ class CardRecommender:
         self._clip_recommender: Optional["CLIPCardRecommender"] = None
         self._llm_filter: Optional[ICardFilter] = None
         self._llm_reranker: Optional[ICardReranker] = None
+        self._query_rewriter: Optional[IQueryRewriter] = None
 
     def _get_clip_recommender(self) -> "CLIPCardRecommender":
         """CLIP 추천기 지연 초기화
 
         첫 호출 시에만 CLIP 모델과 벡터 인덱스 로드
-        LLM 필터와 재순위화기도 함께 초기화
+        LLM 필터, 재순위화기, 쿼리 재작성기도 함께 초기화
         """
         if self._clip_recommender is None:
             # 지연 임포트 (순환 임포트 방지)
@@ -59,6 +61,7 @@ class CardRecommender:
             )
             from app.domain.card.diversity_selector import MMRDiversitySelector
             from app.domain.card.filters.factory import FilterFactory
+            from app.domain.card.query_rewriter import LLMQueryRewriter, NoOpQueryRewriter
             from app.domain.card.vector_searcher import create_vector_index
             from app.infrastructure.external.clip_client import CLIPEmbeddingClient
 
@@ -71,6 +74,8 @@ class CardRecommender:
                 diversity_weight=self._settings.diversity_weight,
                 persona_weight=self._settings.persona_weight,
                 mmr_lambda=self._settings.mmr_lambda,
+                candidate_multiplier=self._settings.initial_search_multiplier,
+                diversity_multiplier=self._settings.diversity_selection_multiplier,
             )
 
             # LLM 필터 초기화
@@ -81,6 +86,15 @@ class CardRecommender:
                 )
                 self._llm_filter, self._llm_reranker = filter_factory.create_all()
 
+            # 쿼리 재작성기 초기화
+            if self._openai_client and self._settings.enable_query_rewriting:
+                self._query_rewriter = LLMQueryRewriter(
+                    openai_client=self._openai_client,
+                    query_count=self._settings.query_rewrite_count,
+                )
+            else:
+                self._query_rewriter = NoOpQueryRewriter()
+
             self._clip_recommender = CLIPCardRecommender(
                 settings=self._settings,
                 embedding_provider=clip_client,
@@ -89,6 +103,7 @@ class CardRecommender:
                 config=config,
                 llm_filter=self._llm_filter,
                 llm_reranker=self._llm_reranker,
+                query_rewriter=self._query_rewriter,
             )
 
         return self._clip_recommender
