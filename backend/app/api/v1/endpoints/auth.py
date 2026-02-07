@@ -13,6 +13,23 @@ from app.schemas.auth import (
 router = APIRouter()
 
 
+@router.get("/check-id/{user_id}")
+async def check_user_id(
+    user_id: str,
+    user_service: UserServiceDep,
+):
+    """아이디 중복 확인"""
+    exists = await user_service.check_user_exists(user_id)
+
+    return success_response(
+        data={
+            "userId": user_id,
+            "available": not exists,
+        },
+        message="사용 가능한 아이디입니다." if not exists else "이미 사용 중인 아이디입니다.",
+    )
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     request: RegisterRequest,

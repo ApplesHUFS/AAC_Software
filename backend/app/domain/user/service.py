@@ -163,6 +163,10 @@ class UserService:
         """사용자 엔티티 조회"""
         return await self._repo.find_by_id(user_id)
 
+    async def check_user_exists(self, user_id: str) -> bool:
+        """아이디 중복 확인"""
+        return await self._repo.exists(user_id)
+
     async def update_user_persona(
         self, user_id: str, updates: Dict[str, Any]
     ) -> UpdateResult:

@@ -13,7 +13,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-y-auto">
       {/* 배경 - 미세한 그라데이션 */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-violet-50/30" />
 
@@ -43,7 +43,7 @@ export default function AuthLayout({
 
         {/* 카드 컨테이너 */}
         <div
-          className="bg-white rounded-3xl shadow-xl p-8
+          className="bg-white rounded-3xl shadow-xl p-8 overflow-visible
                      ring-1 ring-slate-200/50 animate-scale-in"
         >
           {children}

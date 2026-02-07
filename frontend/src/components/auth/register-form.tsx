@@ -5,10 +5,11 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { authApi } from "@/lib/api/auth";
 import { DISABILITY_TYPES, GENDER_OPTIONS, TOPIC_SUGGESTIONS } from "@/lib/constants";
 import {
   UserIcon,
@@ -285,6 +286,36 @@ export function RegisterForm() {
   const [topicInput, setTopicInput] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [idChecked, setIdChecked] = useState(false);
+  const [idAvailable, setIdAvailable] = useState(false);
+  const [checkingId, setCheckingId] = useState(false);
+
+  // 아이디 중복 확인
+  const handleCheckId = useCallback(async () => {
+    if (!formData.userId.trim()) {
+      setError("아이디를 입력해주세요.");
+      return;
+    }
+    setCheckingId(true);
+    setError("");
+    try {
+      const response = await authApi.checkId(formData.userId);
+      if (response.data?.available) {
+        setIdAvailable(true);
+        setIdChecked(true);
+        setSuccess("사용 가능한 아이디입니다.");
+        setTimeout(() => setSuccess(""), 2000);
+      } else {
+        setIdAvailable(false);
+        setIdChecked(true);
+        setError("이미 사용 중인 아이디입니다.");
+      }
+    } catch {
+      setError("중복 확인 중 오류가 발생했습니다.");
+    } finally {
+      setCheckingId(false);
+    }
+  }, [formData.userId]);
 
   const handleAddTopic = () => {
     const topic = topicInput.trim();
@@ -358,7 +389,7 @@ export function RegisterForm() {
         <StepIndicator currentStep={step} totalSteps={3} />
 
         {/* 스텝 콘텐츠 */}
-        <div className="relative overflow-hidden">
+        <div className="relative overflow-visible">
           {/* Step 1: 계정 정보 */}
           <fieldset
             className={`space-y-4 transition-all duration-400 ease-out
@@ -367,19 +398,41 @@ export function RegisterForm() {
             disabled={step !== 1}
           >
             <legend className="sr-only">계정 정보</legend>
-            <InputField
-              id="register-userId"
-              name="userId"
-              type="text"
-              value={formData.userId}
-              onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
-              placeholder="아이디"
-              label="아이디"
-              icon={<UserIcon className="w-5 h-5" />}
-              autoComplete="username"
-              error={!!error}
-              errorId={error ? "register-error" : undefined}
-            />
+            {/* 아이디 + 중복확인 버튼 */}
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <InputField
+                  id="register-userId"
+                  name="userId"
+                  type="text"
+                  value={formData.userId}
+                  onChange={(e) => {
+                    setFormData({ ...formData, userId: e.target.value });
+                    setIdChecked(false);
+                    setIdAvailable(false);
+                  }}
+                  placeholder="아이디"
+                  label="아이디"
+                  icon={<UserIcon className="w-5 h-5" />}
+                  autoComplete="username"
+                  error={!!error && !idAvailable}
+                  errorId={error ? "register-error" : undefined}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleCheckId}
+                disabled={checkingId || !formData.userId.trim()}
+                className={`px-4 py-4 font-medium rounded-2xl transition-all duration-200 whitespace-nowrap
+                           ${idChecked && idAvailable
+                             ? "bg-green-500 text-white"
+                             : "bg-violet-100 text-violet-600 hover:bg-violet-200"
+                           }
+                           disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {checkingId ? "확인중..." : idChecked && idAvailable ? "✓ 확인됨" : "중복확인"}
+              </button>
+            </div>
             <InputField
               id="register-password"
               name="password"
@@ -412,6 +465,10 @@ export function RegisterForm() {
               onClick={() => {
                 if (!formData.userId || !formData.password || !formData.passwordConfirm) {
                   setError("모든 필드를 입력해주세요.");
+                  return;
+                }
+                if (!idChecked || !idAvailable) {
+                  setError("아이디 중복 확인을 해주세요.");
                   return;
                 }
                 if (formData.password !== formData.passwordConfirm) {
