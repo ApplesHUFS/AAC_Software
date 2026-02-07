@@ -1,14 +1,13 @@
 /**
- * 상황 설정 폼 컴포넌트
+ * 상황 설정 폼 - 아름다운 헤더와 그라데이션 버튼
  */
 
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useContext } from "@/hooks/use-context";
 import { Button, Input, Textarea } from "@/components/ui";
-import { IMAGES } from "@/lib/images";
+import { MessageIcon, MapPinIcon, UsersIcon, AlertCircleIcon } from "@/components/ui/icons";
 
 interface ContextFormProps {
   onCancel?: () => void;
@@ -47,79 +46,123 @@ export function ContextForm({ onCancel }: ContextFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* 헤더 */}
+    <form onSubmit={handleSubmit} className="space-y-8">
+      {/* 헤더 - 그라데이션 아이콘 영역 */}
       <div className="text-center">
-        <div className="icon-container icon-container-lg icon-container-partner mx-auto mb-4">
-          <Image
-            src={IMAGES.communicationSituation}
-            alt=""
-            width={32}
-            height={32}
-          />
+        <div
+          className="w-20 h-20 mx-auto mb-5 rounded-3xl flex items-center justify-center shadow-xl"
+          style={{
+            background: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)",
+          }}
+        >
+          <MessageIcon className="w-10 h-10 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">대화 상황 설정</h2>
-        <p className="text-gray-500 mt-1 text-sm">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-pink-600 bg-clip-text text-transparent">
+          대화 상황 설정
+        </h2>
+        <p className="text-gray-500 mt-2">
           소통이가 어디서 누구와 대화하고 있나요?
         </p>
       </div>
 
       {/* 입력 필드 */}
-      <div className="space-y-4">
-        <Input
-          label="장소"
-          leftIcon={IMAGES.place}
-          value={formData.place}
-          onChange={(e) => setFormData({ ...formData, place: e.target.value })}
-          placeholder="예: 집, 학교, 병원, 놀이터"
-          required
-        />
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            장소 <span className="text-pink-500">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+              <MapPinIcon className="w-5 h-5" />
+            </div>
+            <input
+              type="text"
+              value={formData.place}
+              onChange={(e) => setFormData({ ...formData, place: e.target.value })}
+              placeholder="예: 집, 학교, 병원, 놀이터"
+              className="w-full pl-12 pr-4 py-3.5 bg-white/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all"
+              required
+            />
+          </div>
+        </div>
 
-        <Input
-          label="대화 상대"
-          leftIcon={IMAGES.interactionPartner}
-          value={formData.interactionPartner}
-          onChange={(e) =>
-            setFormData({ ...formData, interactionPartner: e.target.value })
-          }
-          placeholder="예: 엄마, 선생님, 친구"
-          required
-        />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            대화 상대 <span className="text-pink-500">*</span>
+          </label>
+          <div className="relative">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400">
+              <UsersIcon className="w-5 h-5" />
+            </div>
+            <input
+              type="text"
+              value={formData.interactionPartner}
+              onChange={(e) => setFormData({ ...formData, interactionPartner: e.target.value })}
+              placeholder="예: 엄마, 선생님, 친구"
+              className="w-full pl-12 pr-4 py-3.5 bg-white/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all"
+              required
+            />
+          </div>
+        </div>
 
-        <Textarea
-          label="현재 활동 (선택)"
-          value={formData.currentActivity}
-          onChange={(e) =>
-            setFormData({ ...formData, currentActivity: e.target.value })
-          }
-          placeholder="예: 밥 먹기, 놀이하기, 수업 듣기"
-          rows={2}
-        />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            현재 활동 <span className="text-gray-400">(선택)</span>
+          </label>
+          <textarea
+            value={formData.currentActivity}
+            onChange={(e) => setFormData({ ...formData, currentActivity: e.target.value })}
+            placeholder="예: 밥 먹기, 놀이하기, 수업 듣기"
+            rows={2}
+            className="w-full px-4 py-3.5 bg-white/50 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-all resize-none"
+          />
+        </div>
       </div>
 
       {/* 에러 메시지 */}
       {error && (
-        <div className="message-error">
-          <Image src={IMAGES.error} alt="" width={18} height={18} />
-          <span>{error}</span>
+        <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl text-red-600">
+          <AlertCircleIcon className="w-5 h-5" />
+          <span className="text-sm font-medium">{error}</span>
         </div>
       )}
 
       {/* 버튼 */}
       <div className="flex gap-3 pt-2">
         {onCancel && (
-          <Button
+          <button
             type="button"
-            variant="secondary"
             onClick={onCancel}
-            className="flex-shrink-0 min-w-[60px]"
+            className="px-6 py-3.5 text-gray-600 font-medium rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all"
           >
             취소
-          </Button>
+          </button>
         )}
-        <Button type="submit" fullWidth isLoading={isLoading}>
-          카드 추천 받기
-        </Button>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex-1 py-3.5 rounded-2xl font-semibold text-white shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+          style={{
+            background: "linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)",
+          }}
+        >
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+              </svg>
+              처리 중...
+            </span>
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              카드 추천 받기
+            </span>
+          )}
+        </button>
       </div>
     </form>
   );

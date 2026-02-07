@@ -1,5 +1,5 @@
 /**
- * 카드 그리드 컴포넌트
+ * 카드 그리드 컴포넌트 - 반응형 그리드 레이아웃
  */
 
 "use client";
@@ -30,14 +30,15 @@ export function CardGrid({
     (!isCardSelected(card) && selectedCards.length >= maxSelection);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {cards.map((card) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5">
+      {cards.map((card, index) => (
         <CardItem
           key={card.filename}
           card={card}
           isSelected={isCardSelected(card)}
           onSelect={onCardSelect}
           disabled={isSelectionDisabled(card)}
+          index={index}
         />
       ))}
     </div>

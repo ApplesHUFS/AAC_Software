@@ -1,7 +1,8 @@
 /**
- * 카드 레이아웃 컴포넌트
- * - 다양한 variant 지원
- * - 인터랙티브 모드 지원
+ * Card Component
+ * - Glassmorphism effect with backdrop blur
+ * - Smooth hover lift animation
+ * - Multiple variants for different use cases
  */
 
 import { HTMLAttributes, forwardRef } from "react";
@@ -13,9 +14,20 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const cardVariants = {
-  default: "bg-white shadow-app-card border border-gray-100",
-  elevated: "bg-white shadow-app-lg",
-  outlined: "bg-white border-2 border-gray-200",
+  default: cn(
+    "bg-white/80 backdrop-blur-xl",
+    "border border-white/20",
+    "shadow-lg shadow-black/5"
+  ),
+  elevated: cn(
+    "bg-white/90 backdrop-blur-xl",
+    "border border-white/30",
+    "shadow-xl shadow-black/10"
+  ),
+  outlined: cn(
+    "bg-white/60 backdrop-blur-lg",
+    "border-2 border-violet-200/50"
+  ),
 };
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
@@ -24,9 +36,13 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          "rounded-2xl",
+          "rounded-3xl",
           cardVariants[variant],
-          interactive && "card-interactive",
+          interactive && cn(
+            "transition-all duration-300 ease-out cursor-pointer",
+            "hover:-translate-y-1 hover:shadow-2xl hover:shadow-violet-500/10",
+            "hover:border-violet-200/40"
+          ),
           className
         )}
         {...props}
@@ -39,7 +55,6 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
 
 Card.displayName = "Card";
 
-// CardHeader Props
 interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
@@ -47,7 +62,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     return (
       <div
         ref={ref}
-        className={cn("px-5 py-4 border-b border-gray-100", className)}
+        className={cn("px-6 py-5 border-b border-white/20", className)}
         {...props}
       >
         {children}
@@ -58,13 +73,12 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
 
 CardHeader.displayName = "CardHeader";
 
-// CardContent Props
 interface CardContentProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <div ref={ref} className={cn("px-5 py-4", className)} {...props}>
+      <div ref={ref} className={cn("px-6 py-5", className)} {...props}>
         {children}
       </div>
     );
@@ -73,7 +87,6 @@ export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
 
 CardContent.displayName = "CardContent";
 
-// CardFooter Props
 interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
@@ -81,7 +94,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
     return (
       <div
         ref={ref}
-        className={cn("px-5 py-4 border-t border-gray-100", className)}
+        className={cn("px-6 py-5 border-t border-white/20", className)}
         {...props}
       >
         {children}

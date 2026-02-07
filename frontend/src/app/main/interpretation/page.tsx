@@ -1,5 +1,5 @@
 /**
- * 해석 페이지
+ * 해석 페이지 - AI 카드 해석 결과 표시
  */
 
 "use client";
@@ -10,10 +10,10 @@ import Image from "next/image";
 import { useContextStore } from "@/stores/context-store";
 import { useCards } from "@/hooks/use-cards";
 import { useFeedback } from "@/hooks/use-feedback";
-import { Button, Spinner, Card, CardContent } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { InterpretationDisplay } from "@/components/interpretation/interpretation-display";
 import { getImageUrl } from "@/lib/utils";
-import { IMAGES } from "@/lib/images";
+import { SparklesIcon, CardsIcon, AlertCircleIcon } from "@/components/ui/icons";
 
 export default function InterpretationPage() {
   const router = useRouter();
@@ -52,7 +52,6 @@ export default function InterpretationPage() {
     const feedbackRequest = await requestFeedback(context?.interactionPartner || "");
 
     if (feedbackRequest) {
-      // confirmationId를 직접 전달하여 클로저 문제 방지
       const result = await submitWithSelection(index, feedbackRequest.confirmationId);
       if (!result?.success) {
         setError("피드백 제출에 실패했습니다.");
@@ -67,7 +66,6 @@ export default function InterpretationPage() {
     const feedbackRequest = await requestFeedback(context?.interactionPartner || "");
 
     if (feedbackRequest) {
-      // confirmationId를 직접 전달하여 클로저 문제 방지
       const result = await submitWithDirectFeedback(feedback, feedbackRequest.confirmationId);
       if (!result?.success) {
         setError("피드백 제출에 실패했습니다.");
@@ -79,37 +77,63 @@ export default function InterpretationPage() {
     return null;
   }
 
-  // 로딩 화면
+  // 로딩 화면 - AI 분석 중
   if (isInterpreting) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-partner-100 flex items-center justify-center animate-pulse-soft shadow-app-sm">
-            <Image src={IMAGES.ai} alt="" width={40} height={40} />
+      <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-pink-100 flex flex-col items-center justify-center p-4">
+        {/* 배경 장식 */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-violet-300/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-300/30 rounded-full blur-3xl animate-pulse delay-1000" />
+        </div>
+
+        <div className="relative text-center">
+          {/* 아이콘 컨테이너 - 펄스 애니메이션 */}
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500 to-pink-500 animate-ping opacity-20" />
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500 to-pink-500 animate-pulse opacity-40" />
+            <div className="relative w-full h-full rounded-3xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-xl shadow-violet-500/30">
+              <SparklesIcon className="w-12 h-12 text-white" />
+            </div>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            카드를 분석하고 있어요!
+
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
+            카드를 분석하고 있어요
           </h2>
-          <p className="text-gray-500 mb-6 text-sm">
+          <p className="text-gray-600 mb-8 leading-relaxed">
             소통이가 선택한 카드들의 의미를
             <br />
-            AI가 해석하고 있어요
+            AI가 정성껏 해석하고 있어요
           </p>
-          <Spinner size="lg" />
+
+          {/* 커스텀 스피너 */}
+          <div className="flex justify-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+            <div className="w-3 h-3 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+            <div className="w-3 h-3 rounded-full bg-violet-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-8">
-      {/* 헤더 */}
-      <header className="app-header">
+    <div className="min-h-screen bg-gradient-to-br from-violet-100 via-purple-50 to-pink-100 pb-8">
+      {/* 배경 장식 */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-80 h-80 bg-violet-300/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300/20 rounded-full blur-3xl" />
+      </div>
+
+      {/* 글래스모피즘 헤더 */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-white/50 shadow-sm">
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-xs text-partner-600 font-medium">카드 해석</p>
-              <h1 className="text-lg font-semibold text-gray-900">
+              <p className="text-xs text-violet-600 font-semibold tracking-wide uppercase">
+                카드 해석
+              </p>
+              <h1 className="text-lg font-bold text-gray-900 mt-0.5">
                 소통이가 말하고 싶은 것은?
               </h1>
             </div>
@@ -117,6 +141,7 @@ export default function InterpretationPage() {
               variant="ghost"
               size="sm"
               onClick={() => router.push("/main/cards")}
+              className="text-violet-600 hover:text-violet-700 hover:bg-violet-50"
             >
               다시 선택
             </Button>
@@ -124,29 +149,37 @@ export default function InterpretationPage() {
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto px-4 py-6 space-y-5">
-        {/* 선택한 카드 표시 */}
-        <div className="app-card p-4 animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
-            <Image src={IMAGES.selectedCard} alt="" width={20} height={20} />
-            <h3 className="font-medium text-gray-900">선택한 카드</h3>
+      <main className="relative max-w-lg mx-auto px-4 py-6 space-y-5">
+        {/* 선택한 카드 미리보기 */}
+        <div className="backdrop-blur-xl bg-white/60 rounded-2xl border border-white/50 p-4 shadow-lg shadow-violet-500/5 animate-fade-in">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center">
+              <CardsIcon className="w-[18px] h-[18px] text-white" />
+            </div>
+            <h3 className="font-semibold text-gray-900">선택한 카드</h3>
+            <span className="ml-auto text-xs text-violet-600 font-medium bg-violet-50 px-2 py-1 rounded-full">
+              {selectedCards.length}개
+            </span>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {selectedCards.map((card) => (
+
+          {/* 가로 스크롤 카드 목록 */}
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+            {selectedCards.map((card, index) => (
               <div
                 key={card.filename}
-                className="flex-shrink-0 w-16 text-center"
+                className="flex-shrink-0 w-20 text-center group"
+                style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="w-16 h-16 bg-gray-50 rounded-xl overflow-hidden shadow-app-sm">
+                <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-300 border border-gray-100">
                   <Image
                     src={getImageUrl(card.filename)}
                     alt={card.name}
-                    width={64}
-                    height={64}
-                    className="object-contain p-1"
+                    width={80}
+                    height={80}
+                    className="object-contain p-2"
                   />
                 </div>
-                <p className="text-xs text-gray-600 mt-1.5 truncate">
+                <p className="text-xs text-gray-700 mt-2 font-medium truncate px-1">
                   {card.name}
                 </p>
               </div>
@@ -154,29 +187,32 @@ export default function InterpretationPage() {
           </div>
         </div>
 
-        {/* 해석 결과 */}
-        <Card variant="elevated" className="animate-fade-in-up delay-100">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Image src={IMAGES.ai} alt="" width={24} height={24} />
-              <h2 className="font-semibold text-gray-900">AI 해석 결과</h2>
+        {/* AI 해석 결과 카드 */}
+        <div className="backdrop-blur-xl bg-white/70 rounded-2xl border border-white/50 p-5 shadow-lg shadow-violet-500/5 animate-fade-in-up">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-md shadow-violet-500/20">
+              <SparklesIcon className="w-6 h-6 text-white" />
             </div>
+            <div>
+              <h2 className="font-bold text-gray-900">AI 해석 결과</h2>
+              <p className="text-xs text-gray-500">가장 적절한 해석을 선택해주세요</p>
+            </div>
+          </div>
 
-            <InterpretationDisplay
-              interpretations={interpretations}
-              onSelectInterpretation={handleSelectInterpretation}
-              onDirectFeedback={handleDirectFeedback}
-              isLoading={isLoading}
-            />
+          <InterpretationDisplay
+            interpretations={interpretations}
+            onSelectInterpretation={handleSelectInterpretation}
+            onDirectFeedback={handleDirectFeedback}
+            isLoading={isLoading}
+          />
 
-            {error && (
-              <div className="message-error mt-4">
-                <Image src={IMAGES.error} alt="" width={18} height={18} />
-                <span>{error}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {error && (
+            <div className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm">
+              <AlertCircleIcon className="w-[18px] h-[18px]" />
+              <span>{error}</span>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );

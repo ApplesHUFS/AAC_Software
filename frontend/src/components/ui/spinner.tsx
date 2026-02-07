@@ -1,5 +1,7 @@
 /**
- * 로딩 스피너 컴포넌트
+ * Spinner Component
+ * - Gradient color from violet to pink
+ * - Smooth rotation animation
  */
 
 import { cn } from "@/lib/utils";
@@ -16,17 +18,43 @@ export function Spinner({ size = "md", className }: SpinnerProps) {
     lg: "w-12 h-12",
   };
 
+  const borderSizes = {
+    sm: "border-2",
+    md: "border-[3px]",
+    lg: "border-4",
+  };
+
   return (
     <div
       className={cn(
-        "animate-spin rounded-full border-2 border-gray-300 border-t-partner-600 mx-auto",
+        "relative mx-auto",
         sizes[size],
         className
       )}
       role="status"
-      aria-label="로딩 중"
+      aria-label="Loading"
     >
-      <span className="sr-only">로딩 중...</span>
+      <div
+        className={cn(
+          "absolute inset-0 rounded-full",
+          "bg-gradient-to-r from-violet-600 to-pink-500",
+          "animate-spin"
+        )}
+        style={{
+          mask: "conic-gradient(transparent 70deg, black)",
+          WebkitMask: "conic-gradient(transparent 70deg, black)",
+        }}
+      />
+      <div
+        className={cn(
+          "absolute rounded-full bg-white/80",
+          sizes[size]
+        )}
+        style={{
+          inset: size === "sm" ? "2px" : size === "md" ? "3px" : "4px",
+        }}
+      />
+      <span className="sr-only">Loading...</span>
     </div>
   );
 }

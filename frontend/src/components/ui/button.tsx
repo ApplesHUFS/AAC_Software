@@ -1,7 +1,8 @@
 /**
- * 버튼 컴포넌트
- * - 다양한 variant와 size 지원
- * - 아이콘 및 로딩 상태 지원
+ * Button Component
+ * - Gradient backgrounds with hover/active effects
+ * - Multiple variants: primary, secondary, ghost, danger
+ * - Loading state with pulse animation
  */
 
 "use client";
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger" | "success";
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   leftIcon?: string | ReactNode;
   rightIcon?: string | ReactNode;
@@ -20,7 +21,6 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   fullWidth?: boolean;
 }
 
-// 아이콘 렌더링 헬퍼
 function renderIcon(icon: string | ReactNode, size: number): ReactNode {
   if (typeof icon === "string") {
     return (
@@ -54,53 +54,42 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const baseStyles = cn(
       "inline-flex items-center justify-center gap-2",
-      "rounded-xl font-semibold whitespace-nowrap",
-      "transition-all duration-200",
+      "rounded-2xl font-semibold whitespace-nowrap",
+      "transition-all duration-300 ease-out",
       "focus:outline-none focus:ring-2 focus:ring-offset-2",
-      "disabled:opacity-50 disabled:cursor-not-allowed",
-      "active:scale-[0.98]"
+      "disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none",
+      "active:scale-[0.97]"
     );
 
     const variants = {
       primary: cn(
-        "bg-partner-600 text-white",
-        "hover:bg-partner-700",
-        "focus:ring-partner-500",
-        "shadow-app-button hover:shadow-app-md"
+        "bg-gradient-to-r from-violet-600 to-pink-500 text-white",
+        "hover:shadow-xl hover:shadow-violet-500/25 hover:-translate-y-0.5",
+        "focus:ring-violet-500",
+        "shadow-lg shadow-violet-500/20"
       ),
       secondary: cn(
-        "bg-gray-100 text-gray-900",
-        "hover:bg-gray-200",
-        "focus:ring-gray-500"
-      ),
-      outline: cn(
-        "border-2 border-gray-200 bg-white text-gray-700",
-        "hover:bg-gray-50 hover:border-gray-300",
-        "focus:ring-gray-500"
+        "border-2 border-violet-300 bg-white/80 backdrop-blur-sm text-violet-700",
+        "hover:bg-violet-50 hover:border-violet-400 hover:shadow-lg hover:-translate-y-0.5",
+        "focus:ring-violet-500"
       ),
       ghost: cn(
-        "text-gray-700",
-        "hover:bg-gray-100",
-        "focus:ring-gray-500"
+        "text-gray-700 bg-transparent",
+        "hover:bg-white/60 hover:backdrop-blur-sm",
+        "focus:ring-gray-400"
       ),
       danger: cn(
-        "bg-red-600 text-white",
-        "hover:bg-red-700",
+        "bg-gradient-to-r from-red-500 to-rose-500 text-white",
+        "hover:shadow-xl hover:shadow-red-500/25 hover:-translate-y-0.5",
         "focus:ring-red-500",
-        "shadow-app-button hover:shadow-app-md"
-      ),
-      success: cn(
-        "bg-green-600 text-white",
-        "hover:bg-green-700",
-        "focus:ring-green-500",
-        "shadow-app-button hover:shadow-app-md"
+        "shadow-lg shadow-red-500/20"
       ),
     };
 
     const sizes = {
-      sm: "h-9 px-3 text-sm",
-      md: "h-11 px-4",
-      lg: "h-13 px-6 text-lg",
+      sm: "h-9 px-4 text-sm",
+      md: "h-11 px-5",
+      lg: "h-13 px-7 text-lg",
     };
 
     const iconSizes = {
@@ -119,6 +108,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           variants[variant],
           sizes[size],
           fullWidth && "w-full",
+          isLoading && "animate-pulse",
           className
         )}
         disabled={isDisabled}
@@ -127,7 +117,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {isLoading ? (
           <>
             <Spinner size="sm" />
-            <span>처리 중...</span>
+            <span>Loading...</span>
           </>
         ) : (
           <>

@@ -9,3 +9,4 @@ export { Select } from "./select";
 export { Spinner } from "./spinner";
 export { Card, CardHeader, CardContent, CardFooter } from "./card";
 export { Icon, IconContainer } from "./icon";
+export * from "./icons";
