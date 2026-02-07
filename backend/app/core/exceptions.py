@@ -47,3 +47,26 @@ class DuplicateException(AppException):
 
     def __init__(self, message: str = "이미 존재하는 리소스입니다."):
         super().__init__(message, status_code=409)
+
+
+class LLMServiceError(AppException):
+    """LLM 서비스 일반 오류 (503)"""
+
+    def __init__(self, message: str = "LLM 서비스 오류가 발생했습니다."):
+        super().__init__(message, status_code=503)
+
+
+class LLMTimeoutError(LLMServiceError):
+    """LLM 요청 타임아웃 (504)"""
+
+    def __init__(self, message: str = "LLM 요청 시간이 초과되었습니다."):
+        super().__init__(message)
+        self.status_code = 504
+
+
+class LLMRateLimitError(LLMServiceError):
+    """LLM Rate Limit 초과 (429)"""
+
+    def __init__(self, message: str = "LLM API 요청 한도를 초과했습니다."):
+        super().__init__(message)
+        self.status_code = 429

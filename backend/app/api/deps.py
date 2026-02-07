@@ -112,12 +112,13 @@ def get_feedback_analyzer() -> IFeedbackAnalyzer:
     과거 피드백에서 상황-카드 연관 패턴을 학습합니다.
     """
     settings = get_settings()
+    feedback_config = settings.feedback
 
-    if settings.enable_feedback_learning:
+    if feedback_config.enable_learning:
         return TFIDFFeedbackAnalyzer(
             feedback_file_path=settings.feedback_file_path,
-            decay_days=settings.feedback_decay_days,
-            min_similarity=settings.feedback_min_similarity,
+            decay_days=feedback_config.decay_days,
+            min_similarity=feedback_config.min_similarity,
         )
 
     return NoOpFeedbackAnalyzer()

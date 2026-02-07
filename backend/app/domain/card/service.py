@@ -1,11 +1,14 @@
 """카드 서비스"""
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
 from app.config.settings import Settings
+
+logger = logging.getLogger(__name__)
 from app.domain.card.entity import Card, CardHistory, Interpretation
 from app.domain.card.recommender import CardRecommender
 from app.domain.context.entity import Context
@@ -67,10 +70,16 @@ class CardService:
         context: Context,
     ) -> RecommendResult:
         """카드 추천 (LLM 필터 포함)"""
+        logger.info(
+            "카드 추천 서비스 시작: user=%s, context=%s",
+            user.user_id, context.context_id
+        )
+
         # 이미 추천된 카드 조회
         excluded_cards = await self._history_repo.get_all_recommended_cards(
             context.context_id
         )
+        logger.debug("제외할 카드: %d개", len(excluded_cards))
 
         # 비동기 카드 추천 (LLM 필터 + 재순위화)
         cards = await self._recommender.recommend_cards_async(
@@ -95,6 +104,11 @@ class CardService:
         )
         await self._history_repo.save_history(history)
 
+        logger.info(
+            "카드 추천 서비스 완료: %d개 카드, page=%d",
+            len(cards), new_page
+        )
+
         return RecommendResult(
             success=True,
             cards=cards,
@@ -112,10 +126,12 @@ class CardService:
         all_recommended_cards: List[str],
     ) -> ValidateResult:
         """카드 선택 검증"""
+        logger.debug("카드 선택 검증: %d개 선택", len(selected_cards))
         selected_count = len(selected_cards)
 
         # 선택 개수 검증
         if selected_count < self._settings.min_card_selection:
+            logger.warning("카드 선택 실패: 최소 개수 미달 (%d개)", selected_count)
             return ValidateResult(
                 valid=False,
                 selected_count=selected_count,
@@ -123,6 +139,7 @@ class CardService:
             )
 
         if selected_count > self._settings.max_card_selection:
+            logger.warning("카드 선택 실패: 최대 개수 초과 (%d개)", selected_count)
             return ValidateResult(
                 valid=False,
                 selected_count=selected_count,
@@ -133,12 +150,14 @@ class CardService:
         all_recommended_set = set(all_recommended_cards)
         for card in selected_cards:
             if card not in all_recommended_set:
+                logger.warning("카드 선택 실패: 비추천 카드 선택 (%s)", card)
                 return ValidateResult(
                     valid=False,
                     selected_count=selected_count,
                     message=f"'{card}'는 추천된 카드가 아닙니다.",
                 )
 
+        logger.info("카드 선택 검증 성공: %d개", selected_count)
         return ValidateResult(
             valid=True,
             selected_count=selected_count,
@@ -152,6 +171,11 @@ class CardService:
         selected_cards: List[str],
     ) -> InterpretResult:
         """카드 해석"""
+        logger.info(
+            "카드 해석 시작: user=%s, %d개 카드",
+            user.user_id, len(selected_cards)
+        )
+
         # 이미지 로드 및 인코딩
         card_images = []
         selected_card_info = []
@@ -196,6 +220,11 @@ class CardService:
 
         # 피드백 ID 생성
         self._feedback_id_counter += 1
+
+        logger.info(
+            "카드 해석 완료: %d개 해석 생성, feedback_id=%d",
+            len(interpretations), self._feedback_id_counter
+        )
 
         return InterpretResult(
             success=True,

@@ -1,10 +1,13 @@
 """컨텍스트 서비스"""
 
+import logging
 from dataclasses import dataclass
 from typing import Optional
 
 from app.domain.context.entity import Context
 from app.domain.context.repository import ContextRepository
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -30,6 +33,11 @@ class ContextService:
         current_activity: str = "",
     ) -> CreateContextResult:
         """새 컨텍스트 생성"""
+        logger.info(
+            "컨텍스트 생성 시작: user=%s, place=%s, partner=%s",
+            user_id, place, interaction_partner
+        )
+
         context = Context(
             context_id=Context.generate_id(),
             user_id=user_id,
@@ -41,6 +49,8 @@ class ContextService:
 
         await self._repo.save(context)
 
+        logger.info("컨텍스트 생성 완료: context_id=%s", context.context_id)
+
         return CreateContextResult(
             success=True,
             context=context,
@@ -49,4 +59,9 @@ class ContextService:
 
     async def get_context(self, context_id: str) -> Optional[Context]:
         """컨텍스트 조회"""
-        return await self._repo.find_by_id(context_id)
+        context = await self._repo.find_by_id(context_id)
+        if context:
+            logger.debug("컨텍스트 조회 성공: %s", context_id)
+        else:
+            logger.warning("컨텍스트 조회 실패: %s", context_id)
+        return context

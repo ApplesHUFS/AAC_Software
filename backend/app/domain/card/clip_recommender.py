@@ -16,6 +16,7 @@ from typing import List, Optional, Set
 import numpy as np
 
 from app.config.settings import Settings
+from app.core.exceptions import LLMRateLimitError, LLMServiceError, LLMTimeoutError
 from app.domain.card.entity import Card
 from app.domain.card.filters.base import FilterContext, ICardFilter, ICardReranker
 from app.domain.card.interfaces import (
@@ -31,6 +32,9 @@ from app.domain.context.entity import Context
 from app.domain.user.entity import User
 
 logger = logging.getLogger(__name__)
+
+# LLM 에러 타입 튜플 (Graceful Degradation 적용 대상)
+LLM_ERRORS = (LLMServiceError, LLMTimeoutError, LLMRateLimitError)
 
 
 @dataclass
@@ -73,13 +77,14 @@ class CLIPCardRecommender(IRecommendationStrategy):
         self._embedding = embedding_provider
         self._vector_index = vector_index
         self._diversity = diversity_selector
+        rec_config = settings.recommendation
         self._config = config or RecommendationConfig(
-            semantic_weight=settings.semantic_weight,
-            diversity_weight=settings.diversity_weight,
-            persona_weight=settings.persona_weight,
-            mmr_lambda=settings.mmr_lambda,
-            candidate_multiplier=settings.initial_search_multiplier,
-            diversity_multiplier=settings.diversity_selection_multiplier,
+            semantic_weight=rec_config.semantic_weight,
+            diversity_weight=rec_config.diversity_weight,
+            persona_weight=rec_config.persona_weight,
+            mmr_lambda=rec_config.mmr_lambda,
+            candidate_multiplier=rec_config.initial_search_multiplier,
+            diversity_multiplier=rec_config.diversity_selection_multiplier,
         )
 
         # LLM 필터 및 재순위화기
@@ -104,14 +109,18 @@ class CLIPCardRecommender(IRecommendationStrategy):
 
         LLM 필터가 필요한 경우 recommend_async 사용
         """
+        logger.info("동기 추천 파이프라인 시작: %d개 요청", count)
+
         candidates = self._stage1_semantic_search(context, count)
 
         if not candidates:
+            logger.warning("Stage 1 검색 결과 없음, 랜덤 선택으로 대체")
             return self._fallback_random_selection(context, count)
 
         diverse_candidates = self._stage2_diversity_selection(candidates, count)
         final_cards = self._stage5_persona_boost(diverse_candidates, context)
 
+        logger.info("동기 추천 파이프라인 완료: %d개 반환", len(final_cards))
         return final_cards
 
     async def recommend_async(
@@ -132,10 +141,16 @@ class CLIPCardRecommender(IRecommendationStrategy):
         Returns:
             점수가 계산된 추천 카드 목록 (count개 보장)
         """
+        logger.info(
+            "비동기 추천 파이프라인 시작: %d개 요청, user=%s",
+            count, user.user_id if user else "None"
+        )
+
         # Stage 1: 다중 쿼리 시맨틱 검색 (CLIP + Query Rewriting)
         candidates = await self._stage1_semantic_search_async(context, count)
 
         if not candidates:
+            logger.warning("Stage 1 검색 결과 없음, 랜덤 선택으로 대체")
             return self._fallback_random_selection(context, count)
 
         # Stage 2: 다양성 선택 (MMR)
@@ -158,6 +173,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
         # Stage 5: 페르소나 부스트
         final_cards = self._stage5_persona_boost(reranked_candidates, context)
 
+        logger.info("비동기 추천 파이프라인 완료: %d개 반환", len(final_cards))
         return final_cards
 
     async def _stage3_llm_filter(
@@ -168,8 +184,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
     ) -> List[ScoredCard]:
         """Stage 3: LLM 적합성 필터 (단순 버전, 카드 수 보장 없음)
 
-        GPT-4o를 사용하여 사용자 나이, 장애유형, 상황에
-        부적절한 카드를 필터링합니다.
+        Graceful Degradation: LLM 실패 시 필터 없이 원본 반환
         """
         if not self._llm_filter or not user or not context_entity:
             return candidates
@@ -190,8 +205,11 @@ class CLIPCardRecommender(IRecommendationStrategy):
                 )
                 return result.appropriate_cards
 
+        except LLM_ERRORS as e:
+            logger.warning(f"LLM 필터 실패, Graceful Degradation 적용: {e}")
+
         except Exception as e:
-            logger.warning(f"LLM 필터 오류, 원본 반환: {e}")
+            logger.warning(f"LLM 필터 예상치 못한 오류, 원본 반환: {e}")
 
         return candidates
 
@@ -304,8 +322,12 @@ class CLIPCardRecommender(IRecommendationStrategy):
 
             return appropriate_cards
 
+        except LLM_ERRORS as e:
+            logger.warning(f"LLM 필터 + Backfill 실패, Graceful Degradation 적용: {e}")
+            return diverse_candidates
+
         except Exception as e:
-            logger.warning(f"LLM 필터 + Backfill 오류, 원본 반환: {e}")
+            logger.warning(f"LLM 필터 + Backfill 예상치 못한 오류, 원본 반환: {e}")
             return diverse_candidates
 
     async def _stage4_llm_rerank(
@@ -316,8 +338,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
     ) -> List[ScoredCard]:
         """Stage 4: LLM 재순위화
 
-        GPT-4o를 사용하여 현재 상황에 맞게
-        카드 순위를 최적화합니다.
+        Graceful Degradation: LLM 실패 시 재순위화 건너뛰기
         """
         if not self._llm_reranker or not user or not context_entity:
             return candidates
@@ -335,8 +356,11 @@ class CLIPCardRecommender(IRecommendationStrategy):
                 logger.info(f"LLM 재순위화: {len(reranked)}개 카드 순위 조정됨")
                 return reranked
 
+        except LLM_ERRORS as e:
+            logger.warning(f"LLM 재순위화 실패, Graceful Degradation 적용: {e}")
+
         except Exception as e:
-            logger.warning(f"LLM 재순위화 오류, 원본 반환: {e}")
+            logger.warning(f"LLM 재순위화 예상치 못한 오류, 원본 반환: {e}")
 
         return candidates
 
@@ -350,10 +374,15 @@ class CLIPCardRecommender(IRecommendationStrategy):
         컨텍스트를 자연어 문장으로 변환하여 CLIP 인코딩
         전체 이미지와 직접 유사도 검색
         """
+        logger.debug("Stage 1 시맨틱 검색 시작")
+
         # 컨텍스트를 풍부한 쿼리로 변환
         query_text = self._build_rich_query(context)
         if not query_text.strip():
+            logger.warning("Stage 1: 빈 쿼리 생성됨")
             return []
+
+        logger.debug("Stage 1 쿼리: %s", query_text[:100])
 
         # CLIP 텍스트 인코딩
         query_embedding = self._embedding.encode_text(query_text)
@@ -391,6 +420,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
                 )
             )
 
+        logger.info("Stage 1 시맨틱 검색 완료: %d개 후보", len(scored_cards))
         return scored_cards
 
     async def _stage1_semantic_search_async(
@@ -525,10 +555,12 @@ class CLIPCardRecommender(IRecommendationStrategy):
 
         사용자의 선호 키워드와 각 카드의 유사도를 계산하여 가산점
         """
-        count = self._settings.display_cards_total
+        logger.debug("Stage 5 페르소나 부스트 시작: %d개 후보", len(candidates))
+        count = self._settings.recommendation.top_k
 
         # 선호 키워드가 있으면 부스트 적용
         if context.preferred_keywords:
+            logger.debug("키워드 부스트 적용: %s", context.preferred_keywords)
             self._apply_keyword_boost(candidates, context.preferred_keywords)
 
         # 최종 점수 계산
@@ -542,6 +574,7 @@ class CLIPCardRecommender(IRecommendationStrategy):
         # 최종 점수 기준 정렬
         candidates.sort(key=lambda sc: sc.rank_key)
 
+        logger.info("Stage 5 페르소나 부스트 완료: %d개 선택", min(count, len(candidates)))
         return candidates[:count]
 
     def _apply_keyword_boost(
@@ -581,6 +614,8 @@ class CLIPCardRecommender(IRecommendationStrategy):
         count: int,
     ) -> List[ScoredCard]:
         """Fallback: 시맨틱 검색 실패 시 랜덤 선택"""
+        logger.warning("Fallback 랜덤 선택 시작: %d개 요청", count)
+
         all_filenames = self._vector_index.filenames
 
         available = [
@@ -589,9 +624,11 @@ class CLIPCardRecommender(IRecommendationStrategy):
         ]
 
         if not available:
+            logger.error("Fallback 실패: 가용 카드 없음")
             return []
 
         selected = random.sample(available, min(count, len(available)))
+        logger.info("Fallback 랜덤 선택 완료: %d개 선택", len(selected))
 
         return [
             ScoredCard(

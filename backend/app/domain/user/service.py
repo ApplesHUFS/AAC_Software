@@ -1,5 +1,6 @@
 """사용자 서비스"""
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -7,6 +8,8 @@ from typing import Any, Dict, List, Optional
 from app.config.settings import Settings
 from app.domain.user.entity import User
 from app.domain.user.repository import UserRepository
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -68,7 +71,10 @@ class UserService:
         password: str,
     ) -> RegisterResult:
         """새 사용자 등록"""
+        logger.info("사용자 등록 시작: user_id=%s, name=%s", user_id, name)
+
         if await self._repo.exists(user_id):
+            logger.warning("사용자 등록 실패: 중복 ID (%s)", user_id)
             return RegisterResult(
                 success=False,
                 user_id=user_id,
@@ -79,6 +85,7 @@ class UserService:
             age, gender, disability_type, interesting_topics
         )
         if validation_error:
+            logger.warning("사용자 등록 실패: 검증 오류 (%s)", validation_error)
             return RegisterResult(
                 success=False, user_id=user_id, message=validation_error
             )
@@ -98,6 +105,8 @@ class UserService:
 
         await self._repo.save(user)
 
+        logger.info("사용자 등록 완료: user_id=%s", user_id)
+
         return RegisterResult(
             success=True,
             user_id=user_id,
@@ -106,9 +115,12 @@ class UserService:
 
     async def authenticate_user(self, user_id: str, password: str) -> AuthResult:
         """사용자 인증"""
+        logger.info("사용자 인증 시도: user_id=%s", user_id)
+
         user = await self._repo.find_by_id(user_id)
 
         if not user:
+            logger.warning("인증 실패: 사용자 없음 (%s)", user_id)
             return AuthResult(
                 authenticated=False,
                 user_info=None,
@@ -116,12 +128,14 @@ class UserService:
             )
 
         if not user.verify_password(password):
+            logger.warning("인증 실패: 비밀번호 불일치 (%s)", user_id)
             return AuthResult(
                 authenticated=False,
                 user_info=None,
                 message="비밀번호가 일치하지 않습니다.",
             )
 
+        logger.info("인증 성공: user_id=%s", user_id)
         return AuthResult(
             authenticated=True,
             user_info=user.to_response_dict(),
@@ -153,9 +167,12 @@ class UserService:
         self, user_id: str, updates: Dict[str, Any]
     ) -> UpdateResult:
         """사용자 페르소나 업데이트"""
+        logger.info("페르소나 업데이트 시작: user_id=%s", user_id)
+
         user = await self._repo.find_by_id(user_id)
 
         if not user:
+            logger.warning("페르소나 업데이트 실패: 사용자 없음 (%s)", user_id)
             return UpdateResult(
                 success=False,
                 updated_fields=[],
@@ -184,6 +201,8 @@ class UserService:
 
         user.updated_at = datetime.now()
         await self._repo.update(user)
+
+        logger.info("페르소나 업데이트 완료: user_id=%s, fields=%s", user_id, updated_fields)
 
         return UpdateResult(
             success=True,

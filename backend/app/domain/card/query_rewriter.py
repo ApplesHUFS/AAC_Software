@@ -3,6 +3,8 @@
 원본 컨텍스트를 여러 검색 쿼리로 확장하여
 더 다양한 카드 후보를 확보합니다.
 
+Graceful Degradation: LLM 실패 시 원본 쿼리만 사용
+
 연구적 접근: Contextual Relevance Feedback
 - 과거 피드백에서 유사 상황 패턴 학습
 - 성공적인 카드 선택 패턴을 쿼리에 반영
@@ -12,11 +14,16 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Optional
 
+from app.core.exceptions import LLMRateLimitError, LLMServiceError, LLMTimeoutError
+
 if TYPE_CHECKING:
     from app.domain.feedback.analyzer import IFeedbackAnalyzer
     from app.infrastructure.external.openai_client import OpenAIClient
 
 logger = logging.getLogger(__name__)
+
+# LLM 에러 타입 튜플 (Graceful Degradation 적용 대상)
+LLM_ERRORS = (LLMServiceError, LLMTimeoutError, LLMRateLimitError)
 
 
 class IQueryRewriter(ABC):
@@ -65,6 +72,8 @@ class LLMQueryRewriter(IQueryRewriter):
     ) -> List[str]:
         """원본 컨텍스트를 다양한 검색 쿼리로 확장
 
+        Graceful Degradation: LLM 실패 시 원본 쿼리만 반환
+
         Returns:
             [원본 쿼리, 확장 쿼리1, 확장 쿼리2, ...]
         """
@@ -86,8 +95,11 @@ class LLMQueryRewriter(IQueryRewriter):
                 )
                 return [original_query] + expanded_queries
 
+        except LLM_ERRORS as e:
+            logger.warning(f"쿼리 재작성 실패, Graceful Degradation 적용: {e}")
+
         except Exception as e:
-            logger.warning(f"쿼리 재작성 실패, 원본만 사용: {e}")
+            logger.warning(f"쿼리 재작성 예상치 못한 오류, 원본만 사용: {e}")
 
         return [original_query]
 
@@ -200,14 +212,13 @@ class FeedbackAwareQueryRewriter(IQueryRewriter):
                     f"관련 카드 {len(expansion.relevant_cards)}개"
                 )
 
-        # 3. LLM 기반 쿼리 확장
+        # 3. LLM 기반 쿼리 확장 (Graceful Degradation 적용)
         try:
             expanded_queries = await self._openai.rewrite_query(
                 place=place,
                 partner=interaction_partner,
                 activity=current_activity,
                 count=self._query_count,
-                # 피드백 컨텍스트 힌트 전달
                 context_hints=expansion.context_hints if expansion.confidence > 0 else None,
             )
 
@@ -218,8 +229,11 @@ class FeedbackAwareQueryRewriter(IQueryRewriter):
                     f"+ LLM 확장 {len(expanded_queries)}개"
                 )
 
+        except LLM_ERRORS as e:
+            logger.warning(f"LLM 쿼리 확장 실패, Graceful Degradation 적용: {e}")
+
         except Exception as e:
-            logger.warning(f"LLM 쿼리 확장 실패: {e}")
+            logger.warning(f"LLM 쿼리 확장 예상치 못한 오류: {e}")
 
         return queries
 

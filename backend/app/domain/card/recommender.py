@@ -4,9 +4,12 @@ CLIP 기반 5단계 시맨틱 추천 시스템 (LLM 필터 + 피드백 학습)
 컨텍스트 → 피드백 기반 쿼리 확장 → 벡터 검색 → MMR 다양성 → LLM 필터(Backfill) → 키워드 부스트
 """
 
+import logging
 from typing import TYPE_CHECKING, List, Optional, Set
 
 from app.config.settings import Settings
+
+logger = logging.getLogger(__name__)
 from app.domain.card.entity import Card
 from app.domain.card.filters.base import ICardFilter, ICardReranker
 from app.domain.card.interfaces import SearchContext, ScoredCard
@@ -59,6 +62,7 @@ class CardRecommender:
         피드백 분석기가 있으면 FeedbackAwareQueryRewriter 사용
         """
         if self._clip_recommender is None:
+            logger.info("CLIP 추천기 초기화 시작")
             # 지연 임포트 (순환 임포트 방지)
             from app.domain.card.clip_recommender import (
                 CLIPCardRecommender,
@@ -78,17 +82,19 @@ class CardRecommender:
             vector_index = create_vector_index(self._settings)
             diversity_selector = MMRDiversitySelector(vector_index)
 
+            rec_config = self._settings.recommendation
             config = RecommendationConfig(
-                semantic_weight=self._settings.semantic_weight,
-                diversity_weight=self._settings.diversity_weight,
-                persona_weight=self._settings.persona_weight,
-                mmr_lambda=self._settings.mmr_lambda,
-                candidate_multiplier=self._settings.initial_search_multiplier,
-                diversity_multiplier=self._settings.diversity_selection_multiplier,
+                semantic_weight=rec_config.semantic_weight,
+                diversity_weight=rec_config.diversity_weight,
+                persona_weight=rec_config.persona_weight,
+                mmr_lambda=rec_config.mmr_lambda,
+                candidate_multiplier=rec_config.initial_search_multiplier,
+                diversity_multiplier=rec_config.diversity_selection_multiplier,
             )
 
             # LLM 필터 초기화
-            if self._openai_client and self._settings.enable_llm_filter:
+            llm_config = self._settings.llm
+            if self._openai_client and llm_config.enable_filter:
                 filter_factory = FilterFactory(
                     settings=self._settings,
                     openai_client=self._openai_client,
@@ -96,20 +102,22 @@ class CardRecommender:
                 self._llm_filter, self._llm_reranker = filter_factory.create_all()
 
             # 쿼리 재작성기 초기화 (피드백 분석기 활용)
-            if self._openai_client and self._settings.enable_query_rewriting:
-                if self._feedback_analyzer and self._settings.enable_feedback_learning:
+            qr_config = self._settings.query_rewrite
+            fb_config = self._settings.feedback
+            if self._openai_client and qr_config.enabled:
+                if self._feedback_analyzer and fb_config.enable_learning:
                     # 피드백 기반 쿼리 재작성 (Contextual Relevance Feedback)
                     self._query_rewriter = FeedbackAwareQueryRewriter(
                         openai_client=self._openai_client,
                         feedback_analyzer=self._feedback_analyzer,
-                        query_count=self._settings.query_rewrite_count,
-                        feedback_weight=self._settings.feedback_weight,
+                        query_count=qr_config.count,
+                        feedback_weight=fb_config.weight,
                     )
                 else:
                     # 기본 LLM 쿼리 재작성
                     self._query_rewriter = LLMQueryRewriter(
                         openai_client=self._openai_client,
-                        query_count=self._settings.query_rewrite_count,
+                        query_count=qr_config.count,
                     )
             else:
                 self._query_rewriter = NoOpQueryRewriter()
@@ -124,6 +132,7 @@ class CardRecommender:
                 llm_reranker=self._llm_reranker,
                 query_rewriter=self._query_rewriter,
             )
+            logger.info("CLIP 추천기 초기화 완료")
 
         return self._clip_recommender
 
@@ -139,6 +148,11 @@ class CardRecommender:
 
         LLM 필터가 필요한 경우 recommend_cards_async 사용
         """
+        logger.info(
+            "동기 카드 추천 시작: place=%s, partner=%s, activity=%s",
+            place, interaction_partner, current_activity
+        )
+
         context = SearchContext(
             place=place,
             interaction_partner=interaction_partner,
@@ -158,6 +172,7 @@ class CardRecommender:
             sc.card.index = i
             cards.append(sc.card)
 
+        logger.info("동기 카드 추천 완료: %d개 카드 반환", len(cards))
         return cards
 
     async def recommend_cards_async(
@@ -184,6 +199,16 @@ class CardRecommender:
         Returns:
             추천된 카드 목록 (총 display_cards_total 개)
         """
+        logger.info(
+            "비동기 카드 추천 시작: place=%s, partner=%s, activity=%s, user=%s",
+            place, interaction_partner, current_activity,
+            user.user_id if user else "None"
+        )
+        logger.debug(
+            "추천 파라미터: keywords=%s, excluded=%d개",
+            preferred_keywords, len(excluded_cards)
+        )
+
         context = SearchContext(
             place=place,
             interaction_partner=interaction_partner,
@@ -205,4 +230,5 @@ class CardRecommender:
             sc.card.index = i
             cards.append(sc.card)
 
+        logger.info("비동기 카드 추천 완료: %d개 카드 반환", len(cards))
         return cards

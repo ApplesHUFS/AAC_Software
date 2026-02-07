@@ -1,6 +1,7 @@
 """OpenAI Responses API 클라이언트
 
 Responses API를 사용하여 텍스트 생성, 이미지 분석, JSON 출력을 처리합니다.
+Resilience: 재시도(exponential backoff) 및 Graceful Degradation 지원
 """
 
 import asyncio
@@ -10,11 +11,17 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from openai import OpenAI
+from openai import APITimeoutError, OpenAI, RateLimitError
 
 from app.config.settings import Settings
+from app.core.exceptions import LLMRateLimitError, LLMServiceError, LLMTimeoutError
 
 logger = logging.getLogger(__name__)
+
+# 재시도 설정 상수
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_BASE_DELAY = 1.0
+EXPONENTIAL_BASE = 2.0
 
 
 class OpenAIClient:
@@ -47,14 +54,27 @@ class OpenAIClient:
         user_persona: Dict[str, Any],
         context: Dict[str, Any],
         memory_summary: Optional[str] = None,
+        max_retries: int = DEFAULT_MAX_RETRIES,
     ) -> List[str]:
-        """선택된 카드들을 해석하여 3가지 가능한 의미 생성 (Structured Outputs 사용)"""
+        """선택된 카드들을 해석하여 3가지 가능한 의미 생성
+
+        카드 해석은 잘못된 해석이 위험하므로 Fallback 없이 명확한 에러를 반환합니다.
+        재시도 로직만 적용됩니다.
+
+        Raises:
+            LLMServiceError: 재시도 후에도 실패한 경우
+        """
+        logger.info("카드 해석 시작: %d개 카드", len(card_images))
+        logger.debug(
+            "해석 컨텍스트: place=%s, partner=%s",
+            context.get("place"), context.get("interactionPartner")
+        )
+
         instructions = self._build_interpretation_system_prompt(
             user_persona, context, memory_summary
         )
         user_content = self._build_interpretation_user_content(card_images)
 
-        # 해석 결과를 위한 JSON 스키마 정의
         interpretation_schema = {
             "type": "json_schema",
             "name": "card_interpretations",
@@ -73,45 +93,109 @@ class OpenAIClient:
             },
         }
 
-        try:
-            logger.info(f"Calling Responses API with Structured Outputs, model: {self._settings.openai_model}")
+        last_exception: Optional[Exception] = None
 
-            response = self._client.responses.create(
-                model=self._settings.openai_model,
-                instructions=instructions,
-                input=user_content,
-                max_output_tokens=self._settings.interpretation_max_tokens,
-                temperature=self._settings.openai_temperature,
-                text={"format": interpretation_schema},
-            )
+        for attempt in range(max_retries):
+            try:
+                logger.info(
+                    f"카드 해석 API 호출 (시도 {attempt + 1}/{max_retries}), "
+                    f"model: {self._settings.openai_model}"
+                )
 
-            content = response.output_text or "{}"
-            logger.info(f"API Response (structured): {content[:500]}")
+                response = self._client.responses.create(
+                    model=self._settings.openai_model,
+                    instructions=instructions,
+                    input=user_content,
+                    max_output_tokens=self._settings.interpretation_max_tokens,
+                    temperature=self._settings.openai_temperature,
+                    text={"format": interpretation_schema},
+                )
 
-            result = json.loads(content)
-            interpretations = result.get("interpretations", [])
+                content = response.output_text or "{}"
+                logger.info(f"API Response (structured): {content[:500]}")
 
-            # 3개 미만인 경우 기본 메시지로 채움
-            while len(interpretations) < 3:
-                interpretations.append("해석을 생성할 수 없습니다.")
+                result = json.loads(content)
+                interpretations = result.get("interpretations", [])
 
-            return interpretations[:3]
+                while len(interpretations) < 3:
+                    interpretations.append("해석을 생성할 수 없습니다.")
 
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON 파싱 오류: {e}")
-            return self._get_fallback_interpretations()
+                logger.info("카드 해석 완료: %d개 해석 생성", len(interpretations))
+                return interpretations[:3]
 
-        except Exception as e:
-            logger.error(f"OpenAI Responses API 오류: {e}")
-            return self._get_fallback_interpretations()
+            except APITimeoutError as e:
+                last_exception = LLMTimeoutError(str(e))
+                logger.warning(f"카드 해석 타임아웃 (시도 {attempt + 1}/{max_retries})")
 
-    def _get_fallback_interpretations(self) -> List[str]:
-        """API 오류 시 반환할 기본 해석"""
-        return [
-            "해석을 생성할 수 없습니다.",
-            "다시 시도해주세요.",
-            "오류가 발생했습니다.",
-        ]
+            except RateLimitError as e:
+                last_exception = LLMRateLimitError(str(e))
+                logger.warning(f"카드 해석 Rate Limit (시도 {attempt + 1}/{max_retries})")
+
+            except json.JSONDecodeError as e:
+                last_exception = LLMServiceError(f"JSON 파싱 오류: {e}")
+                logger.warning(f"카드 해석 JSON 오류 (시도 {attempt + 1}/{max_retries})")
+
+            except Exception as e:
+                last_exception = LLMServiceError(str(e))
+                logger.warning(f"카드 해석 오류 (시도 {attempt + 1}/{max_retries}): {e}")
+
+            # 마지막 시도가 아니면 대기
+            if attempt < max_retries - 1:
+                delay = DEFAULT_BASE_DELAY * (EXPONENTIAL_BASE**attempt)
+                await asyncio.sleep(delay)
+
+        # 재시도 실패 - 명확한 에러 반환 (Fallback 금지)
+        logger.error(f"카드 해석 재시도 실패: {last_exception}")
+        raise last_exception or LLMServiceError("카드 해석에 실패했습니다.")
+
+    async def _retry_with_backoff(
+        self,
+        operation_name: str,
+        api_call: Any,
+        max_retries: int = DEFAULT_MAX_RETRIES,
+    ) -> Any:
+        """Exponential backoff 재시도 헬퍼
+
+        Args:
+            operation_name: 로깅용 작업 이름
+            api_call: API 호출 람다 함수
+            max_retries: 최대 재시도 횟수
+
+        Returns:
+            API 응답
+
+        Raises:
+            LLMServiceError: 재시도 후에도 실패한 경우
+        """
+        last_exception: Optional[Exception] = None
+
+        for attempt in range(max_retries):
+            try:
+                return api_call()
+
+            except APITimeoutError as e:
+                last_exception = LLMTimeoutError(str(e))
+                logger.warning(
+                    f"{operation_name} 타임아웃 (시도 {attempt + 1}/{max_retries})"
+                )
+
+            except RateLimitError as e:
+                last_exception = LLMRateLimitError(str(e))
+                logger.warning(
+                    f"{operation_name} Rate Limit (시도 {attempt + 1}/{max_retries})"
+                )
+
+            except Exception as e:
+                last_exception = LLMServiceError(str(e))
+                logger.warning(
+                    f"{operation_name} 오류 (시도 {attempt + 1}/{max_retries}): {e}"
+                )
+
+            if attempt < max_retries - 1:
+                delay = DEFAULT_BASE_DELAY * (EXPONENTIAL_BASE**attempt)
+                await asyncio.sleep(delay)
+
+        raise last_exception or LLMServiceError(f"{operation_name} 실패")
 
     def _build_interpretation_system_prompt(
         self,
@@ -211,13 +295,14 @@ class OpenAIClient:
     ) -> Dict[str, Any]:
         """카드 적합성 필터링 (JSON 응답)
 
-        Responses API를 사용하여 카드의 적합성을 평가하고
-        부적절한 카드를 필터링합니다.
+        Graceful Degradation: 실패 시 빈 결과 반환 (필터 건너뛰기)
         """
+        logger.info("카드 필터 API 호출 시작")
         retries = max_retries or self._settings.filter_max_retries
 
         for attempt in range(retries):
             try:
+                logger.debug("필터 API 시도 %d/%d", attempt + 1, retries)
                 response = self._client.responses.create(
                     model=self._settings.openai_filter_model,
                     instructions="당신은 AAC 카드 적합성 평가 전문가입니다. JSON 형식으로 응답해주세요.",
@@ -228,21 +313,32 @@ class OpenAIClient:
                 )
 
                 content = response.output_text or "{}"
-                return json.loads(content)
+                result = json.loads(content)
+                logger.info(
+                    "카드 필터 API 완료: %d개 적합, %d개 부적합",
+                    len(result.get("appropriate", [])),
+                    len(result.get("inappropriate", [])),
+                )
+                return result
+
+            except APITimeoutError:
+                logger.warning(f"필터 타임아웃 (시도 {attempt + 1}/{retries})")
+
+            except RateLimitError:
+                logger.warning(f"필터 Rate Limit (시도 {attempt + 1}/{retries})")
 
             except json.JSONDecodeError as e:
-                logger.warning(f"JSON 파싱 오류 (시도 {attempt + 1}/{retries}): {e}")
-                if attempt < retries - 1:
-                    await asyncio.sleep(2**attempt)
-                continue
+                logger.warning(f"필터 JSON 파싱 오류 (시도 {attempt + 1}/{retries}): {e}")
 
             except Exception as e:
                 logger.warning(f"필터 API 오류 (시도 {attempt + 1}/{retries}): {e}")
-                if attempt < retries - 1:
-                    await asyncio.sleep(2**attempt)
-                continue
 
-        logger.error("필터 API 재시도 횟수 초과, 폴백 응답 반환")
+            if attempt < retries - 1:
+                delay = DEFAULT_BASE_DELAY * (EXPONENTIAL_BASE**attempt)
+                await asyncio.sleep(delay)
+
+        # Graceful Degradation: 필터 건너뛰기
+        logger.warning("필터 API 재시도 실패, Graceful Degradation 적용")
         return {
             "appropriate": [],
             "inappropriate": [],
@@ -256,12 +352,14 @@ class OpenAIClient:
     ) -> Dict[str, Any]:
         """카드 재순위화 (JSON 응답)
 
-        Responses API를 사용하여 카드를 컨텍스트에 맞게 재순위화합니다.
+        Graceful Degradation: 실패 시 빈 결과 반환 (재순위화 건너뛰기)
         """
+        logger.info("카드 재순위화 API 호출 시작")
         retries = max_retries or self._settings.filter_max_retries
 
         for attempt in range(retries):
             try:
+                logger.debug("재순위화 API 시도 %d/%d", attempt + 1, retries)
                 response = self._client.responses.create(
                     model=self._settings.openai_filter_model,
                     instructions="당신은 AAC 카드 순위 최적화 전문가입니다. JSON 형식으로 응답해주세요.",
@@ -272,21 +370,31 @@ class OpenAIClient:
                 )
 
                 content = response.output_text or "{}"
-                return json.loads(content)
+                result = json.loads(content)
+                logger.info(
+                    "카드 재순위화 API 완료: %d개 카드 순위 조정",
+                    len(result.get("ranked", [])),
+                )
+                return result
+
+            except APITimeoutError:
+                logger.warning(f"재순위화 타임아웃 (시도 {attempt + 1}/{retries})")
+
+            except RateLimitError:
+                logger.warning(f"재순위화 Rate Limit (시도 {attempt + 1}/{retries})")
 
             except json.JSONDecodeError as e:
-                logger.warning(f"JSON 파싱 오류 (시도 {attempt + 1}/{retries}): {e}")
-                if attempt < retries - 1:
-                    await asyncio.sleep(2**attempt)
-                continue
+                logger.warning(f"재순위화 JSON 파싱 오류 (시도 {attempt + 1}/{retries}): {e}")
 
             except Exception as e:
                 logger.warning(f"재순위화 API 오류 (시도 {attempt + 1}/{retries}): {e}")
-                if attempt < retries - 1:
-                    await asyncio.sleep(2**attempt)
-                continue
 
-        logger.error("재순위화 API 재시도 횟수 초과, 폴백 응답 반환")
+            if attempt < retries - 1:
+                delay = DEFAULT_BASE_DELAY * (EXPONENTIAL_BASE**attempt)
+                await asyncio.sleep(delay)
+
+        # Graceful Degradation: 재순위화 건너뛰기
+        logger.warning("재순위화 API 재시도 실패, Graceful Degradation 적용")
         return {"ranked": []}
 
     async def rewrite_query(
@@ -312,6 +420,11 @@ class OpenAIClient:
         Returns:
             확장된 쿼리 목록
         """
+        logger.info(
+            "쿼리 재작성 시작: place=%s, partner=%s, activity=%s",
+            place, partner, activity
+        )
+
         # 피드백 기반 컨텍스트 힌트 섹션
         hints_section = ""
         if context_hints:

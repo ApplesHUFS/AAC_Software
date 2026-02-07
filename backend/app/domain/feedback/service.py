@@ -1,11 +1,14 @@
 """피드백 서비스"""
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.domain.feedback.entity import Feedback, FeedbackRequest
 from app.domain.feedback.repository import FeedbackRepository
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -42,6 +45,8 @@ class FeedbackService:
         partner_info: str,
     ) -> RequestFeedbackResult:
         """피드백 요청 생성"""
+        logger.info("피드백 요청 시작: user=%s, %d개 카드", user_id, len(cards))
+
         confirmation_id = FeedbackRequest.generate_id()
 
         request = FeedbackRequest(
@@ -54,6 +59,8 @@ class FeedbackService:
         )
 
         await self._repo.save_request(request)
+
+        logger.info("피드백 요청 완료: confirmation_id=%s", confirmation_id)
 
         return RequestFeedbackResult(
             success=True,
@@ -69,9 +76,12 @@ class FeedbackService:
         direct_feedback: Optional[str] = None,
     ) -> SubmitFeedbackResult:
         """피드백 제출"""
+        logger.info("피드백 제출 시작: confirmation_id=%s", confirmation_id)
+
         request = await self._repo.find_request(confirmation_id)
 
         if not request:
+            logger.warning("피드백 요청 없음: %s", confirmation_id)
             return SubmitFeedbackResult(
                 success=False,
                 feedback=None,
@@ -115,6 +125,11 @@ class FeedbackService:
 
         await self._repo.save_feedback(feedback)
         await self._repo.delete_request(confirmation_id)
+
+        logger.info(
+            "피드백 제출 완료: feedback_id=%d, type=%s",
+            feedback_id, feedback_type
+        )
 
         return SubmitFeedbackResult(
             success=True,
